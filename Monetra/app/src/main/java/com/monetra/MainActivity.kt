@@ -13,14 +13,23 @@ import com.monetra.ui.theme.MonetraTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        
+        val viewModel: MainViewModel by viewModels()
+        
+        splashScreen.setKeepOnScreenCondition {
+            viewModel.startDestination.value == null
+        }
+        
         enableEdgeToEdge()
         setContent {
-            val viewModel: MainViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
             
             MonetraTheme {

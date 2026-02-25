@@ -16,10 +16,12 @@ espressoCore         = "3.7.0"
 kotlinxSerialization = "1.7.3"
 work                  = "2.10.0"
 hiltWork              = "1.2.0"
+splashscreen          = "1.0.1"
 
 [libraries]
 # ── Core ──────────────────────────────────────────────────────────────────────
 androidx-core-ktx                  = { group = "androidx.core",      name = "core-ktx",                    version.ref = "coreKtx" }
+androidx-core-splashscreen        = { group = "androidx.core",      name = "core-splashscreen",           version.ref = "splashscreen" }
 
 # ── Lifecycle / Compose ───────────────────────────────────────────────────────
 androidx-lifecycle-runtime-ktx     = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx",        version.ref = "lifecycleRuntimeKtx" }

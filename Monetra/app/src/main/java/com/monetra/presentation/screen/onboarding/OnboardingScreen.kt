@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -125,7 +127,11 @@ private fun SalarySetupStep(
             value = name,
             onValueChange = onNameChange,
             label = { Text("Your Name") },
-            keyboardOptions = KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Next
+            ),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )
@@ -137,7 +143,11 @@ private fun SalarySetupStep(
             onValueChange = onIncomeChange,
             label = { Text("Monthly Salary (Income)") },
             prefix = { Text("₹ ") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            ),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )
@@ -149,7 +159,11 @@ private fun SalarySetupStep(
             onValueChange = onSavingsChange,
             label = { Text("Monthly Savings Target") },
             prefix = { Text("₹ ") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )
@@ -171,13 +185,14 @@ private fun FixedCostsStep(
         
         Spacer(modifier = Modifier.height(Spacing.lg))
 
-        // Basic Add form
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f))) {
             Column(modifier = Modifier.padding(Spacing.md)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Bill Name (e.g., Rent, Internet)") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
@@ -186,7 +201,11 @@ private fun FixedCostsStep(
                     onValueChange = { amount = it },
                     label = { Text("Amount") },
                     prefix = { Text("₹ ") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
@@ -240,6 +259,8 @@ private fun EMIsStep(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Loan Name (e.g., Car, Home)") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
@@ -248,7 +269,11 @@ private fun EMIsStep(
                     onValueChange = { amount = it },
                     label = { Text("Monthly EMI Amount") },
                     prefix = { Text("₹ ") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
