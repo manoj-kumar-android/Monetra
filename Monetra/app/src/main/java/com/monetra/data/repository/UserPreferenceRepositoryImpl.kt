@@ -18,7 +18,9 @@ class UserPreferenceRepositoryImpl @Inject constructor(
                 ownerName = entity?.ownerName ?: "",
                 monthlyIncome = entity?.monthlyIncome ?: 0.0,
                 monthlySavingsGoal = entity?.monthlySavingsGoal ?: 0.0,
-                isOnboardingCompleted = entity?.isOnboardingCompleted ?: false
+                isOnboardingCompleted = entity?.isOnboardingCompleted ?: false,
+                projectionRate = entity?.projectionRate ?: 10.0,
+                projectionYears = entity?.projectionYears ?: 10
             )
         }
     }
@@ -29,7 +31,9 @@ class UserPreferenceRepositoryImpl @Inject constructor(
                 ownerName = preferences.ownerName,
                 monthlyIncome = preferences.monthlyIncome,
                 monthlySavingsGoal = preferences.monthlySavingsGoal,
-                isOnboardingCompleted = preferences.isOnboardingCompleted
+                isOnboardingCompleted = preferences.isOnboardingCompleted,
+                projectionRate = preferences.projectionRate,
+                projectionYears = preferences.projectionYears
             )
         )
     }

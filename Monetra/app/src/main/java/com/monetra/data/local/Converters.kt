@@ -47,4 +47,13 @@ class Converters {
     fun fromInvestmentType(type: InvestmentType): String {
         return type.name
     }
+    @TypeConverter
+    fun toContributionFrequency(value: String): com.monetra.domain.model.ContributionFrequency {
+        return enumValueOf<com.monetra.domain.model.ContributionFrequency>(value)
+    }
+
+    @TypeConverter
+    fun fromContributionFrequency(frequency: com.monetra.domain.model.ContributionFrequency): String {
+        return frequency.name
+    }
 }

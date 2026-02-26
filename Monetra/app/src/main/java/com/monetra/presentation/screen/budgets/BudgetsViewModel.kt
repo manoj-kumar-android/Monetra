@@ -38,7 +38,7 @@ class BudgetsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             val defaultCategories = listOf(
                 "General", "Food", "Transport", "Shopping", 
-                "Entertainment", "Utilities", "Gift", "Health", "Travel"
+                "Entertainment", "Utilities", "Gift", "Health"
             )
             
             getCategoryBudgets(YearMonth.now()).collectLatest { existingBudgets ->

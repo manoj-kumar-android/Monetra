@@ -53,6 +53,13 @@ class TransactionRepositoryImpl @Inject constructor(
         return dao.getTotalExpenseBetweenDates(startDate.format(formatter), endDate.format(formatter)).map { it ?: 0.0 }
     }
 
+    override fun getExpenseSumByCategoryBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<Map<String, Double>> {
+        val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+        return dao.getExpenseSumByCategoryBetweenDates(startDate.format(formatter), endDate.format(formatter)).map { list ->
+            list.associate { it.category to it.total }
+        }
+    }
+
     override fun getLifetimeIncome(): Flow<Double> {
         return dao.getLifetimeTotal("INCOME").map { it ?: 0.0 }
     }

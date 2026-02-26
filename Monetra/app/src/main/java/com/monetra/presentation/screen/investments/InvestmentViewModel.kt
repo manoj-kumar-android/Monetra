@@ -11,6 +11,7 @@ import com.monetra.domain.usecase.investment.GetInvestmentsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 @HiltViewModel
@@ -18,8 +19,23 @@ class InvestmentViewModel @Inject constructor(
     private val getInvestments: GetInvestmentsUseCase,
     private val getWealthIntelligence: GetWealthIntelligenceUseCase,
     private val addInvestment: AddInvestmentUseCase,
-    private val deleteInvestment: DeleteInvestmentUseCase
+    private val deleteInvestment: DeleteInvestmentUseCase,
+    private val userPreferenceRepository: com.monetra.domain.repository.UserPreferenceRepository
 ) : ViewModel() {
+
+    fun onSimulationRateChange(rate: Double) {
+        viewModelScope.launch {
+            val current = userPreferenceRepository.getUserPreferences().first()
+            userPreferenceRepository.saveUserPreferences(current.copy(projectionRate = rate))
+        }
+    }
+
+    fun onSimulationYearsChange(years: Int) {
+        viewModelScope.launch {
+            val current = userPreferenceRepository.getUserPreferences().first()
+            userPreferenceRepository.saveUserPreferences(current.copy(projectionYears = years))
+        }
+    }
 
     private val _investments = getInvestments()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -36,76 +52,84 @@ class InvestmentViewModel @Inject constructor(
             _uiState.update { it.copy(name = name, nameError = null) } 
         }
     }
-    fun onCurrentValueChange(v: String) { 
+    fun onAmountChange(v: String) { 
         val sanitized = v.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
-        _uiState.update { it.copy(currentValue = sanitized, currentValueError = null) } 
-    }
-    fun onInvestedChange(v: String) { 
-        val sanitized = v.filter { it.isDigit() || it == '.' }
-        if (sanitized.count { it == '.' } > 1) return
-        _uiState.update { it.copy(investedLumpSum = sanitized, investedLumpSumError = null) } 
+        _uiState.update { it.copy(amount = sanitized, amountError = null) } 
     }
     fun onMonthlyAmountChange(v: String) { 
         val sanitized = v.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
         _uiState.update { it.copy(monthlyAmount = sanitized, monthlyAmountError = null) } 
     }
-    fun onTypeChange(type: InvestmentType) {
-        _uiState.update { it.copy(type = type, isMonthly = type.defaultMonthly) }
+    fun onInterestRateChange(v: String) {
+        val sanitized = v.filter { it.isDigit() || it == '.' }
+        if (sanitized.count { it == '.' } > 1) return
+        val rate = sanitized.toDoubleOrNull() ?: 0.0
+        if (rate > 30.0) return // Limit as requested
+        _uiState.update { it.copy(interestRate = sanitized, interestRateError = null) }
     }
-    fun onToggleMonthly(isMonthly: Boolean) { _uiState.update { it.copy(isMonthly = isMonthly) } }
+    fun onCurrentValueChange(v: String) {
+        val sanitized = v.filter { it.isDigit() || it == '.' }
+        if (sanitized.count { it == '.' } > 1) return
+        _uiState.update { it.copy(currentValue = sanitized, currentValueError = null) }
+    }
+    fun onStartDateChange(date: java.time.LocalDate) {
+        if (date.isAfter(java.time.LocalDate.now())) return
+        _uiState.update { it.copy(startDate = date) }
+    }
+    fun onTypeChange(type: InvestmentType) {
+        _uiState.update { it.copy(type = type, frequency = type.defaultFrequency) }
+    }
     fun onDeleteInvestment(investment: Investment) {
         viewModelScope.launch { deleteInvestment(investment) }
     }
     fun toggleAddSheet(isOpen: Boolean) {
         _uiState.update {
             if (isOpen) it.copy(isAddSheetOpen = true)
-            else InvestmentUiState()  // full reset on close
+            else InvestmentUiState()
         }
     }
 
     fun onSaveInvestment() {
         val state = _uiState.value
-        
         var hasError = false
+
         if (state.name.isBlank()) {
-            _uiState.update { it.copy(nameError = "Investment name is required") }
+            _uiState.update { it.copy(nameError = "Name is required") }
             hasError = true
         }
 
+        val amount = state.amount.toDoubleOrNull() ?: 0.0
         val monthlyAmount = state.monthlyAmount.toDoubleOrNull() ?: 0.0
-        val currentValuation = state.currentValue.toDoubleOrNull() ?: 0.0
-        val investedTotal = state.investedLumpSum.toDoubleOrNull() ?: 0.0
+        val interestRate = state.interestRate.toDoubleOrNull() ?: 0.0
+        val currentValueInput = state.currentValue.toDoubleOrNull() ?: 0.0
 
-        if (state.isMonthly) {
+        if (state.frequency == com.monetra.domain.model.ContributionFrequency.MONTHLY) {
             if (monthlyAmount <= 0) {
-                _uiState.update { it.copy(monthlyAmountError = "Enter a valid monthly amount") }
+                _uiState.update { it.copy(monthlyAmountError = "Required") }
                 hasError = true
             }
         } else {
-            if (investedTotal <= 0) {
-                _uiState.update { it.copy(investedLumpSumError = "Enter invested amount") }
+            if (amount <= 0) {
+                _uiState.update { it.copy(amountError = "Required") }
                 hasError = true
             }
         }
 
         if (hasError) return
 
-        // For SIPs: if they don't specify total invested, assume it's the first installment
-        val finalInvested = if (state.isMonthly && investedTotal == 0.0) monthlyAmount else investedTotal
-        // If current value is not provided, use invested amount
-        val finalValuation = if (currentValuation == 0.0) finalInvested else currentValuation
-
         viewModelScope.launch {
             addInvestment(
                 Investment(
                     name = state.name,
                     type = state.type,
-                    currentValuation = finalValuation,
-                    investedAmount = finalInvested,
-                    monthlyAmount = if (state.isMonthly) monthlyAmount else 0.0,
-                    isMonthly = state.isMonthly
+                    startDate = state.startDate,
+                    amount = if (state.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) amount else 0.0,
+                    monthlyAmount = if (state.frequency == com.monetra.domain.model.ContributionFrequency.MONTHLY) monthlyAmount else 0.0,
+                    interestRate = interestRate,
+                    currentValue = if (currentValueInput > 0) currentValueInput else if (state.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) amount else 0.0,
+                    frequency = state.frequency
                 )
             )
             _uiState.update { InvestmentUiState() }
@@ -115,14 +139,17 @@ class InvestmentViewModel @Inject constructor(
 
 data class InvestmentUiState(
     val name: String = "",
-    val currentValue: String = "",
-    val investedLumpSum: String = "",
-    val monthlyAmount: String = "",
     val type: InvestmentType = InvestmentType.SIP,
-    val isMonthly: Boolean = true,
+    val startDate: java.time.LocalDate = java.time.LocalDate.now(),
+    val amount: String = "",
+    val monthlyAmount: String = "",
+    val interestRate: String = "0",
+    val currentValue: String = "",
+    val frequency: com.monetra.domain.model.ContributionFrequency = com.monetra.domain.model.ContributionFrequency.MONTHLY,
     val isAddSheetOpen: Boolean = false,
     val nameError: String? = null,
-    val currentValueError: String? = null,
-    val investedLumpSumError: String? = null,
-    val monthlyAmountError: String? = null
+    val amountError: String? = null,
+    val monthlyAmountError: String? = null,
+    val interestRateError: String? = null,
+    val currentValueError: String? = null
 )

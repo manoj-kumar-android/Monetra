@@ -14,6 +14,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlanningViewModel @Inject constructor(
     private val getPlanningOverview: GetFinancialPlanningOverviewUseCase,
+    private val getWealthIntelligence: com.monetra.domain.usecase.intelligence.GetWealthIntelligenceUseCase,
     private val goalRepository: GoalRepository,
     private val investmentRepository: InvestmentRepository
 ) : ViewModel() {
@@ -27,14 +28,18 @@ class PlanningViewModel @Inject constructor(
 
     private fun observePlanningData() {
         viewModelScope.launch {
-            getPlanningOverview()
-                .onEach { overview -> 
-                    _uiState.value = PlanningUiState.Success(overview) 
-                }
-                .catch { throwable ->
-                    _uiState.value = PlanningUiState.Error(throwable.localizedMessage ?: "Unknown error")
-                }
-                .collect()
+            combine(
+                getPlanningOverview(),
+                getWealthIntelligence()
+            ) { overview, wealth ->
+                PlanningUiState.Success(overview, wealth.wealthProjection)
+            }
+            .catch { throwable ->
+                _uiState.value = PlanningUiState.Error(throwable.localizedMessage ?: "Unknown error")
+            }
+            .collect { state ->
+                _uiState.value = state
+            }
         }
     }
 
@@ -58,8 +63,12 @@ class PlanningViewModel @Inject constructor(
                 Investment(
                     name = name,
                     type = type,
-                    investedAmount = amount,
-                    currentValuation = amount
+                    startDate = java.time.LocalDate.now(),
+                    amount = amount,
+                    monthlyAmount = 0.0,
+                    interestRate = 0.0,
+                    currentValue = amount,
+                    frequency = ContributionFrequency.ONE_TIME
                 )
             )
         }
@@ -68,6 +77,9 @@ class PlanningViewModel @Inject constructor(
 
 sealed interface PlanningUiState {
     data object Loading : PlanningUiState
-    data class Success(val overview: PlanningOverview) : PlanningUiState
+    data class Success(
+        val overview: PlanningOverview,
+        val wealthProjection: com.monetra.domain.model.WealthProjection
+    ) : PlanningUiState
     data class Error(val message: String) : PlanningUiState
 }

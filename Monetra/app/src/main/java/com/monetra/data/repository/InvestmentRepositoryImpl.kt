@@ -16,7 +16,7 @@ class InvestmentRepositoryImpl @Inject constructor(
         investmentDao.getInvestments().map { entities -> entities.map { it.toDomain() } }
 
     override fun getTotalInvestmentValue(): Flow<Double> =
-        getInvestments().map { list -> list.sumOf { it.currentValuation } }
+        getInvestments().map { list -> list.sumOf { it.calculateCurrentValue() } }
 
     override suspend fun upsertInvestment(investment: Investment) {
         investmentDao.upsertInvestment(investment.toEntity())

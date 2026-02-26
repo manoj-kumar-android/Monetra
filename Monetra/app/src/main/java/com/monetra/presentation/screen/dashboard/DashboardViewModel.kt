@@ -79,6 +79,10 @@ class DashboardViewModel @Inject constructor(
                 val elapsedDays = (burn?.currentDay ?: 1).coerceAtLeast(1)
                 val dailyAvg = (burn?.currentSpend ?: 0.0) / elapsedDays
 
+                // 🏷️ Filter ACTIVE budgets (limit > 0)
+                val activeBudgets = budgets.filter { it.limit > 0 }
+                val totalBudgetAllocations = activeBudgets.sumOf { it.limit }
+
                 DashboardUiState.Success(
                     dailySafeToSpend = "₹%,.0f".format(sts.remainingToday),
                     dailyLimit = "₹%,.0f".format(sts.dailyLimit),
@@ -90,6 +94,7 @@ class DashboardViewModel @Inject constructor(
                     income = pref.monthlyIncome,
                     savingsGoal = pref.monthlySavingsGoal,
                     totalEmi = totalEmi,
+                    budgetAllocations = totalBudgetAllocations,
                     intelligence = IntelligenceUiModel(
                         dailySafeToSpend = "₹%,.0f".format(sts.remainingToday),
                         projectedMonthEnd = "₹%,.2f".format(burn?.projectedEndMonthSpend ?: 0.0),
@@ -97,7 +102,7 @@ class DashboardViewModel @Inject constructor(
                         comparisonText = burn?.warningMessage ?: "Stable spending velocity",
                         burnRateStatus = if (burn?.isOverspending == true) "Critical" else "Stable"
                     ),
-                    budgets = budgets.map { it.toUiModel() },
+                    budgets = activeBudgets.map { it.toUiModel() },
                     recurringTotal = "₹%,.2f".format(rec.sumOf { it.amount }),
                     recurringItems = rec.map { it.toUiModel() },
                     recentTransactions = txs.take(3).map { it.toUiItem() }
@@ -146,6 +151,7 @@ class DashboardViewModel @Inject constructor(
         categoryName = categoryName,
         limit = "₹%,.0f".format(limit),
         spent = "₹%,.0f".format(currentSpent),
+        remaining = "₹%,.0f".format(limit - currentSpent),
         progress = progress.coerceIn(0f, 1f),
         status = when {
             isAlert -> "Alert"
@@ -184,6 +190,7 @@ sealed interface DashboardUiState {
         val income: Double,
         val savingsGoal: Double,
         val totalEmi: Double,
+        val budgetAllocations: Double,
         val intelligence: IntelligenceUiModel,
         val budgets: List<CategoryBudgetUiModel>,
         val recurringTotal: String,

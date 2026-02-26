@@ -24,35 +24,42 @@ class GetWealthIntelligenceUseCase @Inject constructor(
             val income = prefs.monthlyIncome
             
             // 1. Core Totals
-            val totalNetWorth = investments.sumOf { it.currentValuation }
+            var totalNetWorth = 0.0
+            var totalInvestedCapital = 0.0
             var liquidNetWorth = 0.0
             var semiLiquidAdjustedValue = 0.0
             var lockedAssetsValue = 0.0
             var totalMonthlySIP = 0.0
+            val today = java.time.LocalDate.now()
 
             investments.forEach { inv ->
                 val type = inv.type
-                val value = inv.currentValuation
+                val currentValue = inv.calculateCurrentValue(today)
+                val investedAmount = inv.calculateTotalInvested(today)
                 
-                if (inv.isMonthly) {
+                totalNetWorth += currentValue
+                totalInvestedCapital += investedAmount
+                
+                if (inv.frequency == ContributionFrequency.MONTHLY) {
                     totalMonthlySIP += inv.monthlyAmount
                 }
 
                 when (type.liquidityClass) {
                     LiquidityClass.LIQUID -> {
-                        liquidNetWorth += value
+                        liquidNetWorth += currentValue
                     }
                     LiquidityClass.SEMI_LIQUID -> {
-                        semiLiquidAdjustedValue += value * (1.0 - (type.haircut / 100.0))
+                        semiLiquidAdjustedValue += currentValue * (1.0 - (type.haircut / 100.0))
                     }
                     LiquidityClass.LOCKED -> {
-                        lockedAssetsValue += value
+                        lockedAssetsValue += currentValue
                     }
                 }
             }
 
+            val totalReturns = (totalNetWorth - totalInvestedCapital).coerceAtLeast(0.0)
+
             // 2. Emergency Runway
-            // Essential expenses = EMIs + Fixed Bills + 30% of income for food/utility basics
             val essentialExpenses = totalEmi + fixedCosts + (income * 0.25)
             val runwayBuffer = liquidNetWorth + semiLiquidAdjustedValue
             val runwayMonths = if (essentialExpenses > 0) runwayBuffer / essentialExpenses else 99.0
@@ -60,7 +67,7 @@ class GetWealthIntelligenceUseCase @Inject constructor(
             // 3. Asset Allocation
             val allocation = investments.groupBy { it.type }
                 .map { (type, list) ->
-                    val typeValue = list.sumOf { it.currentValuation }
+                    val typeValue = list.sumOf { it.calculateCurrentValue(today) }
                     AssetAllocationItem(
                         type = type,
                         value = typeValue,
@@ -69,18 +76,18 @@ class GetWealthIntelligenceUseCase @Inject constructor(
                 }.sortedByDescending { it.value }
 
             // 4. Wealth Projection
-            // Using a conservative 8% annual return for projection
-            val annualRate = 0.08
+            val annualRate = prefs.projectionRate / 100.0
             val monthlyRate = annualRate / 12.0
             
-            // Forecast 1 yr and 5 yr based on current SIP and current networth
-            val years1 = 1
-            val months1 = years1 * 12
-            val projection1Yr = forecast(totalNetWorth, totalMonthlySIP, monthlyRate, months1)
+            val years = listOf(1, 5, 10, 15, 20, 25, 30)
+            val milestones = years.associateWith { y ->
+                forecast(totalNetWorth, totalMonthlySIP, monthlyRate, y * 12)
+            }
             
-            val years5 = 5
-            val months5 = years5 * 12
-            val projection5Yr = forecast(totalNetWorth, totalMonthlySIP, monthlyRate, months5)
+            val projectionYears = prefs.projectionYears
+            val finalWealthValue = forecast(totalNetWorth, totalMonthlySIP, monthlyRate, projectionYears * 12)
+            val totalFutureInvestmentPrincipal = totalNetWorth + (totalMonthlySIP * projectionYears * 12)
+            val totalFutureReturnsAmount = (finalWealthValue - totalFutureInvestmentPrincipal).coerceAtLeast(0.0)
 
             // 5. Safety Status
             val (status, message) = when {
@@ -103,7 +110,7 @@ class GetWealthIntelligenceUseCase @Inject constructor(
                 insights.add(WealthInsight("Wealth Builder", "Increase your SIPs to 20%+ to accelerate your path to freedom.", InsightType.INFO))
             }
 
-            val cryptoValue = investments.filter { it.type == InvestmentType.CRYPTO }.sumOf { it.currentValuation }
+            val cryptoValue = investments.filter { it.type == InvestmentType.CRYPTO }.sumOf { it.calculateCurrentValue(today) }
             if (totalNetWorth > 0 && (cryptoValue / totalNetWorth) > 0.15) {
                 insights.add(WealthInsight("High Volatility", "Crypto is >15% of your wealth. Consider rebalancing to safer assets.", InsightType.WARNING))
             }
@@ -122,18 +129,24 @@ class GetWealthIntelligenceUseCase @Inject constructor(
                 sipAsPercentageOfIncome = sipRatio,
                 assetAllocation = allocation,
                 wealthProjection = WealthProjection(
-                    expectedValue1Year = projection1Yr,
-                    expectedValue5Years = projection5Yr,
-                    monthlyContribution = totalMonthlySIP
+                    expectedValue1Year = milestones[1] ?: 0.0,
+                    expectedValue5Years = milestones[5] ?: 0.0,
+                    monthlyContribution = totalMonthlySIP,
+                    totalInvested = totalFutureInvestmentPrincipal,
+                    totalReturns = totalFutureReturnsAmount,
+                    finalWealth = finalWealthValue,
+                    yearlyMilestones = milestones,
+                    interestRate = prefs.projectionRate,
+                    projectionYears = projectionYears
                 ),
                 safetyStatus = status,
                 safetyMessage = message,
-                insights = insights.take(3) // Max 3 as per requirement
+                insights = insights.take(3)
             )
         }
     }
 
-    private fun forecast(currentValue: Double, monthlySIP: Double, monthlyRate: Double, months: Int): Double {
+    fun forecast(currentValue: Double, monthlySIP: Double, monthlyRate: Double, months: Int): Double {
         // Compound interest formula for lump sum + annuity for SIP
         val futureValueLumpSum = currentValue * (1 + monthlyRate).pow(months)
         val futureValueSIP = if (monthlyRate > 0) {

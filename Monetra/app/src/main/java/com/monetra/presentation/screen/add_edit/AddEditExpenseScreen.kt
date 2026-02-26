@@ -67,6 +67,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.ui.theme.Elevation
 import com.monetra.ui.theme.Spacing
 
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.TextButton
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditExpenseScreen(
@@ -74,6 +82,7 @@ fun AddEditExpenseScreen(
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDatePicker by remember { mutableStateOf(false) }
 
     androidx.compose.runtime.LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -93,7 +102,7 @@ fun AddEditExpenseScreen(
         note = uiState.note,
         onNoteChange = viewModel::onNoteChange,
         formattedDate = uiState.formattedDate,
-        onDateClick = { /* Show Date Picker */ },
+        onDateClick = { showDatePicker = true },
         isIncome = uiState.isIncome,
         onTypeChange = viewModel::onTypeChange,
         category = uiState.category,
@@ -102,6 +111,42 @@ fun AddEditExpenseScreen(
         amountError = uiState.amountError,
         onSaveClick = viewModel::onSaveClick
     )
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            selectableDates = object : androidx.compose.material3.SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+
+                override fun isSelectableYear(year: Int): Boolean {
+                    return year <= LocalDate.now().year
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                        viewModel.onDateChange(date)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

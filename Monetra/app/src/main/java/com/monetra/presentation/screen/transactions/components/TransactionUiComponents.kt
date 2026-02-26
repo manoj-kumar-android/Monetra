@@ -182,7 +182,10 @@ fun BudgetSection(budgets: List<CategoryBudgetUiModel>, onManageClick: () -> Uni
 fun BudgetProgressRow(budget: CategoryBudgetUiModel) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            Text(text = budget.categoryName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Column {
+                Text(text = budget.categoryName, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
+                Text(text = "Remaining: ${budget.remaining}", style = MaterialTheme.typography.labelSmall, color = if (budget.status == "Alert") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+            }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(text = budget.spent, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = Color(budget.progressColor))
                 Text(text = " / ${budget.limit}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

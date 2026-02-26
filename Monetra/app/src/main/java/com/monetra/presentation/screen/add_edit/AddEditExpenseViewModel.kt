@@ -128,6 +128,10 @@ class AddEditExpenseViewModel @Inject constructor(
         _uiState.update { it.copy(category = category) }
     }
 
+    fun onDateChange(date: LocalDate) {
+        _uiState.update { it.copy(date = date) }
+    }
+
     fun onSaveClick() {
         val currentState = _uiState.value
         val validationResult = validateTransaction(

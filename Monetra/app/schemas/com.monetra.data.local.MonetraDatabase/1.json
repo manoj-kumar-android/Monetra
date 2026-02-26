@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "2531b74725b4164a8be20cbd0e6b2d49",
+    "identityHash": "3c1fb35bb8f8eba04e85d7d92817adaa",
     "entities": [
       {
         "tableName": "transactions",
@@ -72,7 +72,7 @@
       },
       {
         "tableName": "user_preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, `projectionRate` REAL NOT NULL, `projectionYears` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -101,6 +101,18 @@
           {
             "fieldPath": "isOnboardingCompleted",
             "columnName": "isOnboardingCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "projectionRate",
+            "columnName": "projectionRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "projectionYears",
+            "columnName": "projectionYears",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -185,7 +197,7 @@
       },
       {
         "tableName": "investments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currentValuation` REAL NOT NULL, `investedAmount` REAL NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `startDate` TEXT NOT NULL, `amount` REAL NOT NULL, `monthlyAmount` REAL NOT NULL, `interestRate` REAL NOT NULL, `currentValue` REAL NOT NULL, `frequency` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -206,15 +218,39 @@
             "notNull": true
           },
           {
-            "fieldPath": "currentValuation",
-            "columnName": "currentValuation",
+            "fieldPath": "startDate",
+            "columnName": "startDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
             "affinity": "REAL",
             "notNull": true
           },
           {
-            "fieldPath": "investedAmount",
-            "columnName": "investedAmount",
+            "fieldPath": "monthlyAmount",
+            "columnName": "monthlyAmount",
             "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interestRate",
+            "columnName": "interestRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentValue",
+            "columnName": "currentValue",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "frequency",
+            "columnName": "frequency",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -384,7 +420,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2531b74725b4164a8be20cbd0e6b2d49')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3c1fb35bb8f8eba04e85d7d92817adaa')"
     ]
   }
 }

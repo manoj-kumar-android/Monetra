@@ -171,6 +171,7 @@ fun PlanningScreen(
                 is PlanningUiState.Success -> {
                     PlanningContent(
                         overview = state.overview,
+                        wealthProjection = state.wealthProjection,
                         onNavigateToLoans = onNavigateToLoans,
                         onNavigateToInvestments = onNavigateToInvestments,
                         onNavigateToSimulator = onNavigateToSimulator,
@@ -185,6 +186,7 @@ fun PlanningScreen(
 @Composable
 private fun PlanningContent(
     overview: PlanningOverview,
+    wealthProjection: com.monetra.domain.model.WealthProjection,
     onNavigateToLoans: () -> Unit,
     onNavigateToInvestments: () -> Unit,
     onNavigateToSimulator: () -> Unit,
@@ -199,6 +201,14 @@ private fun PlanningContent(
         item {
             MonthlySafetyCard(
                 analysis = overview.monthlySafety
+            )
+        }
+
+        // CARD 1.5: Wealth Forecast (Moved from Dashboard)
+        item {
+            com.monetra.presentation.screen.dashboard.components.WealthProjectionSummaryCard(
+                projection = wealthProjection,
+                onClick = onNavigateToInvestments
             )
         }
 

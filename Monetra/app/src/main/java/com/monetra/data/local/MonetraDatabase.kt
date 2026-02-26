@@ -31,7 +31,7 @@ import com.monetra.data.local.entity.MonthlyExpenseEntity
         LoanEntity::class,
         MonthlyExpenseEntity::class
     ], 
-    version = 2, 
+    version = 1, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)

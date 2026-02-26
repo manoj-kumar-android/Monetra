@@ -17,6 +17,7 @@ data class CategoryBudgetUiModel(
     val categoryName: String,
     val limit: String,
     val spent: String,
+    val remaining: String,
     val progress: Float,
     val status: String, // "Normal", "Warning", "Alert"
     val progressColor: Long // Hex color for the progress bar

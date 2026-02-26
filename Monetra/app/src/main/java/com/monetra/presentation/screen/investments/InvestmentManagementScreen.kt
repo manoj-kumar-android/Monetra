@@ -95,7 +95,11 @@ fun InvestmentManagementScreen(
 
                 // 4. Wealth Projection
                 item {
-                    ProjectionCard(intel.wealthProjection)
+                    ProjectionCard(
+                        intel = intel,
+                        onRateChange = viewModel::onSimulationRateChange,
+                        onYearsChange = viewModel::onSimulationYearsChange
+                    )
                 }
 
                 item {
@@ -103,12 +107,29 @@ fun InvestmentManagementScreen(
                 }
 
                 item {
-                    Text("Portfolio Breakdown", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Divider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
 
-                // 6. Asset List
-                itemsIndexed(investments) { _, inv ->
-                    InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
+                val monthlyInvestments = investments.filter { it.frequency == ContributionFrequency.MONTHLY }
+                val oneTimeInvestments = investments.filter { it.frequency == ContributionFrequency.ONE_TIME }
+
+                if (monthlyInvestments.isNotEmpty()) {
+                    item {
+                        Text("Monthly Investments (SIP/RD)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    }
+                    items(monthlyInvestments) { inv ->
+                        InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
+                    }
+                    item { Spacer(modifier = Modifier.height(Spacing.sm)) }
+                }
+
+                if (oneTimeInvestments.isNotEmpty()) {
+                    item {
+                        Text("One-time Assets (FD/Stocks/Gold)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    }
+                    items(oneTimeInvestments) { inv ->
+                        InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
+                    }
                 }
             } ?: item {
                 EmptyPortfolioPlaceholder()
@@ -125,10 +146,11 @@ fun InvestmentManagementScreen(
             sheetState = sheetState,
             onNameChange = viewModel::onNameChange,
             onCurrentValueChange = viewModel::onCurrentValueChange,
-            onInvestedChange = viewModel::onInvestedChange,
+            onAmountChange = viewModel::onAmountChange,
             onMonthlyAmountChange = viewModel::onMonthlyAmountChange,
             onTypeChange = viewModel::onTypeChange,
-            onToggleMonthly = viewModel::onToggleMonthly,
+            onInterestRateChange = viewModel::onInterestRateChange,
+            onStartDateChange = viewModel::onStartDateChange,
             onSave = viewModel::onSaveInvestment,
             onDismiss = { viewModel.toggleAddSheet(false) }
         )
@@ -297,34 +319,180 @@ fun InvestmentTypeGrid(
 }
 
 @Composable
-fun ProjectionCard(projection: com.monetra.domain.model.WealthProjection) {
+fun ProjectionCard(
+    intel: WealthIntelligence,
+    onRateChange: (Double) -> Unit,
+    onYearsChange: (Int) -> Unit
+) {
+    val projection = intel.wealthProjection
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(Spacing.lg)) {
-            Text("Wealth Projection (8% return)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-            Spacer(modifier = Modifier.height(Spacing.md))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text("1 Year Forecast", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("₹%,.0f".format(projection.expectedValue1Year), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
+        Column(modifier = Modifier.padding(Spacing.xl)) {
+            Text("Wealth Projection 🚀", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
+            Text("Simulate your future wealth growth", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            Spacer(modifier = Modifier.height(Spacing.xl))
+            
+            // Visual Progress Bar
+            val investedRatio = if (projection.finalWealth > 0) (projection.totalInvested / projection.finalWealth).toFloat() else 0f
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(investedRatio.coerceAtLeast(0.01f))
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight((1f - investedRatio).coerceAtLeast(0.01f))
+                                .background(Color(0xFF34C759).copy(alpha = 0.6f))
+                        )
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("5 Year Forecast", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("₹%,.0f".format(projection.expectedValue5Years), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Invested: ₹%,.0f".format(projection.totalInvested), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Text("Returns: ₹%,.0f".format(projection.totalReturns), style = MaterialTheme.typography.labelSmall, color = Color(0xFF34C759))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.xl))
+
+            // Simulation Controls
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                SimulationSlider(
+                    label = "Expected Return Rate",
+                    value = projection.interestRate.toFloat(),
+                    range = 1f..30f,
+                    displayValue = "${projection.interestRate.toInt()}%",
+                    onValueChange = { onRateChange(it.toDouble()) }
+                )
+                
+                SimulationSlider(
+                    label = "Projection Horizon",
+                    value = projection.projectionYears.toFloat(),
+                    range = 1f..30f,
+                    displayValue = "${projection.projectionYears} Years",
+                    onValueChange = { onYearsChange(it.toInt()) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.xl))
+
+            // Breakdown
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    BreakdownRow("Total Invested", projection.totalInvested)
+                    BreakdownRow("Estimated Returns", projection.totalReturns)
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Final Wealth", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text("₹%,.0f".format(projection.finalWealth), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.xl))
+
+            // Milestones
+            Text("Yearly Milestones", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+            Spacer(modifier = Modifier.height(Spacing.md))
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                projection.yearlyMilestones.keys.sorted().filter { it in listOf(1, 5, 10, 20, 30) }.forEach { year ->
+                    MilestoneRow(year, projection.yearlyMilestones[year] ?: 0.0)
                 }
             }
         }
     }
 }
 
+@Composable
+fun SimulationSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    displayValue: String,
+    onValueChange: (Float) -> Unit
+) {
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(displayValue, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+    }
+}
+
+@Composable
+fun BreakdownRow(label: String, amount: Double) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("₹%,.0f".format(amount), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+@Composable
+fun MilestoneRow(year: Int, amount: Double) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            shape = CircleShape,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text("Y$year", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Spacer(modifier = Modifier.width(Spacing.md))
+        Text("Projected Wealth", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.weight(1f))
+        Text("₹%,.0f".format(amount), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black))
+    }
+}
+
 // ---- Investment Card ----
 @Composable
 fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
-    val returns = inv.currentValuation - inv.investedAmount
-    val returnPercent = if (inv.investedAmount > 0) (returns / inv.investedAmount) * 100.0 else 0.0
+    val today = java.time.LocalDate.now()
+    val invested = inv.calculateTotalInvested(today)
+    val currentVal = inv.calculateCurrentValue(today)
+    val returns = inv.calculateTotalReturns(today)
+    val returnPercent = inv.calculateReturnPercentage(today)
+    
     val isPositive = returns >= 0
     val returnColor = if (isPositive) Color(0xFF34C759) else Color(0xFFFF3B30)
     val typeColor = Color(inv.type.colorHex)
@@ -349,96 +517,74 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, typeColor.copy(alpha = 0.15f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, typeColor.copy(alpha = 0.1f))
     ) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Type Badge
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(typeColor.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(inv.type.emoji, fontSize = 22.sp)
-            }
-
-            Spacer(modifier = Modifier.width(Spacing.md))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        inv.name,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (inv.isMonthly) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                "₹${"%,.0f".format(inv.monthlyAmount)}/mo",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-                Text(
-                    inv.type.displayName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = typeColor
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(typeColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column {
-                        Text(
-                            "₹${"%,.0f".format(inv.currentValuation)}",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
-                        )
-                        Text(
-                            "Invested: ₹${"%,.0f".format(inv.investedAmount)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "${if (isPositive) "+" else ""}₹${"%,.0f".format(returns)}",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = returnColor
-                        )
-                        Text(
-                            "${if (returnPercent >= 0) "+" else ""}${"%.1f".format(returnPercent)}%",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = returnColor
-                        )
-                    }
+                    Text(inv.type.emoji, fontSize = 20.sp)
+                }
+                Spacer(modifier = Modifier.width(Spacing.md))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(inv.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(inv.type.displayName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = { showDeleteConfirm = true }) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
                 }
             }
 
-            Spacer(modifier = Modifier.width(4.dp))
-            IconButton(onClick = { showDeleteConfirm = true }) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(18.dp)
-                )
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Invested capital", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("₹%,.0f".format(invested), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Current value", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("₹%,.0f".format(currentVal), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(returnColor.copy(alpha = 0.05f)).padding(Spacing.sm), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown, contentDescription = null, tint = returnColor, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(Spacing.xs))
+                    Text("${if (isPositive) "+" else ""}₹%,.0f".format(returns), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = returnColor)
+                }
+                Text("${if (returnPercent >= 0) "+" else ""}${"%.2f".format(returnPercent)}%", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black), color = returnColor)
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                DetailItem("Started", inv.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")), modifier = Modifier.weight(1f))
+                if (inv.interestRate > 0) {
+                    DetailItem("Yield", "${inv.interestRate}%", modifier = Modifier.weight(1f))
+                }
+                if (inv.frequency == ContributionFrequency.MONTHLY) {
+                    DetailItem("Frequency", "Monthly", modifier = Modifier.weight(1f))
+                } else {
+                    DetailItem("Frequency", "One-time", modifier = Modifier.weight(1f))
+                }
             }
         }
+    }
+}
+
+@Composable
+fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
     }
 }
 
@@ -474,13 +620,50 @@ fun AddInvestmentSheet(
     sheetState: SheetState,
     onNameChange: (String) -> Unit,
     onCurrentValueChange: (String) -> Unit,
-    onInvestedChange: (String) -> Unit,
+    onAmountChange: (String) -> Unit,
     onMonthlyAmountChange: (String) -> Unit,
     onTypeChange: (com.monetra.domain.model.InvestmentType) -> Unit,
-    onToggleMonthly: (Boolean) -> Unit,
+    onInterestRateChange: (String) -> Unit,
+    onStartDateChange: (java.time.LocalDate) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            selectableDates = object : androidx.compose.material3.SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+
+                override fun isSelectableYear(year: Int): Boolean {
+                    return year <= java.time.LocalDate.now().year
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        val date = java.time.Instant.ofEpochMilli(it)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                        onStartDateChange(date)
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -495,13 +678,26 @@ fun AddInvestmentSheet(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Text("Add Asset", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text("Add Investment", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
 
-            // Asset Type Grid - Icon Selection
-            Text("Select Asset Type", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-            InvestmentTypeGrid(selectedType = uiState.type, onTypeSelected = onTypeChange)
+            // 1. Asset Type Grid
+            Text("Investment Type", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+            InvestmentTypeGrid(selectedType = uiState.type, onTypeSelected = { onTypeChange(it) })
 
-            // Basic Info
+            // Display Frequency Badge
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            ) {
+                Text(
+                    text = if (uiState.frequency == ContributionFrequency.MONTHLY) "🔄 Monthly Investment" else "💰 One-time Investment",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // 2. Core Details
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = onNameChange,
@@ -513,37 +709,73 @@ fun AddInvestmentSheet(
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                // Monthly vs One-time toggle
-                Card(
-                    modifier = Modifier.weight(1f).height(56.dp).clickable { onToggleMonthly(!uiState.isMonthly) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (uiState.isMonthly) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
-                    border = if (uiState.isMonthly) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(if (uiState.isMonthly) "🔄 Monthly SIP" else "💰 One-time", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                    }
+                // AMOUNT: Only one shown based on frequency
+                if (uiState.frequency == ContributionFrequency.MONTHLY) {
+                    OutlinedTextField(
+                        value = uiState.monthlyAmount,
+                        onValueChange = onMonthlyAmountChange,
+                        label = { Text("Monthly SIP") },
+                        prefix = { Text("₹") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = uiState.monthlyAmountError != null
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = uiState.amount,
+                        onValueChange = onAmountChange,
+                        label = { Text("Lump Sum Amount") },
+                        prefix = { Text("₹") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = uiState.amountError != null
+                    )
                 }
 
-                OutlinedTextField(
-                    value = if (uiState.isMonthly) uiState.monthlyAmount else uiState.investedLumpSum,
-                    onValueChange = if (uiState.isMonthly) onMonthlyAmountChange else onInvestedChange,
-                    label = { Text("Amount") },
-                    prefix = { Text("₹") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = if (uiState.isMonthly) uiState.monthlyAmountError != null else uiState.investedLumpSumError != null
+                // INTEREST RATE: Only for logic-based (FD, RD, PPF, Insurance etc)
+                val needsInterest = uiState.type !in listOf(
+                    InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
+                    InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE,
+                    InvestmentType.CASH
                 )
+                
+                if (needsInterest) {
+                    OutlinedTextField(
+                        value = uiState.interestRate,
+                        onValueChange = onInterestRateChange,
+                        label = { Text("Returns %") },
+                        suffix = { Text("%") },
+                        modifier = Modifier.weight(0.8f),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
             }
 
-            // Advanced Options (Current Value)
-            var showAdvanced by remember { mutableStateOf(false) }
-            TextButton(onClick = { showAdvanced = !showAdvanced }) {
-                Text(if (showAdvanced) "Hide Advanced" else "Add Current Value (Optional)", style = MaterialTheme.typography.labelMedium)
-            }
+            // 3. Date Selection
+            OutlinedTextField(
+                value = uiState.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy")),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Start Date") },
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
+                shape = RoundedCornerShape(12.dp)
+            )
 
-            if (showAdvanced) {
+            // 4. Market-based value (if applicable)
+            val isMarketBased = uiState.type in listOf(
+                InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
+                InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE
+            )
+
+            if (isMarketBased) {
                 OutlinedTextField(
                     value = uiState.currentValue,
                     onValueChange = onCurrentValueChange,
@@ -551,7 +783,8 @@ fun AddInvestmentSheet(
                     prefix = { Text("₹") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    supportingText = { Text("Leave blank if same as amount", style = MaterialTheme.typography.labelSmall) }
                 )
             }
 
@@ -562,7 +795,7 @@ fun AddInvestmentSheet(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Confirm Asset Addition", fontWeight = FontWeight.Bold)
+                Text("Save Investment", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }

@@ -10,28 +10,34 @@ data class InvestmentEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val name: String,
     val type: InvestmentType,
-    val currentValuation: Double,
-    val investedAmount: Double,
+    val startDate: java.time.LocalDate,
+    val amount: Double,
     val monthlyAmount: Double,
-    val isMonthly: Boolean
+    val interestRate: Double,
+    val currentValue: Double,
+    val frequency: com.monetra.domain.model.ContributionFrequency
 )
 
 fun InvestmentEntity.toDomain(): Investment = Investment(
     id = id,
     name = name,
     type = type,
-    currentValuation = currentValuation,
-    investedAmount = investedAmount,
+    startDate = startDate,
+    amount = amount,
     monthlyAmount = monthlyAmount,
-    isMonthly = isMonthly
+    interestRate = interestRate,
+    currentValue = currentValue,
+    frequency = frequency
 )
 
 fun Investment.toEntity(): InvestmentEntity = InvestmentEntity(
     id = id,
     name = name,
     type = type,
-    currentValuation = currentValuation,
-    investedAmount = investedAmount,
+    startDate = startDate,
+    amount = amount,
     monthlyAmount = monthlyAmount,
-    isMonthly = isMonthly
+    interestRate = interestRate,
+    currentValue = currentValue,
+    frequency = frequency
 )

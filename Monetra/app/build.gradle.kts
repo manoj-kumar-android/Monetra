@@ -42,7 +42,14 @@ android {
         compose = true
     }
 }
-
+androidComponents.onVariants { variant ->
+    variant.outputs.forEach { output ->
+        if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
+            val vName = output.versionName.get() ?: "1.0"
+            output.outputFileName.set("Monetra-v$vName-${variant.name}.apk")
+        }
+    }
+}
 // ── KSP options ───────────────────────────────────────────────────────────────
 // Room: export schema JSON files for migration history and testing.
 // The folder is version-controlled so migrations can be verified.

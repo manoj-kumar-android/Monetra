@@ -243,8 +243,6 @@ private fun TransactionListContent(
             Column {
                 MonthlySummaryCard(summary = state.summary)
                 Spacer(modifier = Modifier.height(Spacing.lg))
-                com.monetra.presentation.screen.transactions.components.IntelligenceCard(intelligence = state.intelligence)
-                Spacer(modifier = Modifier.height(Spacing.lg))
                 FilterRow(activeFilter = state.activeFilter, onFilterSelected = onFilterSelected)
                 Spacer(modifier = Modifier.height(Spacing.md))
             }

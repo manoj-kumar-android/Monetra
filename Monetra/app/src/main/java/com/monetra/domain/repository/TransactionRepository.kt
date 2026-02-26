@@ -13,6 +13,7 @@ interface TransactionRepository {
     fun getTotalExpense(month: YearMonth): Flow<Double>
     fun getTotalIncomeBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<Double>
     fun getTotalExpenseBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<Double>
+    fun getExpenseSumByCategoryBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<Map<String, Double>>
     fun getLifetimeIncome(): Flow<Double>
     fun getLifetimeExpense(): Flow<Double>
     fun getExpenseSumByCategory(month: YearMonth): Flow<Map<String, Double>>

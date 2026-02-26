@@ -197,6 +197,7 @@ class TransactionListViewModel @Inject constructor(
         categoryName = categoryName,
         limit = "₹%,.0f".format(limit),
         spent = "₹%,.0f".format(currentSpent),
+        remaining = "₹%,.0f".format(limit - currentSpent),
         progress = progress.coerceIn(0f, 1f),
         status = when {
             isAlert -> "Alert"

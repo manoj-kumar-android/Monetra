@@ -24,7 +24,13 @@ data class AssetAllocationItem(
 data class WealthProjection(
     val expectedValue1Year: Double,
     val expectedValue5Years: Double,
-    val monthlyContribution: Double
+    val monthlyContribution: Double,
+    val totalInvested: Double = 0.0,
+    val totalReturns: Double = 0.0,
+    val finalWealth: Double = 0.0,
+    val yearlyMilestones: Map<Int, Double> = emptyMap(),
+    val interestRate: Double = 10.0,
+    val projectionYears: Int = 10
 )
 
 data class WealthInsight(
