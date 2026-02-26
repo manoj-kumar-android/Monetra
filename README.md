@@ -62,7 +62,7 @@ app/src/main/java/com/monetra/
 ### Prerequisites
 *   **Android Studio**: Ladybug (or newer recommended)
 *   **JDK 17**
-*   **Android SDK API Level**: Target SDK 34, Min SDK 24
+*   **Android SDK API Level**: Target SDK 36, Min SDK 24
 
 ### Installation
 1.  **Clone the Repository**:
