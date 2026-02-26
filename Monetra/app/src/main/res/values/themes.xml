@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Base app theme — Compose takes over from here -->
     <style name="Theme.Monetra" parent="android:Theme.Material.Light.NoActionBar" />
 
+    <!--
+        ══ LIGHT MODE Splash Screen ══════════════════════════════════════════
+        Background : iOS grouped background grey (#F2F2F7) — matches the app
+        Icon       : Blue M on transparent (ic_splash_light.xml)
+        Icon bg    : Same grey as background → circle is invisible
+    -->
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#FF007AFF</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenBackground">@color/splash_bg_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated_light</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_bg_light</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
         <item name="postSplashScreenTheme">@style/Theme.Monetra</item>
     </style>
+
 </resources>

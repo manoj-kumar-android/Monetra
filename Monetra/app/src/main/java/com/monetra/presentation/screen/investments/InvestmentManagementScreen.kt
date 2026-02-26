@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.foundation.text.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -103,11 +103,11 @@ fun InvestmentManagementScreen(
                 }
 
                 item {
-                    Divider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
 
                 item {
-                    Divider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
 
                 val monthlyInvestments = investments.filter { it.frequency == ContributionFrequency.MONTHLY }
@@ -402,7 +402,7 @@ fun ProjectionCard(
                 Column(modifier = Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     BreakdownRow("Total Invested", projection.totalInvested)
                     BreakdownRow("Estimated Returns", projection.totalReturns)
-                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Final Wealth", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Text("₹%,.0f".format(projection.finalWealth), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
@@ -556,7 +556,7 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
 
             Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(returnColor.copy(alpha = 0.05f)).padding(Spacing.sm), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown, contentDescription = null, tint = returnColor, modifier = Modifier.size(14.dp))
+                    Icon(if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, tint = returnColor, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(Spacing.xs))
                     Text("${if (isPositive) "+" else ""}₹%,.0f".format(returns), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = returnColor)
                 }

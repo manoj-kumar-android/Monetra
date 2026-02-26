@@ -25,7 +25,7 @@ class MainViewModel @Inject constructor(
                     if (preferences.isOnboardingCompleted) {
                         _startDestination.value = Screen.TransactionList
                     } else {
-                        _startDestination.value = Screen.Onboarding
+                        _startDestination.value = Screen.Welcome
                     }
                 }
             }

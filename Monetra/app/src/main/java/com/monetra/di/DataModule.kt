@@ -23,7 +23,7 @@ object DataModule {
             app,
             MonetraDatabase::class.java,
             "monetra_db"
-        ).fallbackToDestructiveMigration().build()
+        ).fallbackToDestructiveMigration(dropAllTables = true).build()
     }
 
     @Provides

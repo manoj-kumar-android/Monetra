@@ -10,7 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -77,7 +77,7 @@ fun OnboardingScreen(
                         }
                     }) {
                         Text(if (currentStep == 3) "Finish" else "Next")
-                        Icon(if (currentStep == 3) Icons.Default.CheckCircle else Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(if (currentStep == 3) Icons.Default.CheckCircle else Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                     }
                 }
             }

@@ -449,14 +449,14 @@ private fun GroupedTextField(
         },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp), // Adjust padding for standard card feel
         textStyle = textStyle,
-        colors = OutlinedTextFieldDefaults.colors(
+        colors = androidx.compose.material3.TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent,
-            disabledBorderColor = Color.Transparent,
-            errorBorderColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color.Transparent,
             errorContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
         ),
         keyboardOptions = keyboardOptions,

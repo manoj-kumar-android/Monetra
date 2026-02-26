@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Monetra — Classy fluid "m" icon v7
+    Refined specifically to match the elegant ribbon style of the reference image.
+    Color: #007AFF (Monetra Primary Light)
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Fluid ribbon lowercase "m" shape in blue -->
+    <path
+        android:fillColor="#FF007AFF"
+        android:pathData="
+            M28,75
+            C28,50 38,35 50,35
+            C60,35 64,50 54,65
+            C64,50 68,35 78,35
+            C90,35 100,50 100,75
+            C100,85 95,90 90,90
+            C85,90 82,85 82,75
+            C82,65 88,50 91,42
+            C88,50 82,65 72,65
+            C62,65 58,50 58,40
+            C58,35 56,33 53,33
+            C48,33 43,45 40,60
+            C37,75 35,90 28,90
+            C21,90 18,85 18,79
+            C18,73 20,71 23,71
+            C26,71 28,75 28,80
+            C28,84 29,85 31,85
+            C34,85 37,75 40,60
+            C43,45 47,35 53,35
+            L28,75
+            Z
+        " />
+</vector>

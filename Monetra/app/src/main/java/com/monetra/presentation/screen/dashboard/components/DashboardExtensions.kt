@@ -211,7 +211,7 @@ fun WealthProjectionSummaryCard(
                 
                 // Progress Bar showing Principal vs Growth
                 LinearProgressIndicator(
-                    progress = investedRatio.coerceIn(0f, 1f),
+                    progress = { investedRatio.coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = Color(0xFF34C759).copy(alpha = 0.25f)

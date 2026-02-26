@@ -26,6 +26,9 @@ import kotlinx.serialization.Serializable
 
 sealed interface Screen {
     @Serializable
+    data object Welcome : Screen
+
+    @Serializable
     data object Onboarding : Screen
 
     @Serializable
@@ -198,6 +201,16 @@ fun MonetraNavGraph(
             )
         }
         
+        composable<Screen.Welcome> {
+            com.monetra.presentation.screen.welcome.WelcomeScreen(
+                onNavigateToOnboarding = {
+                    navController.navigate(Screen.Onboarding) {
+                        popUpTo(Screen.Welcome) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable<Screen.Onboarding> {
             com.monetra.presentation.screen.onboarding.OnboardingScreen(
                 onComplete = {

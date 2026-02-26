@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Legacy palette -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,4 +8,19 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- ── Monetra splash tokens ── -->
+    <!-- LIGHT MODE splash: iOS-style grouped background -->
+    <color name="splash_bg_light">#FFF2F2F7</color>
+    <!-- Icon circle bg = same as light splash bg (makes circle invisible) -->
+    <color name="splash_icon_bg_light">#FFF2F2F7</color>
+
+    <!-- DARK MODE splash: pure black (matches app dark background) -->
+    <color name="splash_bg_dark">#FF000000</color>
+    <!-- Icon circle bg = same as dark splash bg -->
+    <color name="splash_icon_bg_dark">#FF000000</color>
+
+    <!-- Brand accent colours (kept for reference) -->
+    <color name="monetra_primary_light">#FF007AFF</color>
+    <color name="monetra_primary_dark">#FF0A84FF</color>
 </resources>

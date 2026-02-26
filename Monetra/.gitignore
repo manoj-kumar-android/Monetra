@@ -1,48 +1,73 @@
-# Root level Gradle
-.gradle/
-build/
-/local.properties
-
-# Android Studio / IntelliJ IDEA
-.idea/
-*.iml
-
-# App level
-/app/build/
-/app/schemas/
-
-# Mac OS X
-.DS_Store
-
 # Gradle
 .gradle/
 build/
+/app/build/
+/app/schemas/
+!gradle-wrapper.jar
 
-# Built variants
-*.apk
-*.aar
-*.ap_
-*.aab
-
-# Android Studio
+# IntelliJ Idea / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
 captures/
 .externalNativeBuild/
 .cxx/
+local.properties
 /memory_settings.xml
 
 # Kotlin
 .kotlin/
 kotlin-daemon-*.sys.v2
+.artifacts/
+.java-version
 
-# Keystore files
+# Android (build artifacts)
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+
+# Keystore files (NEVER commit these)
 *.jks
 *.keystore
+*.p12
+*.key
+*.pem
 
 # Google Services
 google-services.json
 
-# Crashlytics
+# Firebase / Crashlytics
 com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# Log / Temporary files
+*.log
+*.tmp
+*.temp
+/target/
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+.vscode/
+.history/
+.env
+.env.local
+.env.*.local
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

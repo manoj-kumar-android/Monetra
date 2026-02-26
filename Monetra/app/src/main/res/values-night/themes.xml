@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base app theme for dark mode -->
+    <style name="Theme.Monetra" parent="android:Theme.Material.NoActionBar" />
+
+    <!--
+        ══ DARK MODE Splash Screen ═══════════════════════════════════════════
+        Background : Pure black (#000000) — matches the app's dark background
+        Icon       : White M with diamond spark (ic_launcher_foreground.xml)
+        Icon bg    : Pure black → circle invisible, white M floats on black
+    -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_bg_dark</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
+        <item name="postSplashScreenTheme">@style/Theme.Monetra</item>
+    </style>
+
+</resources>

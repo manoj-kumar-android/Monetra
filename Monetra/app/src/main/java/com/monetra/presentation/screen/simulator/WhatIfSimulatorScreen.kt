@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
@@ -352,7 +352,7 @@ private fun BeforeAfterSnapshot(result: SimulationResult) {
             SnapshotRow("Fixed Expenses", result.currentExpenses, result.projectedExpenses)
             SnapshotRow("EMIs", result.currentEmis, result.projectedEmis)
             SnapshotRow("Investments / SIP", result.currentInvestments, result.projectedInvestments)
-            Divider(modifier = Modifier.padding(vertical = Spacing.xs))
+            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
             SnapshotRow("Net Savings", currentSavings, result.projectedSavings, highlight = true)
         }
     }
@@ -746,7 +746,7 @@ private fun FutureProjectionGraph(result: SimulationResult) {
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ShowChart, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 Text("12-Month Savings Projection", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
