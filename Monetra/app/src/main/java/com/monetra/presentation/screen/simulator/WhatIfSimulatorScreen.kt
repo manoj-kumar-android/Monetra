@@ -41,6 +41,8 @@ import com.monetra.domain.model.SimulationParams
 import com.monetra.domain.model.SimulationResult
 import com.monetra.ui.theme.Spacing
 import com.monetra.presentation.components.HelpIconButton
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,11 +61,11 @@ fun WhatIfSimulatorScreen(
                 title = {
                     Column {
                         Text(
-                            "What-If Simulator",
+                            stringResource(R.string.simulator_title),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            "Safe future planning — no real money at risk",
+                            stringResource(R.string.simulator_subtitle),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -71,13 +73,13 @@ fun WhatIfSimulatorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     HelpIconButton(onClick = onNavigateToHelp)
                     IconButton(onClick = { viewModel.reset() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Reset all")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reset_all))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -93,7 +95,7 @@ fun WhatIfSimulatorScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         CircularProgressIndicator()
-                        Text("Fetching your financial data…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.fetching_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 is SimulatorUiState.PremiumLocked -> PremiumLockedOverlay()
@@ -133,14 +135,12 @@ private fun SimulatorContent(
     onTargetChange: (Double) -> Unit,
     onReset: () -> Unit
 ) {
-    // Edge case: flag when projections are unhealthy
     val totalProjectedCommitments = result.projectedEmis + result.projectedInvestments + result.projectedExpenses
     val isOverLoaded = totalProjectedCommitments > result.projectedIncome
     val isEmiDangerous = result.projectedEmiRatio > 40
     val isSipUnaffordable = result.projectedInvestments > (result.projectedIncome * 0.5)
     val hasAnyChange = params.salaryDelta != 0.0 || params.newEmiAmount != 0.0 || params.newSipAmount != 0.0 || params.savingsTargetDelta != 0.0
 
-    // Safe max for EMI + SIP: 60% of projected income
     val projectedIncome = result.projectedIncome
     val safeMaxEmi = ((projectedIncome * 0.5) - result.currentEmis).coerceAtLeast(0.0)
     val safeMaxSip = ((projectedIncome * 0.4) - result.currentInvestments).coerceAtLeast(0.0)
@@ -149,10 +149,8 @@ private fun SimulatorContent(
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // While a slider thumb is active, consume the Y component so the
-                // parent Column does not scroll during a horizontal drag.
                 return if (isAnySliderActive && source == NestedScrollSource.UserInput) {
-                    Offset(0f, available.y)  // absorb the vertical movement
+                    Offset(0f, available.y)
                 } else Offset.Zero
             }
         }
@@ -166,37 +164,33 @@ private fun SimulatorContent(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.lg)
     ) {
-        // ---- 1. ANIMATED STATUS BANNER ----
         AnimatedStatusBanner(result, hasAnyChange)
 
-        // ---- 2. BEFORE / AFTER SNAPSHOT (always rendered to avoid layout shift) ----
         BeforeAfterSnapshot(result)
 
-        // ---- 3. WARNING CARDS ----
         if (isOverLoaded) {
             WarningCard(
                 icon = Icons.Default.Warning,
                 color = Color(0xFFF44336),
-                title = "Budget Overloaded! ⚠️",
-                message = "Your total commitments (₹${"%,.0f".format(totalProjectedCommitments)}) exceed projected income (₹${"%,.0f".format(result.projectedIncome)}). Reduce EMI or SIP to bring this under control."
+                title = stringResource(R.string.budget_overloaded_title),
+                message = stringResource(R.string.budget_overloaded_msg, totalProjectedCommitments, result.projectedIncome)
             )
         } else if (isEmiDangerous) {
             WarningCard(
                 icon = Icons.Default.Warning,
                 color = Color(0xFFFF9800),
-                title = "EMI Load is Too High",
-                message = "EMI ratio ${"%,.1f".format(result.projectedEmiRatio)}% is above the safe 40% limit. Try reducing new EMI or increasing salary."
+                title = stringResource(R.string.emi_high_title),
+                message = stringResource(R.string.emi_high_msg, result.projectedEmiRatio)
             )
         } else if (isSipUnaffordable) {
             WarningCard(
                 icon = Icons.Default.Info,
                 color = Color(0xFF5856D6),
-                title = "SIP Amount is Very Aggressive",
-                message = "Investing more than 50% of income is risky. Make sure you have at least 3 months emergency fund first."
+                title = stringResource(R.string.sip_aggressive_title),
+                message = stringResource(R.string.sip_aggressive_msg)
             )
         }
 
-        // ---- 4. SLIDERS ----
         SimulatorControls(
             result = result,
             params = params,
@@ -209,13 +203,10 @@ private fun SimulatorContent(
             onDragStateChange = { isAnySliderActive = it }
         )
 
-        // ---- 5. IMPACT ANALYSIS ----
         ImpactAnalysisSection(result)
 
-        // ---- 6. 12-MONTH GRAPH ----
         FutureProjectionGraph(result)
 
-        // ---- 7. RESET BUTTON (AnimatedVisibility — no layout shift) ----
         androidx.compose.animation.AnimatedVisibility(visible = hasAnyChange) {
             OutlinedButton(
                 onClick = onReset,
@@ -224,7 +215,7 @@ private fun SimulatorContent(
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(Spacing.sm))
-                Text("Reset All Parameters")
+                Text(stringResource(R.string.reset_all_params))
             }
         }
 
@@ -251,15 +242,15 @@ private fun AnimatedStatusBanner(result: SimulationResult, hasAnyChange: Boolean
     )
 
     val statusLabel = when (result.projectedStatus) {
-        FinancialBalanceStatus.HEALTHY -> "✅ Healthy Budget"
-        FinancialBalanceStatus.MODERATE -> "⚠️ Moderate Risk"
-        FinancialBalanceStatus.RISK -> "🚨 Budget at Risk!"
+        FinancialBalanceStatus.HEALTHY -> stringResource(R.string.status_healthy)
+        FinancialBalanceStatus.MODERATE -> stringResource(R.string.status_moderate)
+        FinancialBalanceStatus.RISK -> stringResource(R.string.status_risk)
     }
 
     val statusSubtitle = when (result.projectedStatus) {
-        FinancialBalanceStatus.HEALTHY -> "Your finances look safe with this scenario."
-        FinancialBalanceStatus.MODERATE -> "This scenario stretches your budget a bit."
-        FinancialBalanceStatus.RISK -> "This scenario could cause financial stress!"
+        FinancialBalanceStatus.HEALTHY -> stringResource(R.string.status_healthy_desc)
+        FinancialBalanceStatus.MODERATE -> stringResource(R.string.status_moderate_desc)
+        FinancialBalanceStatus.RISK -> stringResource(R.string.status_risk_desc)
     }
 
     Card(
@@ -274,7 +265,7 @@ private fun AnimatedStatusBanner(result: SimulationResult, hasAnyChange: Boolean
         ) {
             if (!hasAnyChange) {
                 Text(
-                    "Adjust the sliders below\nto simulate a scenario",
+                    stringResource(R.string.adjust_sliders_hint),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -338,22 +329,22 @@ private fun BeforeAfterSnapshot(result: SimulationResult) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Financial Snapshot",
+                    stringResource(R.string.financial_snapshot),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
                 Text(
-                    if (hasChange) "Current → Projected" else "Move sliders to simulate",
+                    if (hasChange) stringResource(R.string.current_projected) else stringResource(R.string.move_sliders_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.height(Spacing.sm))
-            SnapshotRow("Income", result.currentIncome, result.projectedIncome)
-            SnapshotRow("Fixed Expenses", result.currentExpenses, result.projectedExpenses)
-            SnapshotRow("EMIs", result.currentEmis, result.projectedEmis)
-            SnapshotRow("Investments / SIP", result.currentInvestments, result.projectedInvestments)
+            SnapshotRow(stringResource(R.string.income_label), result.currentIncome, result.projectedIncome)
+            SnapshotRow(stringResource(R.string.fixed_expenses), result.currentExpenses, result.projectedExpenses)
+            SnapshotRow(stringResource(R.string.debt_emis_title), result.currentEmis, result.projectedEmis)
+            SnapshotRow(stringResource(R.string.investments_sip), result.currentInvestments, result.projectedInvestments)
             HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
-            SnapshotRow("Net Savings", currentSavings, result.projectedSavings, highlight = true)
+            SnapshotRow(stringResource(R.string.net_savings), currentSavings, result.projectedSavings, highlight = true)
         }
     }
 }
@@ -363,7 +354,7 @@ private fun BeforeAfterSnapshot(result: SimulationResult) {
 private fun SnapshotRow(label: String, before: Double, after: Double, highlight: Boolean = false) {
     val diff = after - before
     val diffColor = when {
-        label.contains("EMI") || label.contains("Expense") -> if (diff > 0) Color(0xFFF44336) else Color(0xFF4CAF50)
+        label.contains("EMI") || label.contains("Expense") || label.contains("Debt") -> if (diff > 0) Color(0xFFF44336) else Color(0xFF4CAF50)
         else -> if (diff >= 0) Color(0xFF4CAF50) else Color(0xFFF44336)
     }
     val diffPrefix = if (diff >= 0) "+" else ""
@@ -437,7 +428,6 @@ private fun SimulatorControls(
     onTargetChange: (Double) -> Unit,
     onDragStateChange: (Boolean) -> Unit
 ) {
-    // Track each slider's drag state
     val salaryInteraction = remember { MutableInteractionSource() }
     val emiInteraction = remember { MutableInteractionSource() }
     val sipInteraction = remember { MutableInteractionSource() }
@@ -461,14 +451,13 @@ private fun SimulatorControls(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(Spacing.sm))
-            Text("Adjust Parameters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.adjust_parameters), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
 
-        // Salary slider
         SimulatorSlider(
-            label = "Salary Hike / Increase",
+            label = stringResource(R.string.salary_hike_label),
             emoji = "💰",
-            hint = "e.g. Set to ₹10,000 if expecting a raise next month",
+            hint = stringResource(R.string.salary_hike_hint),
             value = params.salaryDelta,
             hardMax = 300000f,
             safeMax = null,
@@ -478,11 +467,10 @@ private fun SimulatorControls(
             interactionSource = salaryInteraction
         )
 
-        // EMI slider — capped at safe max
         SimulatorSlider(
-            label = "New Monthly EMI",
+            label = stringResource(R.string.new_monthly_emi),
             emoji = "🏠",
-            hint = "Want a car loan or home loan? Add that EMI here. Safe cap: ₹${"%,.0f".format(safeMaxEmi)}",
+            hint = stringResource(R.string.new_emi_hint, safeMaxEmi),
             value = params.newEmiAmount,
             hardMax = (result.projectedIncome * 0.6).toFloat().coerceAtLeast(50000f),
             safeMax = safeMaxEmi.toFloat(),
@@ -492,11 +480,10 @@ private fun SimulatorControls(
             interactionSource = emiInteraction
         )
 
-        // SIP slider — capped at safe max
         SimulatorSlider(
-            label = "New Monthly SIP / Investment",
+            label = stringResource(R.string.new_monthly_sip),
             emoji = "📈",
-            hint = "Planning to start a new SIP? Safe max: ₹${"%,.0f".format(safeMaxSip)}",
+            hint = stringResource(R.string.new_sip_hint, safeMaxSip),
             value = params.newSipAmount,
             hardMax = (result.projectedIncome * 0.5).toFloat().coerceAtLeast(50000f),
             safeMax = safeMaxSip.toFloat(),
@@ -506,11 +493,10 @@ private fun SimulatorControls(
             interactionSource = sipInteraction
         )
 
-        // Savings target
         SimulatorSlider(
-            label = "Savings Target Adjustment",
+            label = stringResource(R.string.savings_target_adj),
             emoji = "🎯",
-            hint = "Increase/decrease your monthly savings goal",
+            hint = stringResource(R.string.savings_target_hint),
             value = params.savingsTargetDelta,
             hardMax = 100000f,
             safeMax = null,
@@ -579,9 +565,7 @@ private fun SimulatorSlider(
                 )
             )
 
-            // Safe zone indicator
             if (safeMax != null && hardMax > 0) {
-                val safeFraction = safeMax / hardMax
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -593,7 +577,7 @@ private fun SimulatorSlider(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            "Safe: ₹${"%,.0f".format(safeMax)}",
+                            stringResource(R.string.safe_label_format, safeMax),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFF4CAF50)
                         )
@@ -608,7 +592,7 @@ private fun SimulatorSlider(
                     Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        "Above safe limit — this could strain your budget!",
+                        stringResource(R.string.above_safe_limit),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFFFF9800)
                     )
@@ -624,22 +608,22 @@ private fun ImpactAnalysisSection(result: SimulationResult) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.BarChart, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(Spacing.sm))
-            Text("Impact Analysis", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.impact_analysis), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
             ImpactCard(
                 modifier = Modifier.weight(1f),
-                label = "EMI Ratio",
-                sublabel = "Safe limit: < 40%",
+                label = stringResource(R.string.emi_ratio_label),
+                sublabel = stringResource(R.string.emi_ratio_safe_hint),
                 value = "${"%,.1f".format(result.projectedEmiRatio)}%",
                 isGood = result.projectedEmiRatio < 35,
                 isBad = result.projectedEmiRatio > 40
             )
             ImpactCard(
                 modifier = Modifier.weight(1f),
-                label = "Invest. Ratio",
-                sublabel = "Ideal: > 15%",
+                label = stringResource(R.string.invest_ratio_label),
+                sublabel = stringResource(R.string.invest_ratio_ideal_hint),
                 value = "${"%,.1f".format(result.projectedInvestmentRatio)}%",
                 isGood = result.projectedInvestmentRatio > 15,
                 isBad = result.projectedInvestmentRatio > 50
@@ -648,19 +632,18 @@ private fun ImpactAnalysisSection(result: SimulationResult) {
 
         ImpactCard(
             modifier = Modifier.fillMaxWidth(),
-            label = "Monthly Net Savings",
-            sublabel = if (result.projectedSavings < 0) "Deficit! You'd be spending more than you earn." else "Amount left after all commitments",
+            label = stringResource(R.string.net_savings),
+            sublabel = if (result.projectedSavings < 0) stringResource(R.string.deficit_desc) else stringResource(R.string.left_after_commitments),
             value = if (result.projectedSavings < 0) "-₹${"%,.0f".format(Math.abs(result.projectedSavings))}" else "₹${"%,.0f".format(result.projectedSavings)}",
             isGood = result.projectedSavings > 0,
             isBad = result.projectedSavings < 0
         )
 
-        // Simple verdict row
         val verdict = when {
-            result.projectedSavings < 0 -> Pair("❌ Cannot afford this scenario", Color(0xFFF44336))
-            result.projectedEmiRatio > 40 -> Pair("⚠️ EMI load is too high — risky", Color(0xFFFF9800))
-            result.projectedEmiRatio > 30 -> Pair("🟡 Budget is stretched — proceed carefully", Color(0xFFFFC107))
-            else -> Pair("✅ This scenario looks financially safe!", Color(0xFF4CAF50))
+            result.projectedSavings < 0 -> Pair(stringResource(R.string.verdict_cannot_afford), Color(0xFFF44336))
+            result.projectedEmiRatio > 40 -> Pair(stringResource(R.string.verdict_emi_high), Color(0xFFFF9800))
+            result.projectedEmiRatio > 30 -> Pair(stringResource(R.string.verdict_stretched), Color(0xFFFFC107))
+            else -> Pair(stringResource(R.string.verdict_safe), Color(0xFF4CAF50))
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -703,16 +686,16 @@ private fun ImpactCard(modifier: Modifier, label: String, sublabel: String, valu
 private fun PremiumLockedOverlay() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(Spacing.xxl)) {
-            Text("💎 Premium Feature", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.premium_feature), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(Spacing.md))
             Text(
-                "The What-If Simulator helps you plan life decisions by projecting financial impacts before you make them.",
+                stringResource(R.string.premium_simulator_desc),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(Spacing.xl))
             Button(onClick = { /* Paywall */ }, shape = CircleShape) {
-                Text("Upgrade to Monetra Premium")
+                Text(stringResource(R.string.upgrade_premium))
             }
         }
     }
@@ -748,7 +731,7 @@ private fun FutureProjectionGraph(result: SimulationResult) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(Spacing.sm))
-                Text("12-Month Savings Projection", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.savings_projection_12m), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
             Spacer(modifier = Modifier.height(Spacing.sm))
 
@@ -756,18 +739,18 @@ private fun FutureProjectionGraph(result: SimulationResult) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(10.dp).background(primaryColor, CircleShape))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Simulated", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.simulated), style = MaterialTheme.typography.labelSmall)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(10.dp).background(outlineColor, CircleShape))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Current pace", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.current_pace), style = MaterialTheme.typography.labelSmall)
                 }
                 if (hasNegative) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(10.dp).background(negativeColor, CircleShape))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Deficit zone", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.deficit_zone), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -782,7 +765,7 @@ private fun FutureProjectionGraph(result: SimulationResult) {
                     Icon(Icons.Default.Warning, tint = negativeColor, modifier = Modifier.size(14.dp), contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        "Negative savings — deficit grows each month!",
+                        stringResource(R.string.negative_savings_warning),
                         style = MaterialTheme.typography.labelSmall,
                         color = negativeColor
                     )
@@ -798,51 +781,35 @@ private fun FutureProjectionGraph(result: SimulationResult) {
                 val zeroY = height - ((-minVal / range) * height).toFloat()
 
                 // Zero line
-                if (hasNegative) {
-                    drawLine(
-                        color = negativeColor.copy(alpha = 0.4f),
-                        start = Offset(0f, zeroY),
-                        end = Offset(width, zeroY),
-                        strokeWidth = 1f,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f))
-                    )
-                }
+                drawLine(
+                    color = outlineColor.copy(alpha = 0.3f),
+                    start = Offset(0f, zeroY),
+                    end = Offset(width, zeroY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                )
 
-                // Baseline
-                val basePath = Path()
-                baselinePathData.forEachIndexed { index, value ->
-                    val x = index * xStep
-                    val y = height - (((value - minVal) / range) * height).toFloat()
-                    if (index == 0) basePath.moveTo(x, y) else basePath.lineTo(x, y)
+                // Current Path
+                val currentPath = Path().apply {
+                    moveTo(0f, zeroY)
+                    baselinePathData.forEachIndexed { i, savings ->
+                        val x = i * xStep
+                        val y = height - (((savings - minVal) / range) * height).toFloat()
+                        lineTo(x, y)
+                    }
                 }
-                drawPath(basePath, outlineColor, style = Stroke(3f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))))
+                drawPath(currentPath, outlineColor, style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f)))
 
-                // Projected
-                val projPath = Path()
-                val projColor = if (hasNegative) negativeColor else primaryColor
-                projectedPathData.forEachIndexed { index, value ->
-                    val x = index * xStep
-                    val y = height - (((value - minVal) / range) * height).toFloat()
-                    if (index == 0) projPath.moveTo(x, y) else projPath.lineTo(x, y)
+                // Simulated Path
+                val simulatedPath = Path().apply {
+                    moveTo(0f, zeroY)
+                    projectedPathData.forEachIndexed { i, savings ->
+                        val x = i * xStep
+                        val y = height - (((savings - minVal) / range) * height).toFloat()
+                        lineTo(x, y)
+                    }
                 }
-                drawPath(projPath, projColor, style = Stroke(5f))
-
-                val finalY = height - (((projectedPathData.last() - minVal) / range) * height).toFloat()
-                drawCircle(color = projColor, radius = 8f, center = Offset(width, finalY))
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.sm))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Month 1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val finalVal = projectedPathData.last()
-                    Text(
-                        "Year end: ${if (finalVal < 0) "-" else ""}₹${"%,.0f".format(Math.abs(finalVal))}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (finalVal < 0) Color(0xFFF44336) else MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text("Month 12", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                drawPath(simulatedPath, if (hasNegative) negativeColor else primaryColor, style = Stroke(width = 3.dp.toPx()))
             }
         }
     }

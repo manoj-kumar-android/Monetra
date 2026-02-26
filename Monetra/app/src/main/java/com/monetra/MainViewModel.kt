@@ -18,6 +18,7 @@ class MainViewModel @Inject constructor(
     private val _startDestination: MutableStateFlow<Screen?> = MutableStateFlow(null)
     val startDestination = _startDestination.asStateFlow()
 
+
     init {
         viewModelScope.launch {
             userPreferenceRepo.getUserPreferences().collect { preferences ->

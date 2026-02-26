@@ -20,6 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.CategoryBudget
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,10 +36,10 @@ fun BudgetsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Budget Guard", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.budget_guard_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -58,7 +60,7 @@ fun BudgetsScreen(
             ) {
                 item {
                     Text(
-                        text = "Set limits for each category to stay on track with your financial health score.",
+                        text = stringResource(R.string.budget_guard_instruction),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = Spacing.md)
@@ -80,13 +82,13 @@ fun BudgetsScreen(
         
         AlertDialog(
             onDismissRequest = { showEditDialog = null },
-            title = { Text("Set Limit for ${budget.categoryName}") },
+            title = { Text(stringResource(R.string.set_limit_for_format, budget.categoryName)) },
             text = {
                 OutlinedTextField(
                     value = limitInput,
                     onValueChange = { limitInput = it },
-                    label = { Text("Limit Amount") },
-                    prefix = { Text("₹") },
+                    label = { Text(stringResource(R.string.limit_amount_label)) },
+                    prefix = { Text(stringResource(R.string.rupee_symbol)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -101,12 +103,12 @@ fun BudgetsScreen(
                         showEditDialog = null
                     }
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -135,13 +137,13 @@ private fun BudgetEditRow(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Limit: ₹%,.0f".format(budget.limit),
+                    text = stringResource(R.string.limit_display_format, budget.limit),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = onEditClick) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit Limit", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_limit), tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

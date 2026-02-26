@@ -22,6 +22,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 import com.monetra.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,10 +48,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -64,7 +66,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.xl)
         ) {
             Text(
-                text = "PROFILE & FINANCIAL GOALS",
+                text = stringResource(R.string.profile_financial_goals),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -78,7 +80,7 @@ fun SettingsScreen(
                      OutlinedTextField(
                         value = uiState.ownerName,
                         onValueChange = viewModel::onNameChange,
-                        label = { Text("Your Name") },
+                        label = { Text(stringResource(R.string.your_name_label)) },
                         isError = uiState.nameError != null,
                         supportingText = if (uiState.nameError != null) {
                             { Text(uiState.nameError!!) }
@@ -92,8 +94,8 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = uiState.monthlyIncome,
                         onValueChange = viewModel::onIncomeChange,
-                        label = { Text("Monthly Income") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.monthly_income_label_settings)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         isError = uiState.incomeError != null,
                         supportingText = if (uiState.incomeError != null) {
                             { Text(uiState.incomeError!!) }
@@ -108,8 +110,8 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = uiState.monthlySavingsGoal,
                         onValueChange = viewModel::onSavingsGoalChange,
-                        label = { Text("Monthly Savings Goal") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.monthly_savings_goal_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         isError = uiState.savingsError != null,
                         supportingText = if (uiState.savingsError != null) {
                             { Text(uiState.savingsError!!) }
@@ -137,23 +139,21 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Check, contentDescription = null)
                         Spacer(modifier = Modifier.width(Spacing.sm))
-                        Text("Saved Successfully")
+                        Text(stringResource(R.string.saved_successfully))
                     }
                 } else {
-                    Text("Save Settings")
+                    Text(stringResource(R.string.save_settings))
                 }
             }
             
             Text(
-                text = "These values are used to calculate your 'Safe to Spend' limit. Ensure they are accurate for better insights.",
+                text = stringResource(R.string.settings_instruction),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
 
-            Spacer(modifier = Modifier.height(Spacing.md))
-
             Text(
-                text = "PREFERENCES",
+                text = stringResource(R.string.preferences),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -169,7 +169,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Manage Category Budgets",
+                        text = stringResource(R.string.manage_category_budgets),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
@@ -183,13 +183,12 @@ fun SettingsScreen(
         }
     }
 
-    // Full screen loading overlay for high-impact feedback
     if (uiState.isLoading) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
-                .clickable(enabled = false) { }, // Prevent clicks while loading
+                .clickable(enabled = false) { },
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -199,7 +198,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(Spacing.md))
                 Text(
-                    text = "Calculating Impact...",
+                    text = stringResource(R.string.calculating_impact),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium

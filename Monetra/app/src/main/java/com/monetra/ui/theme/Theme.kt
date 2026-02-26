@@ -6,6 +6,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.ColorScheme
 
 // ── Light scheme ──────────────────────────────────────────────────────────
 private val LightColorScheme = lightColorScheme(
@@ -90,13 +93,6 @@ private val DarkColorScheme = darkColorScheme(
 
 // ── Theme entry point ─────────────────────────────────────────────────────
 
-/**
- * Root theme wrapper for the Monetra app.
- *
- * Dynamic colour is intentionally disabled — we rely on our hand-crafted
- * Cupertino-inspired palette for a consistent, brand-correct appearance
- * regardless of the user's wallpaper.
- */
 @Composable
 fun MonetraTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

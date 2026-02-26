@@ -31,6 +31,8 @@ import com.monetra.domain.model.*
 import com.monetra.ui.theme.Spacing
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +46,15 @@ fun MonthlyReportScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Monthly Analysis", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(stringResource(R.string.monthly_analysis_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.generateReport() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -83,26 +85,20 @@ private fun ReportContent(report: ComprehensiveMonthlyReport, onNavigateToSimula
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl)
     ) {
-        // 1. Overview Header
         OverviewHeader(report)
 
-        // 2. Comparison Section
         if (report.comparison != null) {
             ComparisonSection(report.comparison)
         }
 
-        // 3. Top Spending Categories
         if (report.topCategories.isNotEmpty()) {
             TopSpendingSection(report.topCategories)
         }
 
-        // 4. What-If Simulator Entry
         SimulationEntryCard(onNavigateToSimulator)
 
-        // 5. EMI Stress Card
         EMIStressCard(report.emiStressLevel)
 
-        // 6. Suggestions
         if (report.suggestions.isNotEmpty()) {
             SuggestionsSection(report.suggestions)
         }
@@ -121,34 +117,34 @@ private fun OverviewHeader(report: ComprehensiveMonthlyReport) {
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Financial Performance",
+            text = stringResource(R.string.financial_performance),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black)
         )
         
         Spacer(modifier = Modifier.height(Spacing.lg))
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            ReportMetricCard(modifier = Modifier.weight(1f), label = "Total Income", value = report.income, color = Color(0xFF34C759))
-            ReportMetricCard(modifier = Modifier.weight(1f), label = "Total Outlays", value = report.expenses + report.emis, color = MaterialTheme.colorScheme.error)
+            ReportMetricCard(modifier = Modifier.weight(1f), label = stringResource(R.string.total_income), value = report.income, color = Color(0xFF34C759))
+            ReportMetricCard(modifier = Modifier.weight(1f), label = stringResource(R.string.total_outlays), value = report.expenses + report.emis, color = MaterialTheme.colorScheme.error)
         }
     }
 }
 
 @Composable
 private fun ComparisonSection(comparison: PreviousMonthComparison) {
-    ReportSection(title = "Versus Last Month") {
+    ReportSection(title = stringResource(R.string.versus_last_month)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            ComparisonRow("Monthly Income", comparison.incomeChangePercent)
-            ComparisonRow("Total Expenses", comparison.expenseChangePercent, inverse = true)
-            ComparisonRow("Actual Savings", comparison.savingsChangePercent)
-            ComparisonRow("Investments", comparison.investmentChangePercent)
+            ComparisonRow(stringResource(R.string.monthly_income_label), comparison.incomeChangePercent)
+            ComparisonRow(stringResource(R.string.total_expenses_label), comparison.expenseChangePercent, inverse = true)
+            ComparisonRow(stringResource(R.string.actual_savings_label), comparison.savingsChangePercent)
+            ComparisonRow(stringResource(R.string.investments_label), comparison.investmentChangePercent)
         }
     }
 }
 
 @Composable
 private fun TopSpendingSection(categories: List<CategorySpending>) {
-    ReportSection(title = "Top Spending Categories") {
+    ReportSection(title = stringResource(R.string.top_spending_categories)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             categories.forEach { category ->
                 Row(
@@ -180,25 +176,27 @@ private fun EMIStressCard(stressLevel: String) {
     val (color, icon, description) = when (stressLevel) {
         "CRITICAL" -> Triple(
             Color(0xFFFF3B30), Icons.Default.Warning,
-            "EMIs exceed 50% of income — this is financially dangerous. Reduce debt immediately."
+            stringResource(R.string.stress_critical_desc)
         )
         "HIGH" -> Triple(
             Color(0xFFFF9500), Icons.Default.Warning,
-            "EMIs are between 35–50% of income — above the safe limit. Avoid new loans."
+            stringResource(R.string.stress_high_desc)
         )
         "MODERATE" -> Triple(
             Color(0xFF5856D6), Icons.Default.Info,
-            "EMIs are 20–35% of income — manageable, but keep an eye on new commitments."
+            stringResource(R.string.stress_moderate_desc)
         )
         else -> Triple(
             Color(0xFF34C759), Icons.Default.CheckCircle,
-            "EMIs are under 20% of income — excellent! You have a healthy debt load."
+            stringResource(R.string.stress_healthy_desc)
         )
     }
 
     val displayLabel = when (stressLevel) {
-        "CRITICAL", "HIGH", "MODERATE" -> stressLevel
-        else -> "HEALTHY"
+        "CRITICAL" -> stringResource(R.string.stress_critical)
+        "HIGH" -> stringResource(R.string.stress_high)
+        "MODERATE" -> stringResource(R.string.stress_moderate)
+        else -> stringResource(R.string.stress_healthy)
     }
 
     Card(
@@ -211,7 +209,7 @@ private fun EMIStressCard(stressLevel: String) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.width(Spacing.md))
             Column {
-                Text("EMI Stress Level", style = MaterialTheme.typography.labelSmall, color = color)
+                Text(stringResource(R.string.emi_stress_level_label), style = MaterialTheme.typography.labelSmall, color = color)
                 Text(
                     displayLabel,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
@@ -231,7 +229,7 @@ private fun EMIStressCard(stressLevel: String) {
 
 @Composable
 private fun SuggestionsSection(suggestions: List<SavingSuggestion>) {
-    ReportSection(title = "Personalized Improvements") {
+    ReportSection(title = stringResource(R.string.personalized_improvements)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             suggestions.take(3).forEach { suggestion ->
                 Surface(
@@ -311,8 +309,8 @@ private fun SimulationEntryCard(onClick: () -> Unit) {
         ) {
             Text("⚡", fontSize = 32.sp)
             Column(modifier = Modifier.weight(1f)) {
-                Text("What-If Simulator", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text("Test life decisions and see their impact on your financial health score.", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.what_if_simulator), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.what_if_simulator_desc), style = MaterialTheme.typography.bodySmall)
             }
         }
     }

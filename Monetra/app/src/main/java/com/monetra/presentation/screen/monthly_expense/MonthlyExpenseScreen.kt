@@ -23,6 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.MonthlyExpense
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +39,10 @@ fun MonthlyExpenseScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Fixed Monthly Costs", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.fixed_monthly_costs_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -54,7 +56,7 @@ fun MonthlyExpenseScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Fixed Cost")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_fixed_cost))
             }
         }
     ) { padding ->
@@ -65,7 +67,7 @@ fun MonthlyExpenseScreen(
         ) {
             item {
                 Text(
-                    text = "Add recurring expenses like Rent, WiFi, Netflix, or Electricity. These will be automatically deducted from your daily budget.",
+                    text = stringResource(R.string.fixed_costs_instruction),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = Spacing.md)
@@ -74,7 +76,7 @@ fun MonthlyExpenseScreen(
             if (expenses.isEmpty()) {
                 item {
                     Box(Modifier.fillParentMaxSize(0.7f), contentAlignment = Alignment.Center) {
-                        Text("No fixed costs added yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.no_fixed_costs_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -92,12 +94,12 @@ fun MonthlyExpenseScreen(
                     modifier = Modifier.padding(Spacing.xl).padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    Text("Add Recurring Cost", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.add_recurring_cost_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     
                     OutlinedTextField(
                         value = uiState.name,
                         onValueChange = viewModel::onNameChange,
-                        label = { Text("Expense Name (e.g. Rent)") },
+                        label = { Text(stringResource(R.string.recurring_expense_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -105,8 +107,8 @@ fun MonthlyExpenseScreen(
                     OutlinedTextField(
                         value = uiState.amount,
                         onValueChange = viewModel::onAmountChange,
-                        label = { Text("Amount") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.amount_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -116,7 +118,7 @@ fun MonthlyExpenseScreen(
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Save Monthly Cost")
+                        Text(stringResource(R.string.save_monthly_cost))
                     }
                 }
             }
@@ -137,10 +139,10 @@ private fun FixedCostItem(expense: MonthlyExpense, onDelete: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = expense.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "₹%,.0f per month".format(expense.amount), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Text(text = stringResource(R.string.per_month_format, expense.amount), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
             }
         }
     }

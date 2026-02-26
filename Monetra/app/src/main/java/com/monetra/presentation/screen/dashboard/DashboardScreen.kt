@@ -32,7 +32,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 import com.monetra.presentation.screen.dashboard.components.*
 import com.monetra.presentation.screen.transactions.*
 import com.monetra.presentation.screen.transactions.components.*
@@ -60,7 +61,7 @@ fun DashboardScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Dashboard",
+                        text = stringResource(R.string.dashboard_title),
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -74,10 +75,10 @@ fun DashboardScreen(
                 actions = {
                     HelpIconButton(onClick = onNavigateToHelp)
                     IconButton(onClick = onNavigateToReport) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Monthly Report")
+                        Icon(Icons.Default.DateRange, contentDescription = stringResource(R.string.monthly_report))
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
                 }
             )
@@ -90,7 +91,7 @@ fun DashboardScreen(
                 shape = CircleShape,
                 modifier = Modifier.padding(bottom = Spacing.md)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_transaction_cd))
             }
         }
     ) { paddingValues ->
@@ -110,12 +111,12 @@ fun DashboardScreen(
                         Text("👋", style = MaterialTheme.typography.displayMedium)
                         Spacer(modifier = Modifier.height(Spacing.md))
                         Text(
-                            "Welcome to Monetra!",
+                            stringResource(R.string.welcome_to_monetra),
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                         )
                         Spacer(modifier = Modifier.height(Spacing.sm))
                         Text(
-                            "Set your monthly salary in Settings to unlock your personalised financial dashboard.",
+                            stringResource(R.string.set_salary_instruction),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -125,7 +126,7 @@ fun DashboardScreen(
                             onClick = onNavigateToSettings,
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
                         ) {
-                            Text("⚙️  Go to Settings")
+                            Text(stringResource(R.string.go_to_settings))
                         }
                     }
                 }
@@ -161,9 +162,9 @@ private fun DashboardContent(
             Column(modifier = Modifier.padding(bottom = Spacing.sm)) {
                 val hour = java.time.LocalTime.now().hour
                 val greeting = when {
-                    hour < 12 -> "Good Morning,"
-                    hour < 17 -> "Good Afternoon,"
-                    else -> "Good Evening,"
+                    hour < 12 -> stringResource(R.string.good_morning)
+                    hour < 17 -> stringResource(R.string.good_afternoon)
+                    else -> stringResource(R.string.good_evening)
                 }
                 Text(
                     text = greeting,
@@ -171,7 +172,7 @@ private fun DashboardContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = state.summary.ownerName.ifBlank { "there" },
+                    text = state.summary.ownerName.ifBlank { stringResource(R.string.there) },
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
@@ -204,9 +205,9 @@ private fun DashboardContent(
                 )
                 
                 MetricCard(
-                    title = "Fixed Bills",
+                    title = stringResource(R.string.fixed_bills),
                     amount = state.fixedCosts,
-                    subtitle = "Monthly commit",
+                    subtitle = stringResource(R.string.monthly_commit),
                     icon = Icons.Default.Notifications,
                     modifier = Modifier.weight(1f).clickable(onClick = onFixedCostsClick),
                     color = MaterialTheme.colorScheme.tertiaryContainer
@@ -218,7 +219,7 @@ private fun DashboardContent(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Text(
-                    text = "Monthly Health",
+                    text = stringResource(R.string.monthly_health),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(horizontal = Spacing.xs)
                 )
@@ -256,11 +257,11 @@ private fun DashboardContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recent Activity",
+                    text = stringResource(R.string.recent_activity),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
                 TextButton(onClick = onSeeAllTransactions) {
-                    Text("See All", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.see_all), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -322,12 +323,12 @@ private fun SafeToSpendCard(amount: String, limit: String, percent: Float) {
                 ) {
                     Column {
                         Text(
-                            text = "Safe to Spend Today",
+                            text = stringResource(R.string.safe_to_spend_today),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = if (isOverspent) "Redistributing from tomorrow" else "Daily Budget: ₹$limit",
+                            text = if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.daily_budget_format, limit),
                             style = MaterialTheme.typography.labelMedium,
                             color = baseColor.copy(alpha = 0.7f)
                         )

@@ -46,6 +46,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 import com.monetra.domain.model.*
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
@@ -70,7 +72,7 @@ fun PlanningScreen(
         
         AlertDialog(
             onDismissRequest = { showGoalDialog = false },
-            title = { Text("Add Financial Goal", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.add_financial_goal), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedTextField(
@@ -79,7 +81,7 @@ fun PlanningScreen(
                             title = it
                             if (it.isNotBlank()) titleError = null 
                         },
-                        label = { Text("Goal Name (e.g., Vacation)") },
+                        label = { Text(stringResource(R.string.goal_name_label)) },
                         isError = titleError != null,
                         supportingText = if (titleError != null) { { Text(titleError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -97,8 +99,8 @@ fun PlanningScreen(
                                 if (sanitized.isNotBlank()) targetError = null
                             }
                         },
-                        label = { Text("Target Amount") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.target_amount_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         isError = targetError != null,
                         supportingText = if (targetError != null) { { Text(targetError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -110,16 +112,17 @@ fun PlanningScreen(
                 }
             },
             confirmButton = {
+                val context = androidx.compose.ui.platform.LocalContext.current
                 Button(onClick = {
                     val t = target.toDoubleOrNull()
                     var hasError = false
                     
                     if (title.isBlank()) {
-                        titleError = "Goal name is required"
+                        titleError = context.getString(R.string.goal_name_required)
                         hasError = true
                     }
                     if (t == null || t <= 0) {
-                        targetError = "Enter a valid amount"
+                        targetError = context.getString(R.string.valid_amount_required)
                         hasError = true
                     }
                     
@@ -128,11 +131,11 @@ fun PlanningScreen(
                         showGoalDialog = false
                     }
                 }) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showGoalDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showGoalDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -143,7 +146,7 @@ fun PlanningScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Assistant",
+                        text = stringResource(R.string.assistant_title),
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -224,21 +227,24 @@ private fun PlanningContent(
             )
         }
 
-        // CARD 4: Can I Afford This?
+        // CARD 4: Impact Checker
         item {
-            CanIAffordThisCard(overview.monthlySafety)
+            ImpactChecker(
+                safety = overview.monthlySafety,
+                emergency = overview.emergencySafety
+            )
         }
-
-        // CARD 5: 7-Day Control Plan
+        
+        // CARD 5: Daily Pocket Money
         item {
-            WeeklyControlPlanCard(overview.controlPlan)
+            DailyPocketMoney(overview.controlPlan)
         }
 
         // QUICK ACTIONS / MANAGERS
         item {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Text(
-                    text = "Personal Finance Managers",
+                    text = stringResource(R.string.personal_finance_managers),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.padding(horizontal = Spacing.xs, vertical = Spacing.sm)
@@ -249,15 +255,15 @@ private fun PlanningContent(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
                     ManagerCard(
-                        title = "EMIs & Debt",
-                        subtitle = if (overview.totalEmi > 0) "₹%,.0f/mo".format(overview.totalEmi) else "No debt",
+                        title = stringResource(R.string.emis_debt),
+                        subtitle = if (overview.totalEmi > 0) stringResource(R.string.monthly_emi_format, overview.totalEmi) else stringResource(R.string.no_debt),
                         icon = Icons.Default.Build,
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToLoans
                     )
                     ManagerCard(
-                        title = "Investments",
-                        subtitle = if (overview.totalInvestments > 0) "Value: ₹%,.0f".format(overview.totalInvestments) else "Not started",
+                        title = stringResource(R.string.investments_title),
+                        subtitle = if (overview.totalInvestments > 0) stringResource(R.string.value_format, overview.totalInvestments) else stringResource(R.string.not_started),
                         icon = Icons.Default.Star,
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToInvestments
@@ -311,18 +317,18 @@ private fun ManagerCard(
 @Composable
 private fun MonthlySafetyCard(analysis: MonthlySafetyAnalysis) {
     CoachCard(
-        title = "Am I Safe This Month?",
+        title = stringResource(R.string.am_i_safe_month),
         status = analysis.status
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatItem("Savings Gap", "₹%,.0f".format(analysis.savingsGap), isBad = analysis.savingsGap > 0)
-                StatItem("EMI Ratio", "%.1f%%".format(analysis.emiRatio), isBad = analysis.emiRatio > 40)
+                StatItem(stringResource(R.string.savings_gap_label), "₹%,.0f".format(analysis.savingsGap), isBad = analysis.savingsGap > 0)
+                StatItem(stringResource(R.string.emi_ratio_label), "%.1f%%".format(analysis.emiRatio), isBad = analysis.emiRatio > 40)
             }
             
             if (analysis.isBurnRisk) {
                 StatusAlert(
-                    message = "High Burn Risk: You are spending faster than your budget allows.",
+                    message = stringResource(R.string.high_burn_risk),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -335,7 +341,7 @@ private fun MonthlySafetyCard(analysis: MonthlySafetyAnalysis) {
 @Composable
 private fun MoneyLeakageCard(analysis: MoneyLeakageAnalysis) {
     CoachCard(
-        title = "Where Is My Money Leaking?",
+        title = stringResource(R.string.leakage_title),
         status = if (analysis.topCategories.isNotEmpty()) SafetyStatus.YELLOW else SafetyStatus.GREEN
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -357,15 +363,15 @@ private fun MoneyLeakageCard(analysis: MoneyLeakageAnalysis) {
 @Composable
 private fun EmergencySafetyCard(analysis: EmergencySafetyAnalysis) {
     CoachCard(
-        title = "Emergency Safety (Runway)",
+        title = stringResource(R.string.emergency_safety_runway),
         status = analysis.status
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Text(
-                "You can survive %.1f months without income.".format(analysis.monthsCovered),
+                stringResource(R.string.survival_months_format, analysis.monthsCovered),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
-            Text("Survival target: 6 months", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.survival_target), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             
             analysis.suggestion?.let {
                 ActionSuggestion(it)
@@ -375,56 +381,140 @@ private fun EmergencySafetyCard(analysis: EmergencySafetyAnalysis) {
 }
 
 @Composable
-private fun CanIAffordThisCard(safety: MonthlySafetyAnalysis) {
-    var amount by remember { mutableStateOf("") }
-    val expense = amount.toDoubleOrNull() ?: 0.0
+private fun ImpactChecker(safety: MonthlySafetyAnalysis, emergency: EmergencySafetyAnalysis) {
+    var amountText by remember { mutableStateOf("") }
+    val amount = amountText.toDoubleOrNull() ?: 0.0
     
     CoachCard(
-        title = "Can I Afford This?",
-        status = SafetyStatus.GREEN 
+        title = stringResource(R.string.impact_checker_title),
+        status = if (amount == 0.0) SafetyStatus.GREEN else {
+            when {
+                amount > (safety.savingsGap * -1).coerceAtLeast(0.0) && safety.savingsGap > 0 -> SafetyStatus.RED
+                amount > (safety.dailyBurnRate * 3) -> SafetyStatus.YELLOW
+                else -> SafetyStatus.GREEN
+            }
+        }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Text(
+                stringResource(R.string.impact_checker_instruction),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
             OutlinedTextField(
-                value = amount,
-                onValueChange = { amount = it.filter { c -> c.isDigit() } },
-                label = { Text("Enter expense amount") },
-                prefix = { Text("₹") },
+                value = amountText,
+                onValueChange = { amountText = it.filter { c -> c.isDigit() } },
+                label = { Text(stringResource(R.string.how_much_is_it)) },
+                prefix = { Text(stringResource(R.string.rupee_symbol)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp)
             )
             
-            if (expense > 0) {
-                val impact = safety.savingsGap + expense
-                StatusAlert(
-                    message = "This will increase your savings gap to ₹%,.0f.".format(impact),
-                    color = if (impact > 0) MaterialTheme.colorScheme.error else Color(0xFF34C759)
-                )
+            if (amount > 0) {
+                val impactOnSavings = (safety.savingsGap + amount)
+                val daysToRecover = if (safety.dailyBurnRate > 0) amount / safety.dailyBurnRate else 0.0
+                
+                val (verdict, color, advice) = when {
+                    amount > (safety.dailyBurnRate * 15) -> Triple(stringResource(R.string.verdict_big_purchase), MaterialTheme.colorScheme.error, stringResource(R.string.impact_checker_big_purchase_advice, daysToRecover))
+                    impactOnSavings > 0 -> Triple(stringResource(R.string.verdict_savings_risk), Color(0xFFFF9500), stringResource(R.string.impact_checker_savings_risk_advice))
+                    else -> Triple(stringResource(R.string.verdict_safe_to_buy), Color(0xFF34C759), stringResource(R.string.impact_checker_safe_advice))
+                }
+
+                Surface(
+                    color = color.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(Spacing.md)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (color == MaterialTheme.colorScheme.error) Icons.Default.Warning else Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Text(verdict, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = color)
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.xs))
+                        Text(advice, style = MaterialTheme.typography.bodySmall, color = color.copy(alpha = 0.9f))
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun WeeklyControlPlanCard(plan: WeeklyControlPlan) {
+private fun DailyPocketMoney(plan: WeeklyControlPlan) {
+    val progress = if (plan.dailyLimit > 0) 
+        ((plan.dailyLimit - plan.remainingToday) / plan.dailyLimit).toFloat().coerceIn(0f, 1f) 
+        else 0f
+    
+    val statusColor = when {
+        progress > 0.9f -> MaterialTheme.colorScheme.error
+        progress > 0.7f -> Color(0xFFFF9500)
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     CoachCard(
-        title = "7-Day Control Plan",
-        status = SafetyStatus.GREEN
+        title = stringResource(R.string.daily_pocket_money),
+        status = if (progress > 0.9f) SafetyStatus.RED else SafetyStatus.GREEN
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Text(
-                "Max spend next 7 days:",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                "₹%,.0f".format(plan.weeklyLimit),
-                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
-                color = MaterialTheme.colorScheme.primary
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(stringResource(R.string.todays_allowance), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "₹%,.0f".format(plan.remainingToday),
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
+                        color = statusColor
+                    )
+                }
+                Text(
+                    stringResource(R.string.limit_format, plan.dailyLimit),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
+                    color = statusColor,
+                    trackColor = statusColor.copy(alpha = 0.1f),
+                    strokeCap = StrokeCap.Round
+                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(stringResource(R.string.spent_today_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.used_percent_format, (progress * 100).toInt()), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = statusColor)
+                }
+            }
             
-            plan.highRiskCategory?.let {
-                ActionSuggestion("Watch out for $it - your highest spend category.")
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(Spacing.sm).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(
+                        stringResource(R.string.pacing_tip_format, plan.dailyLimit),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -503,7 +593,7 @@ private fun ActionSuggestion(suggestion: String) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Coach: $suggestion",
+            text = stringResource(R.string.coach_prefix, suggestion),
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
             modifier = Modifier.padding(Spacing.md),
             color = MaterialTheme.colorScheme.onPrimaryContainer

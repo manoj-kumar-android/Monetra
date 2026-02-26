@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @Composable
 fun OnboardingScreen(
@@ -48,7 +50,7 @@ fun OnboardingScreen(
                 ) {
                     if (currentStep > 0) {
                         TextButton(onClick = viewModel::previousStep) {
-                            Text("Back")
+                            Text(stringResource(R.string.back))
                         }
                     } else {
                         Spacer(modifier = Modifier.width(60.dp))
@@ -76,7 +78,7 @@ fun OnboardingScreen(
                             onComplete()
                         }
                     }) {
-                        Text(if (currentStep == 3) "Finish" else "Next")
+                        Text(if (currentStep == 3) stringResource(R.string.finish) else stringResource(R.string.next))
                         Icon(if (currentStep == 3) Icons.Default.CheckCircle else Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                     }
                 }
@@ -117,16 +119,16 @@ private fun SalarySetupStep(
     onSavingsChange: (String) -> Unit
 ) {
     Column(modifier = Modifier.padding(Spacing.xl).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-        Text("Welcome to Monetra 🚀", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+        Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
         Spacer(modifier = Modifier.height(Spacing.md))
-        Text("Let's set up your financial baseline to calculate your safe-to-spend allowance.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.onboarding_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         
         Spacer(modifier = Modifier.height(Spacing.xxl))
 
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
-            label = { Text("Your Name") },
+            label = { Text(stringResource(R.string.your_name_label)) },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Next
@@ -141,8 +143,8 @@ private fun SalarySetupStep(
         OutlinedTextField(
             value = income,
             onValueChange = onIncomeChange,
-            label = { Text("Monthly Salary (Income)") },
-            prefix = { Text("₹ ") },
+            label = { Text(stringResource(R.string.monthly_income_label_settings)) },
+            prefix = { Text("${stringResource(R.string.rupee_symbol)} ") },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Next
@@ -157,8 +159,8 @@ private fun SalarySetupStep(
         OutlinedTextField(
             value = savings,
             onValueChange = onSavingsChange,
-            label = { Text("Monthly Savings Target") },
-            prefix = { Text("₹ ") },
+            label = { Text(stringResource(R.string.monthly_savings_goal_label)) },
+            prefix = { Text("${stringResource(R.string.rupee_symbol)} ") },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -179,9 +181,9 @@ private fun FixedCostsStep(
     var amount by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.padding(Spacing.xl).fillMaxSize()) {
-        Text("Step 1: Commitments", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+        Text(stringResource(R.string.onboarding_step1_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
         Spacer(modifier = Modifier.height(Spacing.sm))
-        Text("What are your mandatory monthly utility bills and subscriptions?", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.onboarding_step1_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         
         Spacer(modifier = Modifier.height(Spacing.lg))
 
@@ -190,7 +192,7 @@ private fun FixedCostsStep(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Bill Name (e.g., Rent, Internet)") },
+                    label = { Text(stringResource(R.string.bill_name_hint)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -199,8 +201,8 @@ private fun FixedCostsStep(
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Amount") },
-                    prefix = { Text("₹ ") },
+                    label = { Text(stringResource(R.string.amount_label)) },
+                    prefix = { Text("${stringResource(R.string.rupee_symbol)} ") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -222,7 +224,7 @@ private fun FixedCostsStep(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("Add Fixed Cost")
+                    Text(stringResource(R.string.add_fixed_cost))
                 }
             }
         }
@@ -232,7 +234,7 @@ private fun FixedCostsStep(
         fixedCosts.forEach {
             ListItem(
                 headlineContent = { Text(it.name) },
-                trailingContent = { Text("₹${it.amount}", fontWeight = FontWeight.Bold) }
+                trailingContent = { Text("${stringResource(R.string.rupee_symbol)}${it.amount}", fontWeight = FontWeight.Bold) }
             )
         }
     }
@@ -247,9 +249,9 @@ private fun EMIsStep(
     var amount by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.padding(Spacing.xl).fillMaxSize()) {
-        Text("Step 2: Loans & EMIs", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+        Text(stringResource(R.string.onboarding_step2_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
         Spacer(modifier = Modifier.height(Spacing.sm))
-        Text("Do you have any ongoing loan EMIs or debts?", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.onboarding_step2_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         
         Spacer(modifier = Modifier.height(Spacing.lg))
 
@@ -258,7 +260,7 @@ private fun EMIsStep(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Loan Name (e.g., Car, Home)") },
+                    label = { Text(stringResource(R.string.loan_name_hint)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -267,8 +269,8 @@ private fun EMIsStep(
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Monthly EMI Amount") },
-                    prefix = { Text("₹ ") },
+                    label = { Text(stringResource(R.string.monthly_emi_label_onboarding)) },
+                    prefix = { Text("${stringResource(R.string.rupee_symbol)} ") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -290,7 +292,7 @@ private fun EMIsStep(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("Add EMI")
+                    Text(stringResource(R.string.add_emi_onboarding))
                 }
             }
         }
@@ -300,7 +302,7 @@ private fun EMIsStep(
         loans.forEach {
             ListItem(
                 headlineContent = { Text(it.name) },
-                trailingContent = { Text("₹${it.monthlyEmi}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
+                trailingContent = { Text("${stringResource(R.string.rupee_symbol)}${it.monthlyEmi}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
             )
         }
     }
@@ -311,9 +313,9 @@ private fun CalculationStep(income: Double, savings: Double, totalFixed: Double,
     val allowance = (income - savings - totalFixed - totalEmi).coerceAtLeast(0.0)
 
     Column(modifier = Modifier.padding(Spacing.xl).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-        Text("The Monetra Magic ✨", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+        Text(stringResource(R.string.onboarding_step3_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
         Spacer(modifier = Modifier.height(Spacing.md))
-        Text("Here is how we calculate your true Safe-to-Spend limit.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.onboarding_step3_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         
         Spacer(modifier = Modifier.height(Spacing.xxl))
 
@@ -323,20 +325,20 @@ private fun CalculationStep(income: Double, savings: Double, totalFixed: Double,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(Spacing.lg)) {
-                CalcRow("Monthly Salary", income, true)
-                CalcRow("Savings Target", savings, false)
-                CalcRow("Fixed Costs", totalFixed, false)
-                CalcRow("Loan EMIs", totalEmi, false)
+                CalcRow(stringResource(R.string.monthly_income_label), income, true)
+                CalcRow(stringResource(R.string.monthly_savings_goal_label), savings, false)
+                CalcRow(stringResource(R.string.fixed_bills), totalFixed, false)
+                CalcRow(stringResource(R.string.emis_debt), totalEmi, false)
                 HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.md))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Safe-to-Spend", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text("₹%,.0f".format(allowance), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary))
+                    Text(stringResource(R.string.safe_to_spend_label), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("${stringResource(R.string.rupee_symbol)}${"%,.0f".format(allowance)}", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary))
                 }
             }
         }
         
         Spacer(modifier = Modifier.height(Spacing.lg))
-        Text("Spend freely from this allowance! Monetra will guide you daily to keep you on track.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.spend_freely_instruction), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -349,6 +351,6 @@ private fun CalcRow(label: String, amount: Double, isAddition: Boolean) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
         val symbol = if (isAddition) "+" else "-"
         val color = if (isAddition) Color(0xFF4CAF50) else Color(0xFFF44336)
-        Text("$symbol ₹%,.0f".format(amount), color = color, fontWeight = FontWeight.Medium)
+        Text("$symbol ${stringResource(R.string.rupee_symbol)}${"%,.0f".format(amount)}", color = color, fontWeight = FontWeight.Medium)
     }
 }

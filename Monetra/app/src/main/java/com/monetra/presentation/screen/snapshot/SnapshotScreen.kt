@@ -21,6 +21,8 @@ import com.monetra.domain.model.MonthlyFinancialReport
 import com.monetra.domain.model.SavingSuggestion
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +38,7 @@ fun SnapshotScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Financial Snapshot",
+                        text = stringResource(R.string.snapshot_title_header),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -79,27 +81,27 @@ private fun SnapshotContent(report: MonthlyFinancialReport, suggestions: List<Sa
 
         // Primary Metrics
         item {
-            SnapshotSection(title = "Monthly Overview") {
+            SnapshotSection(title = stringResource(R.string.monthly_overview)) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                    MetricRow(label = "Monthly Salary", value = report.income, isPrimary = true)
+                    MetricRow(label = stringResource(R.string.monthly_salary_label), value = report.income, isPrimary = true)
                     HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    MetricRow(label = "Total Expenses", value = report.totalExpenses)
-                    MetricRow(label = "Total EMI", value = report.totalEmis)
-                    MetricRow(label = "Total Investments", value = report.totalInvestments)
+                    MetricRow(label = stringResource(R.string.total_expenses_label), value = report.totalExpenses)
+                    MetricRow(label = stringResource(R.string.monthly_emi_label), value = report.totalEmis)
+                    MetricRow(label = stringResource(R.string.investments_label), value = report.totalInvestments)
                 }
             }
         }
 
         // Savings Analysis
         item {
-            SnapshotSection(title = "Savings Analysis") {
+            SnapshotSection(title = stringResource(R.string.savings_analysis)) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                    MetricRow(label = "Target Savings", value = report.targetSavings)
-                    MetricRow(label = "Actual Savings", value = report.actualSavings, color = if (report.actualSavings >= report.targetSavings) Color(0xFF34C759) else MaterialTheme.colorScheme.primary)
+                    MetricRow(label = stringResource(R.string.target_savings_label), value = report.targetSavings)
+                    MetricRow(label = stringResource(R.string.actual_savings_label), value = report.actualSavings, color = if (report.actualSavings >= report.targetSavings) Color(0xFF34C759) else MaterialTheme.colorScheme.primary)
                     
                     if (report.savingsGap > 0) {
                         MetricRow(
-                            label = "Savings Gap", 
+                            label = stringResource(R.string.savings_gap_label), 
                             value = report.savingsGap, 
                             color = MaterialTheme.colorScheme.error
                         )
@@ -112,7 +114,7 @@ private fun SnapshotContent(report: MonthlyFinancialReport, suggestions: List<Sa
         if (suggestions.isNotEmpty()) {
             item {
                 Text(
-                    text = "Suggested Improvements",
+                    text = stringResource(R.string.suggested_improvements),
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -136,9 +138,9 @@ private fun SnapshotContent(report: MonthlyFinancialReport, suggestions: List<Sa
 @Composable
 private fun HealthStatusHeader(status: FinancialBalanceStatus) {
     val (statusLabel, statusColor) = when (status) {
-        FinancialBalanceStatus.HEALTHY -> "EXCELLENT" to Color(0xFF34C759)
-        FinancialBalanceStatus.MODERATE -> "STABLE" to Color(0xFFFF9500)
-        FinancialBalanceStatus.RISK -> "ACTION REQUIRED" to Color(0xFFFF3B30)
+        FinancialBalanceStatus.HEALTHY -> stringResource(R.string.status_excellent) to Color(0xFF34C759)
+        FinancialBalanceStatus.MODERATE -> stringResource(R.string.status_stable) to Color(0xFFFF9500)
+        FinancialBalanceStatus.RISK -> stringResource(R.string.status_action_required) to Color(0xFFFF3B30)
     }
 
     Column(
@@ -164,9 +166,9 @@ private fun HealthStatusHeader(status: FinancialBalanceStatus) {
         
         Text(
             text = when(status) {
-                FinancialBalanceStatus.HEALTHY -> "Your financial health is in great shape."
-                FinancialBalanceStatus.MODERATE -> "Your finances are stable but can be optimized."
-                FinancialBalanceStatus.RISK -> "Immediate adjustments are recommended."
+                FinancialBalanceStatus.HEALTHY -> stringResource(R.string.health_healthy_desc)
+                FinancialBalanceStatus.MODERATE -> stringResource(R.string.health_moderate_desc)
+                FinancialBalanceStatus.RISK -> stringResource(R.string.health_risk_desc)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -219,7 +221,7 @@ private fun MetricRow(
             color = if (isPrimary) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "₹%,.0f".format(value),
+            text = "₹${"%,.0f".format(value)}",
             style = if (isPrimary) {
                 MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
             } else {

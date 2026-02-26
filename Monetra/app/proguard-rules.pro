@@ -1,21 +1,29 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# For more details, see http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room
+-keep class androidx.room.paging.PagingSource { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Hilt
+-keep class com.google.** { *; }
+-keep interface dagger.** { *; }
+-keep class dagger.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepnames class kotlinx.coroutines.android.AndroidExceptionPreHandler {}
+-keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
+-keep class kotlinx.coroutines.android.** { *; }
+
+# Compose
+-keep class androidx.compose.material.icons.** { *; }
+
+# Monetra Models (keep domain/data models from being obfuscated to avoid Room/JSON issues)
+-keep class com.monetra.domain.model.** { *; }
+-keep class com.monetra.data.local.entity.** { *; }
+-keep class com.monetra.data.local.dao.** { *; }
+
+# Keep SourceFile and LineNumberTable for better crash reporting
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

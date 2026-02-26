@@ -25,6 +25,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.*
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +44,11 @@ fun InvestmentManagementScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Wealth Intelligence", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
+                    Text(stringResource(R.string.wealth_intelligence_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -61,7 +63,7 @@ fun InvestmentManagementScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Investment")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_investment))
             }
         }
     ) { padding ->
@@ -71,29 +73,24 @@ fun InvestmentManagementScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             intelligence?.let { intel ->
-                // 1. Hero Financial Safety Card
                 item {
                     HeroSurvivalCard(intel)
                 }
 
-                // New: Liquidity Hierarchy Visualization
                 item {
                     LiquidityBreakdownSection(intel)
                 }
 
-                // 2. Asset Allocation Overview
                 item {
                     AllocationSection(intel.assetAllocation)
                 }
 
-                // 3. Smart Assistant Section
                 if (intel.insights.isNotEmpty()) {
                     item {
                         WealthInsightsSection(intel.insights)
                     }
                 }
 
-                // 4. Wealth Projection
                 item {
                     ProjectionCard(
                         intel = intel,
@@ -106,16 +103,12 @@ fun InvestmentManagementScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
 
-                item {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                }
-
                 val monthlyInvestments = investments.filter { it.frequency == ContributionFrequency.MONTHLY }
                 val oneTimeInvestments = investments.filter { it.frequency == ContributionFrequency.ONE_TIME }
 
                 if (monthlyInvestments.isNotEmpty()) {
                     item {
-                        Text("Monthly Investments (SIP/RD)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.monthly_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                     items(monthlyInvestments) { inv ->
                         InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
@@ -125,7 +118,7 @@ fun InvestmentManagementScreen(
 
                 if (oneTimeInvestments.isNotEmpty()) {
                     item {
-                        Text("One-time Assets (FD/Stocks/Gold)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.onetime_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                     items(oneTimeInvestments) { inv ->
                         InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
@@ -191,7 +184,7 @@ private fun HeroSurvivalCard(intel: com.monetra.domain.model.WealthIntelligence)
                 ) {
                     Column {
                         Text(
-                            "Financial Survival Status",
+                            stringResource(R.string.financial_survival_status),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -201,7 +194,7 @@ private fun HeroSurvivalCard(intel: com.monetra.domain.model.WealthIntelligence)
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = (-1).sp
-                            )
+                              )
                         )
                     }
                     Surface(
@@ -222,14 +215,14 @@ private fun HeroSurvivalCard(intel: com.monetra.domain.model.WealthIntelligence)
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 SurvivalStat(
-                    label = "Survival Buffer", 
+                    label = stringResource(R.string.survival_buffer), 
                     value = "${"%.1f".format(intel.emergencyRunwayMonths)} mo",
                     icon = Icons.Default.Shield,
                     color = statusColor,
                     modifier = Modifier.weight(1f)
                 )
                 SurvivalStat(
-                    label = "Liquid Wealth", 
+                    label = stringResource(R.string.liquid_wealth), 
                     value = "₹%,.0f".format(intel.liquidNetWorth),
                     icon = Icons.Default.WaterDrop,
                     color = MaterialTheme.colorScheme.secondary,
@@ -254,55 +247,98 @@ private fun HeroSurvivalCard(intel: com.monetra.domain.model.WealthIntelligence)
         }
     }
 }
-
-
 }
-@Composable
-fun InvestmentTypeGrid(
-    selectedType: InvestmentType,
-    onTypeSelected: (InvestmentType) -> Unit
-) {
-    val allTypes = InvestmentType.entries
-    val half = (allTypes.size + 1) / 2
-    val firstRow = allTypes.subList(0, half)
-    val secondRow = allTypes.subList(half, allTypes.size)
 
+@Composable
+fun SurvivalStat(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, modifier: Modifier) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+@Composable
+fun AllocationSection(allocation: List<com.monetra.domain.model.AssetAllocationItem>) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        listOf(firstRow, secondRow).forEach { row ->
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                contentPadding = PaddingValues(horizontal = 2.dp)
-            ) {
-                items(row.size) { i ->
-                    val type = row[i]
-                    val isSelected = type == selectedType
-                    val color = Color(type.colorHex)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onTypeSelected(type) },
-                        label = {
-                            Text(
-                                "${type.emoji} ${type.displayName}",
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = color.copy(alpha = 0.15f),
-                            selectedLabelColor = color
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            selectedBorderColor = color.copy(alpha = 0.5f),
-                            selectedBorderWidth = 1.5.dp
-                        )
-                    )
+        Text(stringResource(R.string.asset_allocation_label), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+        Row(
+            modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))
+        ) {
+            allocation.forEach { item ->
+                Box(
+                    modifier = Modifier
+                        .weight(item.percentage.toFloat().coerceAtLeast(0.01f))
+                        .fillMaxHeight()
+                        .background(Color(item.type.colorHex))
+                )
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            allocation.take(4).forEach { item ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(item.type.colorHex)))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("${item.type.displayName} ${item.percentage.toInt()}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 }
 
+@Composable
+fun WealthInsightsSection(insights: List<com.monetra.domain.model.WealthInsight>) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(stringResource(R.string.smart_assistant_label), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+        insights.forEach { insight ->
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(modifier = Modifier.padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(modifier = Modifier.width(Spacing.md))
+                    Column {
+                        Text(insight.title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(insight.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LiquidityBreakdownSection(intel: WealthIntelligence) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(stringResource(R.string.liquidity_hierarchy_label), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            LiquidityIndicator(
+                label = stringResource(R.string.liquid_label),
+                amount = intel.liquidNetWorth,
+                color = Color(0xFF34C759),
+                modifier = Modifier.weight(1f)
+            )
+            LiquidityIndicator(
+                label = stringResource(R.string.semi_liquid_label),
+                amount = intel.semiLiquidAdjustedValue,
+                color = Color(0xFFFFCC00),
+                modifier = Modifier.weight(1f)
+            )
+            LiquidityIndicator(
+                label = stringResource(R.string.locked_label),
+                amount = intel.lockedAssetsValue,
+                color = Color(0xFF8E8E93),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
 
 @Composable fun LiquidityIndicator(label: String, amount: Double, color: Color, modifier: Modifier) {
     Surface(
@@ -333,12 +369,11 @@ fun ProjectionCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(Spacing.xl)) {
-            Text("Wealth Projection 🚀", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
-            Text("Simulate your future wealth growth", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.wealth_projection_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
+            Text(stringResource(R.string.wealth_projection_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             
             Spacer(modifier = Modifier.height(Spacing.xl))
             
-            // Visual Progress Bar
             val investedRatio = if (projection.finalWealth > 0) (projection.totalInvested / projection.finalWealth).toFloat() else 0f
             Column(modifier = Modifier.fillMaxWidth()) {
                 Box(
@@ -365,17 +400,16 @@ fun ProjectionCard(
                 }
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Invested: ₹%,.0f".format(projection.totalInvested), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    Text("Returns: ₹%,.0f".format(projection.totalReturns), style = MaterialTheme.typography.labelSmall, color = Color(0xFF34C759))
+                    Text(stringResource(R.string.invested_label_format, projection.totalInvested), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.returns_label_format, projection.totalReturns), style = MaterialTheme.typography.labelSmall, color = Color(0xFF34C759))
                 }
             }
 
             Spacer(modifier = Modifier.height(Spacing.xl))
 
-            // Simulation Controls
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
                 SimulationSlider(
-                    label = "Expected Return Rate",
+                    label = stringResource(R.string.expected_return_rate),
                     value = projection.interestRate.toFloat(),
                     range = 1f..30f,
                     displayValue = "${projection.interestRate.toInt()}%",
@@ -383,7 +417,7 @@ fun ProjectionCard(
                 )
                 
                 SimulationSlider(
-                    label = "Projection Horizon",
+                    label = stringResource(R.string.projection_horizon),
                     value = projection.projectionYears.toFloat(),
                     range = 1f..30f,
                     displayValue = "${projection.projectionYears} Years",
@@ -393,18 +427,17 @@ fun ProjectionCard(
 
             Spacer(modifier = Modifier.height(Spacing.xl))
 
-            // Breakdown
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    BreakdownRow("Total Invested", projection.totalInvested)
-                    BreakdownRow("Estimated Returns", projection.totalReturns)
+                    BreakdownRow(stringResource(R.string.total_invested_label), projection.totalInvested)
+                    BreakdownRow(stringResource(R.string.estimated_returns_label), projection.totalReturns)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Final Wealth", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.final_wealth_label), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Text("₹%,.0f".format(projection.finalWealth), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
                     }
                 }
@@ -412,8 +445,7 @@ fun ProjectionCard(
 
             Spacer(modifier = Modifier.height(Spacing.xl))
 
-            // Milestones
-            Text("Yearly Milestones", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.yearly_milestones), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(Spacing.md))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 projection.yearlyMilestones.keys.sorted().filter { it in listOf(1, 5, 10, 20, 30) }.forEach { year ->
@@ -478,13 +510,12 @@ fun MilestoneRow(year: Int, amount: Double) {
             }
         }
         Spacer(modifier = Modifier.width(Spacing.md))
-        Text("Projected Wealth", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.projected_wealth_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.weight(1f))
         Text("₹%,.0f".format(amount), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black))
     }
 }
 
-// ---- Investment Card ----
 @Composable
 fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
     val today = java.time.LocalDate.now()
@@ -502,15 +533,15 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Remove Investment") },
-            text = { Text("Remove \"${inv.name}\" from your portfolio?") },
+            title = { Text(stringResource(R.string.remove_investment_title)) },
+            text = { Text(stringResource(R.string.remove_investment_msg, inv.name)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(); showDeleteConfirm = false }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -543,11 +574,11 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Invested capital", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.invested_capital_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("₹%,.0f".format(invested), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Current value", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.current_value_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("₹%,.0f".format(currentVal), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
                 }
             }
@@ -566,14 +597,14 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
             Spacer(modifier = Modifier.height(Spacing.md))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                DetailItem("Started", inv.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")), modifier = Modifier.weight(1f))
+                DetailItem(stringResource(R.string.started), inv.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")), modifier = Modifier.weight(1f))
                 if (inv.interestRate > 0) {
-                    DetailItem("Yield", "${inv.interestRate}%", modifier = Modifier.weight(1f))
+                    DetailItem(stringResource(R.string.yield_label), "${inv.interestRate}%", modifier = Modifier.weight(1f))
                 }
                 if (inv.frequency == ContributionFrequency.MONTHLY) {
-                    DetailItem("Frequency", "Monthly", modifier = Modifier.weight(1f))
+                    DetailItem(stringResource(R.string.frequency_label), stringResource(R.string.monthly_label), modifier = Modifier.weight(1f))
                 } else {
-                    DetailItem("Frequency", "One-time", modifier = Modifier.weight(1f))
+                    DetailItem(stringResource(R.string.frequency_label), stringResource(R.string.onetime_label), modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -588,7 +619,6 @@ fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
     }
 }
 
-// ---- Empty State ----
 @Composable
 fun EmptyPortfolioPlaceholder() {
     Column(
@@ -600,11 +630,11 @@ fun EmptyPortfolioPlaceholder() {
     ) {
         Text("📊", fontSize = 64.sp)
         Text(
-            "No investments yet",
+            stringResource(R.string.no_investments_title),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
         )
         Text(
-            "Tap the button below to add your first SIP, FD, stocks or any investment to track your wealth.",
+            stringResource(R.string.no_investments_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -612,7 +642,6 @@ fun EmptyPortfolioPlaceholder() {
     }
 }
 
-// ---- Add Investment Bottom Sheet ----
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddInvestmentSheet(
@@ -654,10 +683,10 @@ fun AddInvestmentSheet(
                         onStartDateChange(date)
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -678,30 +707,27 @@ fun AddInvestmentSheet(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Text("Add Investment", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.add_investment), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
 
-            // 1. Asset Type Grid
-            Text("Investment Type", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.investment_type_label), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             InvestmentTypeGrid(selectedType = uiState.type, onTypeSelected = { onTypeChange(it) })
 
-            // Display Frequency Badge
             Card(
                 shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             ) {
                 Text(
-                    text = if (uiState.frequency == ContributionFrequency.MONTHLY) "🔄 Monthly Investment" else "💰 One-time Investment",
+                    text = if (uiState.frequency == ContributionFrequency.MONTHLY) stringResource(R.string.monthly_investment_tag) else stringResource(R.string.onetime_investment_tag),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // 2. Core Details
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = onNameChange,
-                label = { Text("Name (e.g. HDFC NIFTY 50)") },
+                label = { Text(stringResource(R.string.investment_name_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 isError = uiState.nameError != null,
@@ -709,13 +735,12 @@ fun AddInvestmentSheet(
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                // AMOUNT: Only one shown based on frequency
                 if (uiState.frequency == ContributionFrequency.MONTHLY) {
                     OutlinedTextField(
                         value = uiState.monthlyAmount,
                         onValueChange = onMonthlyAmountChange,
-                        label = { Text("Monthly SIP") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.monthly_sip_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -725,8 +750,8 @@ fun AddInvestmentSheet(
                     OutlinedTextField(
                         value = uiState.amount,
                         onValueChange = onAmountChange,
-                        label = { Text("Lump Sum Amount") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.lump_sum_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -734,7 +759,6 @@ fun AddInvestmentSheet(
                     )
                 }
 
-                // INTEREST RATE: Only for logic-based (FD, RD, PPF, Insurance etc)
                 val needsInterest = uiState.type !in listOf(
                     InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
                     InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE,
@@ -745,7 +769,7 @@ fun AddInvestmentSheet(
                     OutlinedTextField(
                         value = uiState.interestRate,
                         onValueChange = onInterestRateChange,
-                        label = { Text("Returns %") },
+                        label = { Text(stringResource(R.string.returns_percent_label)) },
                         suffix = { Text("%") },
                         modifier = Modifier.weight(0.8f),
                         shape = RoundedCornerShape(12.dp),
@@ -754,12 +778,11 @@ fun AddInvestmentSheet(
                 }
             }
 
-            // 3. Date Selection
             OutlinedTextField(
                 value = uiState.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy")),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Start Date") },
+                label = { Text(stringResource(R.string.start_date_label)) },
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null)
@@ -769,7 +792,6 @@ fun AddInvestmentSheet(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // 4. Market-based value (if applicable)
             val isMarketBased = uiState.type in listOf(
                 InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
                 InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE
@@ -779,12 +801,12 @@ fun AddInvestmentSheet(
                 OutlinedTextField(
                     value = uiState.currentValue,
                     onValueChange = onCurrentValueChange,
-                    label = { Text("Current Market Value") },
-                    prefix = { Text("₹") },
+                    label = { Text(stringResource(R.string.current_market_value_label)) },
+                    prefix = { Text(stringResource(R.string.rupee_symbol)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { Text("Leave blank if same as amount", style = MaterialTheme.typography.labelSmall) }
+                    supportingText = { Text(stringResource(R.string.leave_blank_desc), style = MaterialTheme.typography.labelSmall) }
                 )
             }
 
@@ -795,99 +817,54 @@ fun AddInvestmentSheet(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Save Investment", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(stringResource(R.string.save_investment), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }
 }
 
 @Composable
-fun SurvivalStat(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, modifier: Modifier) {
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-    }
-}
+fun InvestmentTypeGrid(
+    selectedType: InvestmentType,
+    onTypeSelected: (InvestmentType) -> Unit
+) {
+    val allTypes = InvestmentType.entries
+    val half = (allTypes.size + 1) / 2
+    val firstRow = allTypes.subList(0, half)
+    val secondRow = allTypes.subList(half, allTypes.size)
 
-@Composable
-fun AllocationSection(allocation: List<com.monetra.domain.model.AssetAllocationItem>) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text("Asset Allocation", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-        Row(
-            modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))
-        ) {
-            allocation.forEach { item ->
-                Box(
-                    modifier = Modifier
-                        .weight(item.percentage.toFloat().coerceAtLeast(0.01f))
-                        .fillMaxHeight()
-                        .background(Color(item.type.colorHex))
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            allocation.take(4).forEach { item ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(item.type.colorHex)))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("${item.type.displayName} ${item.percentage.toInt()}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun WealthInsightsSection(insights: List<com.monetra.domain.model.WealthInsight>) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text("Smart Assistant", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-        insights.forEach { insight ->
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        listOf(firstRow, secondRow).forEach { row ->
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                contentPadding = PaddingValues(horizontal = 2.dp)
             ) {
-                Row(modifier = Modifier.padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    }
-                    Spacer(modifier = Modifier.width(Spacing.md))
-                    Column {
-                        Text(insight.title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                        Text(insight.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                items(row.size) { i ->
+                    val type = row[i]
+                    val isSelected = type == selectedType
+                    val color = Color(type.colorHex)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onTypeSelected(type) },
+                        label = {
+                            Text(
+                                "${type.emoji} ${type.displayName}",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = color.copy(alpha = 0.15f),
+                            selectedLabelColor = color
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = color.copy(alpha = 0.5f),
+                            selectedBorderWidth = 1.5.dp
+                        )
+                    )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun LiquidityBreakdownSection(intel: WealthIntelligence) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text("Liquidity Hierarchy", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            LiquidityIndicator(
-                label = "Liquid",
-                amount = intel.liquidNetWorth,
-                color = Color(0xFF34C759),
-                modifier = Modifier.weight(1f)
-            )
-            LiquidityIndicator(
-                label = "Semi-liquid",
-                amount = intel.semiLiquidAdjustedValue,
-                color = Color(0xFFFFCC00),
-                modifier = Modifier.weight(1f)
-            )
-            LiquidityIndicator(
-                label = "Locked",
-                amount = intel.lockedAssetsValue,
-                color = Color(0xFF8E8E93),
-                modifier = Modifier.weight(1f)
-            )
         }
     }
 }

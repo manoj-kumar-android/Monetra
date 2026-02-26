@@ -6,7 +6,8 @@ data class PlanningOverview(
     val emergencySafety: EmergencySafetyAnalysis,
     val controlPlan: WeeklyControlPlan,
     val totalEmi: Double,
-    val totalInvestments: Double
+    val totalInvestments: Double,
+    val affordabilityCalculation: AffordabilityAnalysis? = null
 )
 
 data class MonthlySafetyAnalysis(
@@ -14,7 +15,8 @@ data class MonthlySafetyAnalysis(
     val savingsGap: Double,
     val emiRatio: Double,
     val isBurnRisk: Boolean,
-    val suggestedAction: String
+    val suggestedAction: String,
+    val dailyBurnRate: Double = 0.0
 )
 
 enum class SafetyStatus { GREEN, YELLOW, RED }
@@ -36,12 +38,16 @@ data class EmergencySafetyAnalysis(
 
 data class WeeklyControlPlan(
     val weeklyLimit: Double,
+    val dailyLimit: Double,
+    val remainingToday: Double,
+    val daysPassedInWeek: Int,
     val highRiskCategory: String?
 )
 
 data class AffordabilityAnalysis(
-    val expenseAmount: Double,
-    val impactOnSavings: Double,
-    val newSafetyStatus: SafetyStatus,
-    val message: String
+    val amount: Double,
+    val status: SafetyStatus,
+    val verdict: String,
+    val message: String,
+    val opportunityCost: String? = null
 )

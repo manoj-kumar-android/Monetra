@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
+
             
             MonetraTheme {
                 Surface(

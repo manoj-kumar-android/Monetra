@@ -23,38 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.unit.sp
-
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,16 +39,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 import com.monetra.ui.theme.Elevation
 import com.monetra.ui.theme.Spacing
-
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.TextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +56,7 @@ fun AddEditExpenseScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
 
-    androidx.compose.runtime.LaunchedEffect(viewModel.events) {
+    LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
             when (event) {
                 is AddEditEvent.SaveSuccess -> onNavigateBack()
@@ -114,16 +86,7 @@ fun AddEditExpenseScreen(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-            selectableDates = object : androidx.compose.material3.SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis <= System.currentTimeMillis()
-                }
-
-                override fun isSelectableYear(year: Int): Boolean {
-                    return year <= LocalDate.now().year
-                }
-            }
+            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -135,12 +98,12 @@ fun AddEditExpenseScreen(
                     }
                     showDatePicker = false
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         ) {
@@ -176,7 +139,7 @@ private fun AddEditExpenseContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Add Transaction",
+                        text = stringResource(if (title.isBlank()) R.string.add_transaction_title else R.string.edit_transaction_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold
                         )
@@ -186,7 +149,7 @@ private fun AddEditExpenseContent(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -209,14 +172,14 @@ private fun AddEditExpenseContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    shape = RoundedCornerShape(14.dp), // Apple style large button
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(
-                        text = "Save",
+                        text = stringResource(R.string.save),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         )
@@ -234,44 +197,26 @@ private fun AddEditExpenseContent(
         ) {
             Spacer(modifier = Modifier.height(Spacing.md))
             
-            // Transaction Type Segmented Control
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = !isIncome,
                     onClick = { onTypeChange(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        inactiveContainerColor = MaterialTheme.colorScheme.surface
-                    )
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
                 ) {
-                    Text(
-                        "Expense", 
-                        color = if (!isIncome) MaterialTheme.colorScheme.onSurface 
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.expense))
                 }
                 SegmentedButton(
                     selected = isIncome,
                     onClick = { onTypeChange(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        inactiveContainerColor = MaterialTheme.colorScheme.surface
-                    )
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                 ) {
-                    Text(
-                        "Income",
-                        color = if (isIncome) MaterialTheme.colorScheme.onSurface 
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.income))
                 }
             }
 
             Spacer(modifier = Modifier.height(Spacing.md))
             
+            // Suggestions (localized suggestions would be better, but for now we keep the strings or skip if not critical)
             val suggestions = if (!isIncome) {
                 listOf("Groceries", "Coffee", "Dinner", "Fuel", "Rent", "WiFi")
             } else {
@@ -279,18 +224,12 @@ private fun AddEditExpenseContent(
             }
             
             androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                contentPadding = PaddingValues(horizontal = 4.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 items(suggestions) { suggestion ->
-                    androidx.compose.material3.SuggestionChip(
+                    SuggestionChip(
                         onClick = { onTitleChange(suggestion) },
-                        label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) },
-                        shape = CircleShape,
-                        border = null,
-                        colors = androidx.compose.material3.SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
+                        label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
                     )
                 }
             }
@@ -298,63 +237,41 @@ private fun AddEditExpenseContent(
             Spacer(modifier = Modifier.height(Spacing.lg))
 
             Text(
-                text = "DETAILS",
+                text = stringResource(R.string.details_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
             )
 
-            // Grouped List Style Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp), // iOS grouped corner radius
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = Elevation.none)
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column {
-                    // Amount Field
                     GroupedTextField(
                         value = amount,
                         onValueChange = onAmountChange,
-                        placeholder = "₹0.00",
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = androidx.compose.ui.text.input.ImeAction.Next
-                        ),
-                        textStyle = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
+                        placeholder = stringResource(R.string.amount_placeholder),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        textStyle = MaterialTheme.typography.headlineMedium,
                         isError = amountError != null
                     )
-                    
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp, modifier = Modifier.padding(start = Spacing.lg))
-
-                    // Title Field
+                    HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
                     GroupedTextField(
                         value = title,
                         onValueChange = onTitleChange,
-                        placeholder = "Title",
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Words,
-                            imeAction = androidx.compose.ui.text.input.ImeAction.Next
-                        ),
+                        placeholder = stringResource(R.string.title_placeholder),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                         textStyle = MaterialTheme.typography.bodyLarge,
                         isError = titleError != null
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp, modifier = Modifier.padding(start = Spacing.lg))
-
-                    // Notes Field
+                    HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
                     GroupedTextField(
                         value = note,
                         onValueChange = onNoteChange,
-                        placeholder = "Notes",
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
-                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
-                        ),
+                        placeholder = stringResource(R.string.notes_placeholder),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         textStyle = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -363,65 +280,39 @@ private fun AddEditExpenseContent(
             Spacer(modifier = Modifier.height(Spacing.xl))
 
             Text(
-                text = "CATEGORY",
+                text = stringResource(R.string.category_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
             )
             
-            EmojiCategoryGrid(
-                selectedCategory = category,
-                onCategorySelect = onCategoryChange
-            )
+            EmojiCategoryGrid(category, onCategoryChange)
             
-            // Subtle validation errors
-            if (amountError != null) {
-                ErrorText(amountError)
-            }
-            if (titleError != null) {
-                ErrorText(titleError)
-            }
+            if (amountError != null) ErrorText(amountError)
+            if (titleError != null) ErrorText(titleError)
 
             Spacer(modifier = Modifier.height(Spacing.xl))
 
             Text(
-                text = "DATE",
+                text = stringResource(R.string.date_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
             )
 
-            // Date Picker Card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onDateClick),
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onDateClick),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = Elevation.none)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Date",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = formattedDate,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.date_label), modifier = Modifier.weight(1f))
+                    Text(formattedDate, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-
             Spacer(modifier = Modifier.height(Spacing.xxxl))
         }
     }
@@ -434,88 +325,58 @@ private fun GroupedTextField(
     placeholder: String,
     keyboardOptions: KeyboardOptions,
     textStyle: androidx.compose.ui.text.TextStyle,
-    isError: Boolean = false,
-    keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default
+    isError: Boolean = false
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = textStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp), // Adjust padding for standard card feel
+        placeholder = { Text(placeholder, style = textStyle) },
+        modifier = Modifier.fillMaxWidth(),
         textStyle = textStyle,
-        colors = androidx.compose.material3.TextFieldDefaults.colors(
+        colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent,
-            errorContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
+            unfocusedIndicatorColor = Color.Transparent
         ),
         keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
         isError = isError,
         singleLine = true
     )
 }
 
-
 @Composable
-private fun EmojiCategoryGrid(
-    selectedCategory: String,
-    onCategorySelect: (String) -> Unit
-) {
+private fun EmojiCategoryGrid(selected: String, onSelect: (String) -> Unit) {
     val categories = listOf(
-        "General" to "💰",
-        "Food" to "🍔",
-        "Transport" to "🚗",
-        "Shopping" to "🛍️",
-        "Fun" to "🎭",
-        "Bills" to "💡",
-        "Health" to "🏥",
-        "Salary" to "💸"
+        "General" to (R.string.cat_general to "💰"),
+        "Food" to (R.string.cat_food to "🍔"),
+        "Transport" to (R.string.cat_transport to "🚗"),
+        "Shopping" to (R.string.cat_shopping to "🛍️"),
+        "Fun" to (R.string.cat_fun to "🎭"),
+        "Bills" to (R.string.cat_bills to "💡"),
+        "Health" to (R.string.cat_health to "🏥"),
+        "Salary" to (R.string.cat_salary to "💸")
     )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp),
+        modifier = Modifier.fillMaxWidth().height(180.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-        contentPadding = PaddingValues(bottom = Spacing.md)
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        items(categories) { (name, emoji) ->
-            val isSelected = name == selectedCategory
+        items(categories) { (id, data) ->
+            val (resId, emoji) = data
+            val isSelected = id == selected
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCategorySelect(name) },
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().clickable { onSelect(id) },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                                    else MaterialTheme.colorScheme.surface
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                 ),
                 border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
             ) {
-                Column(
-                    modifier = Modifier.padding(Spacing.md),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = emoji, fontSize = 24.sp)
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                    )
+                Column(modifier = Modifier.padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(emoji, fontSize = 24.sp)
+                    Text(stringResource(resId), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
             }
         }
@@ -524,21 +385,9 @@ private fun EmojiCategoryGrid(
 
 @Composable
 private fun ErrorText(error: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = Spacing.sm, top = Spacing.xs)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(14.dp)
-        )
+    Row(modifier = Modifier.padding(start = Spacing.sm, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
         Spacer(modifier = Modifier.size(4.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error
-        )
+        Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
 }

@@ -17,11 +17,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.res.stringResource
 import com.monetra.ui.theme.Spacing
+import com.monetra.R
 
 data class HelpSection(
-    val title: String,
-    val description: String
+    val titleResId: Int,
+    val descriptionResId: Int
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +31,7 @@ data class HelpSection(
 fun ScreenHelpDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    title: String,
+    titleResId: Int,
     sections: List<HelpSection>
 ) {
     if (showDialog) {
@@ -39,13 +41,13 @@ fun ScreenHelpDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Info,
-                        contentDescription = "Info",
+                        contentDescription = stringResource(R.string.back),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(Spacing.sm))
                     Text(
-                        title, 
+                        stringResource(titleResId), 
                         fontWeight = FontWeight.Bold, 
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -67,13 +69,13 @@ fun ScreenHelpDialog(
                         ) {
                             Column(modifier = Modifier.padding(Spacing.sm)) {
                                 Text(
-                                    text = section.title,
+                                    text = stringResource(section.titleResId),
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.height(Spacing.xs))
                                 Text(
-                                    text = section.description,
+                                    text = stringResource(section.descriptionResId),
                                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -90,7 +92,7 @@ fun ScreenHelpDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
-                        "Got It / Samajh Gaya", 
+                        stringResource(R.string.samajh_gaya), 
                         modifier = Modifier.padding(vertical = 4.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -107,18 +109,20 @@ fun ScreenHelpDialog(
 
 @Composable
 fun HelpIconButton(onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-    ) {
-        Icon(
-            Icons.Default.Info, 
-            contentDescription = "Help Info", 
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
+    Box(modifier = Modifier.padding(end = Spacing.sm)) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+        ) {
+            Icon(
+                Icons.Default.Info, 
+                contentDescription = stringResource(R.string.back), 
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
     }
 }

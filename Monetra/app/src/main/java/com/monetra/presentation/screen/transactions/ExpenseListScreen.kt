@@ -74,6 +74,8 @@ import kotlinx.coroutines.launch
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import com.monetra.presentation.components.HelpIconButton
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,16 +121,16 @@ fun ExpenseListScreen(
         if (state.transactionToDelete != null) {
             AlertDialog(
                 onDismissRequest = viewModel::dismissDeleteDialog,
-                title = { Text("Delete Transaction") },
-                text = { Text("Are you sure you want to delete this transaction?") },
+                title = { Text(stringResource(R.string.delete_transaction_title)) },
+                text = { Text(stringResource(R.string.delete_transaction_msg)) },
                 confirmButton = {
                     TextButton(onClick = viewModel::confirmDelete) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = viewModel::dismissDeleteDialog) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -141,7 +143,7 @@ fun ExpenseListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Transactions",
+                        text = stringResource(R.string.transactions_title),
                         style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -158,7 +160,7 @@ fun ExpenseListScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_transaction_cd))
             }
         }
     ) { paddingValues ->
@@ -304,17 +306,17 @@ private fun EmptyState() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "💸",
+            text = "\uD83D\uDCB8",
             style = MaterialTheme.typography.displayLarge
         )
         Spacer(modifier = Modifier.height(Spacing.md))
         Text(
-            text = "No transactions found",
+            text = stringResource(R.string.no_transactions_found),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "Start tracking your expenses by adding a new one!",
+            text = stringResource(R.string.start_tracking_instruction),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -346,7 +348,7 @@ private fun MonthSelector(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onMonthSelected(selectedMonth.minusMonths(1)) }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.previous_month_cd))
                 }
                 
                 // Show "Today" button only if not in current month
@@ -362,7 +364,7 @@ private fun MonthSelector(
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(Spacing.xs))
-                        Text("Today", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.today), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                     }
                 }
             }
@@ -374,7 +376,7 @@ private fun MonthSelector(
                 color = MaterialTheme.colorScheme.onSurface
             )
             IconButton(onClick = { onMonthSelected(selectedMonth.plusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.next_month_cd))
             }
         }
     }
@@ -421,14 +423,13 @@ private fun SwipeableTransactionItem(
 
     SwipeToDismissBox(
         state = dismissState,
-        enableDismissFromStartToEnd = false,
         backgroundContent = {
             Box(
                 Modifier.fillMaxSize().padding(vertical = Spacing.xs).clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = Spacing.xl),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onErrorContainer)
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onErrorContainer)
             }
         },
         content = {

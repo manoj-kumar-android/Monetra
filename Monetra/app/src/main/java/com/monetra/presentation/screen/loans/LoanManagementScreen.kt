@@ -27,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.Loan
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,10 +43,10 @@ fun LoanManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Debt & EMIs", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.debt_emis_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -58,7 +60,7 @@ fun LoanManagementScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Loan")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_loan))
             }
         }
     ) { padding ->
@@ -70,7 +72,7 @@ fun LoanManagementScreen(
             if (loans.isEmpty()) {
                 item {
                     Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No loans or EMIs added yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.no_loans_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -89,12 +91,12 @@ fun LoanManagementScreen(
                     modifier = Modifier.padding(Spacing.xl).padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    Text("Add New EMI", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.add_new_emi), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     
                     OutlinedTextField(
                         value = uiState.name,
                         onValueChange = viewModel::onNameChange,
-                        label = { Text("Loan Name (e.g. Home Loan)") },
+                        label = { Text(stringResource(R.string.loan_name_placeholder)) },
                         isError = uiState.nameError != null,
                         supportingText = if (uiState.nameError != null) { { Text(uiState.nameError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -108,8 +110,8 @@ fun LoanManagementScreen(
                     OutlinedTextField(
                         value = uiState.principal,
                         onValueChange = viewModel::onPrincipalChange,
-                        label = { Text("Total Principal") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.total_principal)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         isError = uiState.principalError != null,
                         supportingText = if (uiState.principalError != null) { { Text(uiState.principalError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -123,8 +125,8 @@ fun LoanManagementScreen(
                     OutlinedTextField(
                         value = uiState.emi,
                         onValueChange = viewModel::onEmiChange,
-                        label = { Text("Monthly EMI") },
-                        prefix = { Text("₹") },
+                        label = { Text(stringResource(R.string.monthly_emi_label)) },
+                        prefix = { Text(stringResource(R.string.rupee_symbol)) },
                         isError = uiState.emiError != null,
                         supportingText = if (uiState.emiError != null) { { Text(uiState.emiError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -138,7 +140,7 @@ fun LoanManagementScreen(
                     OutlinedTextField(
                         value = uiState.tenure,
                         onValueChange = viewModel::onTenureChange,
-                        label = { Text("Tenure (Months)") },
+                        label = { Text(stringResource(R.string.tenure_months)) },
                         isError = uiState.tenureError != null,
                         supportingText = if (uiState.tenureError != null) { { Text(uiState.tenureError!!) } } else null,
                         keyboardOptions = KeyboardOptions(
@@ -154,7 +156,7 @@ fun LoanManagementScreen(
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Save Debt Plan")
+                        Text(stringResource(R.string.save_debt_plan))
                     }
                 }
             }
@@ -175,11 +177,11 @@ private fun LoanItem(loan: Loan, onDelete: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = loan.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "EMI: ₹%,.0f/mo".format(loan.monthlyEmi), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                Text(text = "${loan.remainingTenure} months left", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = stringResource(R.string.emi_format, loan.monthlyEmi), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Text(text = stringResource(R.string.months_left_suffix, loan.remainingTenure), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
             }
         }
     }

@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.monetra.R
 
 private val Brand    = Color(0xFF6C63FF)   // Indigo
 private val BrandAlt = Color(0xFF00C6FF)   // Sky blue
@@ -128,7 +130,7 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "₹",
+                        text = stringResource(R.string.rupee_symbol),
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Black,
                             fontSize = 52.sp
@@ -141,7 +143,7 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
             // ── Hero text ─────────────────────────────────────────────────
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Meet Monetra",
+                    text = stringResource(R.string.meet_monetra),
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontWeight = FontWeight.Black
                     ),
@@ -150,7 +152,7 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
-                    text = "Your personal finance OS — built to guide every rupee you earn.",
+                    text = stringResource(R.string.hero_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -167,22 +169,22 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
                     visible  = card1,
                     icon     = Icons.Default.AccountBalance,
                     iconTint = Brand,
-                    title    = "Complete Money Clarity",
-                    subtitle = "Track every expense, EMI and fixed cost — all in one beautiful place."
+                    title    = stringResource(R.string.feature1_title),
+                    subtitle = stringResource(R.string.feature1_subtitle)
                 )
                 AnimatedFeatureCard(
                     visible  = card2,
                     icon     = Icons.AutoMirrored.Filled.TrendingUp,
                     iconTint = Accent,
-                    title    = "Grow Your Wealth",
-                    subtitle = "Set savings goals, monitor investments and see your net worth rise."
+                    title    = stringResource(R.string.feature2_title),
+                    subtitle = stringResource(R.string.feature2_subtitle)
                 )
                 AnimatedFeatureCard(
                     visible  = card3,
                     icon     = Icons.Default.AutoAwesome,
                     iconTint = Color(0xFFFF9F0A),
-                    title    = "AI-Powered Insights",
-                    subtitle = "Smart nudges and what-if simulations guide every financial decision."
+                    title    = stringResource(R.string.feature3_title),
+                    subtitle = stringResource(R.string.feature3_subtitle)
                 )
             }
 
@@ -214,7 +216,7 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
                 )
             ) {
                 Text(
-                    text  = "Get Started",
+                    text  = stringResource(R.string.get_started),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -317,7 +319,7 @@ private fun PrivacyBadge() {
         )
         Spacer(modifier = Modifier.width(Spacing.xs))
         Text(
-            text  = "100% offline & private — your data never leaves your device",
+            text  = stringResource(R.string.privacy_badge_text),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = Accent,
             textAlign = TextAlign.Center

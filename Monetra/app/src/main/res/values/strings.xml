@@ -1,3 +1,392 @@
 <resources>
     <string name="app_name">Monetra</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="back">Back</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="samajh_gaya">Got It / Samajh Gaya</string>
+    <string name="rupee_symbol">₹</string>
+    <string name="finish">Finish</string>
+    <string name="next">Next</string>
+    <string name="undo">Undo</string>
+    <string name="today">Today</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="monthly_report">Monthly Report</string>
+    <string name="settings_title">Settings</string>
+    <string name="welcome_to_monetra">Welcome to Monetra!</string>
+    <string name="set_salary_instruction">Set your monthly salary in Settings to unlock your personalised financial dashboard.</string>
+    <string name="go_to_settings">⚙️  Go to Settings</string>
+    <string name="good_morning">Good Morning,</string>
+    <string name="good_afternoon">Good Afternoon,</string>
+    <string name="good_evening">Good Evening,</string>
+    <string name="there">there</string>
+    <string name="safe_to_spend_today">Safe to Spend Today</string>
+    <string name="redistributing_tomorrow">Redistributing from tomorrow</string>
+    <string name="daily_budget_format">Daily Budget: ₹%s</string>
+    <string name="fixed_bills">Fixed Bills</string>
+    <string name="monthly_commit">Monthly commit</string>
+    <string name="monthly_health">Monthly Health</string>
+    <string name="recent_activity">Recent Activity</string>
+    <string name="see_all">See All</string>
+
+    <!-- Assistant / Planning -->
+    <string name="assistant_title">Assistant</string>
+    <string name="add_financial_goal">Add Financial Goal</string>
+    <string name="goal_name_label">Goal Name (e.g., Vacation)</string>
+    <string name="target_amount_label">Target Amount</string>
+    <string name="goal_name_required">Goal name is required</string>
+    <string name="valid_amount_required">Enter a valid amount</string>
+    <string name="personal_finance_managers">Personal Finance Managers</string>
+    <string name="emis_debt">EMIs &amp; Debt</string>
+    <string name="investments_title">Investments</string>
+    <string name="no_debt">No debt</string>
+    <string name="not_started">Not started</string>
+    <string name="value_format">Value: ₹%,.0f</string>
+    <string name="monthly_emi_format">₹%,.0f/mo</string>
+    <string name="am_i_safe_month">Am I Safe This Month?</string>
+    <string name="savings_gap_label">Savings Gap</string>
+    <string name="emi_ratio_label">EMI Ratio</string>
+    <string name="high_burn_risk">High Burn Risk: You are spending faster than your budget allows.</string>
+    <string name="leakage_title">Where Is My Money Leaking?</string>
+    <string name="emergency_safety_runway">Emergency Safety (Runway)</string>
+    <string name="survival_months_format">You can survive %.1f months without income.</string>
+    <string name="survival_target">Survival target: 6 months</string>
+    <string name="impact_checker_title">Impact Checker</string>
+    <string name="impact_checker_instruction">Thinking of buying something? Monetra will check the health impact.</string>
+    <string name="how_much_is_it">How much is it?</string>
+    <string name="verdict_big_purchase">Big Purchase!</string>
+    <string name="verdict_savings_risk">Savings Risk</string>
+    <string name="verdict_safe_to_buy">Safe to Buy</string>
+    <string name="impact_checker_big_purchase_advice">This costs about %.1f days of your life\'s earnings. This will significantly tap into your emergency stash.</string>
+    <string name="impact_checker_savings_risk_advice">This will use up money you planned to save. You\'ll need to be extra careful for a few days to recover.</string>
+    <string name="impact_checker_safe_advice">This is within your \'Fun Money\' portion of the month. Enjoy!</string>
+    <string name="daily_pocket_money">Daily Pocket Money</string>
+    <string name="todays_allowance">Today\'s Allowance</string>
+    <string name="limit_format">limit ₹%,.0f</string>
+    <string name="spent_today_label">Spent Today</string>
+    <string name="used_percent_format">%d%% Used</string>
+    <string name="pacing_tip_format">Pacing: Keep spending below ₹%,.0f tomorrow for a better weekend limit.</string>
+    <string name="coach_prefix">Coach: %s</string>
+
+    <!-- Add/Edit Transaction -->
+    <string name="add_transaction_title">Add Transaction</string>
+    <string name="edit_transaction_title">Edit Transaction</string>
+    <string name="expense">Expense</string>
+    <string name="income">Income</string>
+    <string name="income_label">Income</string>
+    <string name="details_label">DETAILS</string>
+    <string name="category_label">CATEGORY</string>
+    <string name="date_label">DATE</string>
+    <string name="title_placeholder">Title</string>
+    <string name="notes_placeholder">Notes</string>
+    <string name="amount_placeholder">₹0.00</string>
+
+    <!-- Help Screens Guide Titles -->
+    <string name="help_center">Help Center</string>
+    <string name="help_dashboard_guide_title">Dashboard Guide</string>
+    <string name="help_assistant_guide_title">Money Coach Guide</string>
+    <string name="help_transactions_guide_title">Transactions Guide</string>
+    <string name="help_simulator_guide_title">Wealth Simulator Guide</string>
+    <string name="help_loans_guide_title">Loans &amp; EMI Guide</string>
+    <string name="help_investments_guide_title">Wealth Tracker Guide</string>
+    <string name="help_fixed_costs_guide_title">Fixed Bills Guide</string>
+
+    <!-- Dashboard Help Content -->
+    <string name="help_dashboard_step1_title">Step 1: Check \'Safe to Spend\'</string>
+    <string name="help_dashboard_step1_desc">This is your primary guide. It shows exactly how much money you can spend TODAY to stay on track for your monthly goals.\n\n(Aaj kitne paise kharch kar sakte hain ye card bata raha hai.)</string>
+    <string name="help_dashboard_step2_title">Step 2: Watch the Liquid Bar</string>
+    <string name="help_dashboard_step2_desc">As you spend, the bar fills up. If you overspend today, Monetra automatically borrows from your tomorrow\'s budget to keep your savings safe.\n\n(Progress bar bharega toh matlab aaj ka limit khatam ho raha hai.)</string>
+    <string name="help_dashboard_step3_title">Step 3: Monitor \'Monthly Health\'</string>
+    <string name="help_dashboard_step3_desc">See the \'Waterfall\' breakdown. Monetra takes your Salary, subtracts your Savings Goal, EMIs, and Fixed Bills. What remains is your \'Allowance\' for the month.\n\n(Salary se savings aur EMI nikalne ke baad jo bachega, wahi aapka asli kharcha hai.)</string>
+
+    <!-- Assistant Help Content -->
+    <string name="help_assistant_step1_title">Step 1: Use the \'Impact Checker\'</string>
+    <string name="help_assistant_step1_desc">Thinking of buying something? Enter the price. The Coach checks three things:\n• GOAL CHECK: Do you have enough extra cash after meeting your monthly savings target?\n• PACING CHECK: Is this cost more than 3 days of your usual spending?\n• SURVIVAL CHECK: Is this a \'Big Purchase\' costing more than 15 days of your survival budget?\n\n(Naya kharcha karne se pehle amount daalein, Monetra aapki bachat aur survival budget check karke sahi salah dega.)</string>
+    <string name="help_assistant_step2_title">Step 2: Understand the \'Verdict\'</string>
+    <string name="help_assistant_step2_desc">🟢 Safe: Enjoy! No impact on your goals.\n🟡 Savings Risk: This uses money meant for your savings target. You\'ll need to cut back later.\n🔴 Big Purchase!: This costs many days of your life\'s earnings and hits your emergency stash.\n\n(Green matlab safe, Yellow matlab bachat kam hogi, Red matlab bada kharcha jo emergency stash ko asar karega.)</string>
+    <string name="help_assistant_step3_title">Step 3: Follow \'Daily Pocket Money\'</string>
+    <string name="help_assistant_step3_desc">This is your \'Goldilocks\' number. If you stay below this every day, your savings goal is 100% guaranteed. If you overspend today, Monetra reduces tomorrow\'s amount to keep you safe.\n\n(Ye aapka safe limit hai. Isse kam kharcha karenge toh mahine ke end mein bachat pakki hai.)</string>
+    <string name="help_assistant_step4_title">Step 4: Watch your \'Essential Stash\'</string>
+    <string name="help_assistant_step4_desc">Calculated as: [Total Cash] ÷ [Fixed Bills + Survival Spend]. It tells you exactly how many months you can survive if your income stops today. Target: 6 months.\n\n(Survival Runway: Bina naukri ke ghar kitne mahine chalega. Target 6 mahine rakhein.)</string>
+
+    <!-- Transactions Help Content -->
+    <string name="help_transactions_step1_title">Step 1: Track as you go</string>
+    <string name="help_transactions_step1_desc">Tap the \'+\' button to add spends. Monetra categorizes them to help you find \'Money Leakage\' later.\n\n(Kharcha hote hi add karein taaki hisaab hamesha up-to-date rahe.)</string>
+    <string name="help_transactions_step2_title">Step 2: Swipe to Navigate</string>
+    <string name="help_transactions_step2_desc">Swipe left or right on the list to jump between months. No buttons needed—smooth and fluid.\n\n(Mahina badalne ke liye bas swipe karein.)</string>
+
+    <!-- Simulator Help Content -->
+    <string name="help_simulator_step1_title">Step 1: Plan \'What-If\' Scenarios</string>
+    <string name="help_simulator_step1_desc">What if you get a 20% hike? What if you buy a car? Enter these scenarios to see your future.\n\n(Nayi job ya naye kharche ka asar agle 1 saal ki bachat pe dekhein.)</string>
+    <string name="help_simulator_step2_title">Step 2: 12-Month Projection</string>
+    <string name="help_simulator_step2_desc">Watch the graph predict your net worth for the next year. It accounts for your salary, current spending habits, and existing debts.\n\n(Ye aapka agle 1 saal ki bachat ka sateek andaza lagata hai.)</string>
+
+    <!-- Loans Help Content -->
+    <string name="help_loans_step1_title">Centralize your Debt</string>
+    <string name="help_loans_step1_desc">Add all your EMIs here. Monetra prioritizes these as \'Committed Spend\' and removes them from your \'Safe to Spend\' immediately.\n\n(Saare EMI yahan add karein, ye sabse pehle salary se deduct hote hain.)</string>
+
+    <!-- Investments Help Content -->
+    <string name="help_investments_step1_title">1. Portfolio Creation</string>
+    <string name="help_investments_step1_desc">Begin by adding your assets. Group them into Monthly (SIPs) or One-time (FDs, Stocks, Gold). Monetra uses this frequency to correctly calculate your future growth and current worth.\n\n(Apne investments add karein: SIP mahine ke liye aur Stocks/Gold ek baar ke liye.)</string>
+    <string name="help_investments_step2_title">2. Survival Status &amp; Runway</string>
+    <string name="help_investments_step2_desc">The Hero Card at the top tells you your \'Financial Runway\'. This is exactly how many months you can maintain your current lifestyle if your income stops today. A healthy target is 6 months.\n\n(Ye card batata hai ki bina income ke aapka ghar kitne mahine chal sakta hai.)</string>
+    <string name="help_investments_step3_title">3. Liquidity Hierarchy</string>
+    <string name="help_investments_step3_desc">Not all money is easy to spend. Monetra categorizes your wealth into:\n• Liquid: Cash/Savings available instantly.\n• Semi-liquid: Stocks/Mutual Funds (takes 2-3 days).\n• Locked: PPF, EPF, Real Estate (not for emergencies).\n\n(Paise kitni jaldi hath mein aayenge: Cash turant, Stocks 2 din, Real Estate lock rehta hai.)</string>
+    <string name="help_investments_step4_title">4. Asset Allocation &amp; Insights</string>
+    <string name="help_investments_step4_desc">Check the visual breakdown of your portfolio. The Smart Assistant provides real-time nudges, like warning if you have too much cash idle or too little in emergency funds.\n\n(Apne assets ka batwaara dekhein aur AI coach ki sahi salah lein.)</string>
+    <string name="help_investments_step5_title">5. Wealth Projection Simulator</string>
+    <string name="help_investments_step5_desc">Use the sliders at the bottom to simulate your future wealth. Adjust the expected return rate and projection years to see how your net worth grows over time with Compound Interest.\n\n(Future net worth dekhein: Return rate aur saal badalkar simulation karein.)</string>
+
+    <!-- Fixed Costs Help Content -->
+    <string name="help_fixed_costs_step1_title">Automate Fixed Spends</string>
+    <string name="help_fixed_costs_step1_desc">Add Rent, Internet, and Electricity. These are reserved automatically every month so you never miss a payment.\n\n(Pakke kharche jaise kiraaya ya bill yahan add karein.)</string>
+
+    <string name="help_general_title">General Help</string>
+    <string name="help_general_desc">Explore categories to master your money with Monetra.</string>
+
+    <!-- Categories -->
+    <string name="cat_general">General</string>
+    <string name="cat_food">Food</string>
+    <string name="cat_transport">Transport</string>
+    <string name="cat_shopping">Shopping</string>
+    <string name="cat_fun">Fun</string>
+    <string name="cat_bills">Bills</string>
+    <string name="cat_health">Health</string>
+    <string name="cat_salary">Salary</string>
+
+    <!-- Report / Analysis -->
+    <string name="monthly_analysis_title">Monthly Analysis</string>
+    <string name="financial_performance">Financial Performance</string>
+    <string name="total_income">Total Income</string>
+    <string name="total_outlays">Total Outlays</string>
+    <string name="versus_last_month">Versus Last Month</string>
+    <string name="monthly_income_label">Monthly Income</string>
+    <string name="total_expenses_label">Total Expenses</string>
+    <string name="actual_savings_label">Actual Savings</string>
+    <string name="investments_label">Investments</string>
+    <string name="top_spending_categories">Top Spending Categories</string>
+    <string name="emi_stress_level_label">EMI Stress Level</string>
+    <string name="personalized_improvements">Personalized Improvements</string>
+    <string name="what_if_simulator">What-If Simulator</string>
+    <string name="what_if_simulator_desc">Test life decisions and see their impact on your financial health score.</string>
+
+    <string name="stress_critical">CRITICAL</string>
+    <string name="stress_high">HIGH</string>
+    <string name="stress_moderate">MODERATE</string>
+    <string name="stress_healthy">HEALTHY</string>
+
+    <string name="stress_critical_desc" formatted="false">EMIs exceed 50% of income — this is financially dangerous. Reduce debt immediately.</string>
+    <string name="stress_high_desc" formatted="false">EMIs are between 35–50% of income — above the safe limit. Avoid new loans.</string>
+    <string name="stress_moderate_desc" formatted="false">EMIs are 20–35% of income — manageable, but keep an eye on new commitments.</string>
+    <string name="stress_healthy_desc" formatted="false">EMIs are under 20% of income — excellent! You have a healthy debt load.</string>
+
+    <string name="refresh">Refresh</string>
+
+    <string name="profile_financial_goals">PROFILE &amp; FINANCIAL GOALS</string>
+    <string name="your_name_label">Your Name</string>
+    <string name="monthly_income_label_settings">Monthly Income</string>
+    <string name="monthly_savings_goal_label">Monthly Savings Goal</string>
+    <string name="saved_successfully">Saved Successfully</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="settings_instruction">These values are used to calculate your \'Safe to Spend\' limit. Ensure they are accurate for better insights.</string>
+    <string name="preferences">PREFERENCES</string>
+    <string name="manage_category_budgets">Manage Category Budgets</string>
+    <string name="calculating_impact">Calculating Impact...</string>
+
+    <!-- Loans / Debt -->
+    <string name="debt_emis_title">Debt &amp; EMIs</string>
+    <string name="add_loan">Add Loan</string>
+    <string name="no_loans_empty">No loans or EMIs added yet.</string>
+    <string name="add_new_emi">Add New EMI</string>
+    <string name="loan_name_placeholder">Loan Name (e.g. Home Loan)</string>
+    <string name="total_principal">Total Principal</string>
+    <string name="monthly_emi_label">Monthly EMI</string>
+    <string name="tenure_months">Tenure (Months)</string>
+    <string name="save_debt_plan">Save Debt Plan</string>
+    <string name="emi_format">EMI: ₹%,.0f/mo</string>
+    <string name="months_left_suffix">%d months left</string>
+
+    <!-- Investments / Wealth -->
+    <string name="wealth_intelligence_title">Wealth Intelligence</string>
+    <string name="add_investment">Add Investment</string>
+    <string name="monthly_investments_header">Monthly Investments (SIP/RD)</string>
+    <string name="onetime_investments_header">One-time Assets (FD/Stocks/Gold)</string>
+    <string name="financial_survival_status">Financial Survival Status</string>
+    <string name="survival_buffer">Survival Buffer</string>
+    <string name="liquid_wealth">Liquid Wealth</string>
+    <string name="wealth_projection_title">Wealth Projection 🚀</string>
+    <string name="wealth_projection_desc">Simulate your future wealth growth</string>
+    <string name="invested_label_format">Invested: ₹%,.0f</string>
+    <string name="returns_label_format">Returns: ₹%,.0f</string>
+    <string name="expected_return_rate">Expected Return Rate</string>
+    <string name="projection_horizon">Projection Horizon</string>
+    <string name="total_invested_label">Total Invested</string>
+    <string name="estimated_returns_label">Estimated Returns</string>
+    <string name="final_wealth_label">Final Wealth</string>
+    <string name="yearly_milestones">Yearly Milestones</string>
+    <string name="projected_wealth_label">Projected Wealth</string>
+    <string name="remove_investment_title">Remove Investment</string>
+    <string name="remove_investment_msg">Remove \"%s\" from your portfolio?</string>
+    <string name="remove">Remove</string>
+    <string name="invested_capital_label">Invested capital</string>
+    <string name="current_value_label">Current value</string>
+    <string name="started">Started</string>
+    <string name="yield_label">Yield</string>
+    <string name="frequency_label">Frequency</string>
+    <string name="monthly_label">Monthly</string>
+    <string name="onetime_label">One-time</string>
+    <string name="no_investments_title">No investments yet</string>
+    <string name="no_investments_desc">Tap the button below to add your first SIP, FD, stocks or any investment to track your wealth.</string>
+    <string name="investment_type_label">Investment Type</string>
+    <string name="monthly_investment_tag">🔄 Monthly Investment</string>
+    <string name="onetime_investment_tag">💰 One-time Investment</string>
+    <string name="investment_name_placeholder">Name (e.g. HDFC NIFTY 50)</string>
+    <string name="monthly_sip_label">Monthly SIP</string>
+    <string name="lump_sum_label">Lump Sum Amount</string>
+    <string name="returns_percent_label" formatted="false">Returns %</string>
+    <string name="start_date_label">Start Date</string>
+    <string name="current_market_value_label">Current Market Value</string>
+    <string name="leave_blank_desc">Leave blank if same as amount</string>
+    <string name="save_investment">Save Investment</string>
+    <string name="asset_allocation_label">Asset Allocation</string>
+    <string name="smart_assistant_label">Smart Assistant</string>
+    <string name="liquidity_hierarchy_label">Liquidity Hierarchy</string>
+    <string name="liquid_label">Liquid</string>
+    <string name="semi_liquid_label">Semi-liquid</string>
+    <string name="locked_label">Locked</string>
+
+    <!-- Simulator -->
+    <string name="simulator_title">What-If Simulator</string>
+    <string name="simulator_subtitle">Safe future planning — no real money at risk</string>
+    <string name="reset_all">Reset all</string>
+    <string name="fetching_data">Fetching your financial data…</string>
+    <string name="budget_overloaded_title">Budget Overloaded! ⚠️</string>
+    <string name="budget_overloaded_msg">Your total commitments (₹%1$,.0f) exceed projected income (₹%2$,.0f). Reduce EMI or SIP to bring this under control.</string>
+    <string name="emi_high_title">EMI Load is Too High</string>
+    <string name="emi_high_msg">EMI ratio %1$,.1f%% is above the safe 40%% limit. Try reducing new EMI or increasing salary.</string>
+    <string name="sip_aggressive_title">SIP Amount is Very Aggressive </string>
+    <string name="sip_aggressive_msg">Investing more than 50% of income is risky. Make sure you have at least 3 months emergency fund first.</string>
+    <string name="reset_all_params">Reset All Parameters</string>
+    <string name="status_healthy">✅ Healthy Budget</string>
+    <string name="status_moderate">⚠️ Moderate Risk</string>
+    <string name="status_risk">🚨 Budget at Risk!</string>
+    <string name="status_healthy_desc">Your finances look safe with this scenario.</string>
+    <string name="status_moderate_desc">This scenario stretches your budget a bit.</string>
+    <string name="status_risk_desc">This scenario could cause financial stress!</string>
+    <string name="adjust_sliders_hint">Adjust the sliders below\nto simulate a scenario</string>
+    <string name="financial_snapshot">Financial Snapshot</string>
+    <string name="current_projected">Current → Projected</string>
+    <string name="move_sliders_hint">Move sliders to simulate</string>
+    <string name="fixed_expenses">Fixed Expenses</string>
+    <string name="investments_sip">Investments / SIP</string>
+    <string name="net_savings">Net Savings</string>
+    <string name="adjust_parameters">Adjust Parameters</string>
+    <string name="salary_hike_label">Salary Hike / Increase</string>
+    <string name="salary_hike_hint">e.g. Set to ₹10,000 if expecting a raise next month</string>
+    <string name="new_monthly_emi">New Monthly EMI</string>
+    <string name="new_emi_hint">Want a car loan or home loan? Add that EMI here. Safe cap: ₹%,.0f</string>
+    <string name="new_monthly_sip">New Monthly SIP / Investment</string>
+    <string name="new_sip_hint">Planning to start a new SIP? Safe max: ₹%,.0f</string>
+    <string name="savings_target_adj">Savings Target Adjustment</string>
+    <string name="savings_target_hint">Increase/decrease your monthly savings goal</string>
+    <string name="safe_label_format">Safe: ₹%,.0f</string>
+    <string name="above_safe_limit">Above safe limit — this could strain your budget!</string>
+    <string name="impact_analysis">Impact Analysis</string>
+    <string name="invest_ratio_label">Invest. Ratio</string>
+    <string name="emi_ratio_safe_hint">Safe limit: &lt; 40%</string>
+    <string name="invest_ratio_ideal_hint">Ideal: &gt; 15%</string>
+    <string name="deficit_desc">Deficit! You\'d be spending more than you earn.</string>
+    <string name="left_after_commitments">Amount left after all commitments</string>
+    <string name="verdict_cannot_afford">❌ Cannot afford this scenario</string>
+    <string name="verdict_emi_high">⚠️ EMI load is too high — risky</string>
+    <string name="verdict_stretched">🟡 Budget is stretched — proceed carefully</string>
+    <string name="verdict_safe">✅ This scenario looks financially safe!</string>
+    <string name="premium_feature">💎 Premium Feature</string>
+    <string name="premium_simulator_desc">The What-If Simulator helps you plan life decisions by projecting financial impacts before you make them.</string>
+    <string name="upgrade_premium">Upgrade to Monetra Premium</string>
+    <string name="savings_projection_12m">12-Month Savings Projection</string>
+    <string name="simulated">Simulated</string>
+    <string name="current_pace">Current pace</string>
+    <string name="deficit_zone">Deficit zone</string>
+    <string name="negative_savings_warning">Negative savings — deficit grows each month!</string>
+
+    <!-- Budgets -->
+    <string name="budget_guard_title">Budget Guard</string>
+    <string name="budget_guard_instruction">Set limits for each category to stay on track with your financial health score.</string>
+    <string name="set_limit_for_format">Set Limit for %s</string>
+    <string name="limit_amount_label">Limit Amount</string>
+    <string name="limit_display_format">Limit: ₹%,.0f</string>
+    <string name="edit_limit">Edit Limit</string>
+
+    <!-- Snapshot -->
+    <string name="snapshot_title_header">Financial Snapshot</string>
+    <string name="monthly_overview">Monthly Overview</string>
+    <string name="monthly_salary_label">Monthly Salary</string>
+    <string name="savings_analysis">Savings Analysis</string>
+    <string name="target_savings_label">Target Savings</string>
+    <string name="suggested_improvements">Suggested Improvements</string>
+    <string name="status_excellent">EXCELLENT</string>
+    <string name="status_stable">STABLE</string>
+    <string name="status_action_required">ACTION REQUIRED</string>
+    <string name="health_healthy_desc">Your financial health is in great shape.</string>
+    <string name="health_moderate_desc">Your finances are stable but can be optimized.</string>
+    <string name="health_risk_desc">Immediate adjustments are recommended.</string>
+
+    <!-- Welcome -->
+    <string name="meet_monetra">Meet Monetra</string>
+    <string name="hero_subtitle">Your personal finance OS — built to guide every rupee you earn.</string>
+    <string name="feature1_title">Complete Money Clarity</string>
+    <string name="feature1_subtitle">Track every expense, EMI and fixed cost — all in one beautiful place.</string>
+    <string name="feature2_title">Grow Your Wealth</string>
+    <string name="feature2_subtitle">Set savings goals, monitor investments and see your net worth rise.</string>
+    <string name="feature3_title">AI-Powered Insights</string>
+    <string name="feature3_subtitle">Smart nudges and what-if simulations guide every financial decision.</string>
+    <string name="privacy_badge_text">100%% offline &amp; private — your data never leaves your device</string>
+    <string name="get_started">Get Started</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Welcome to Monetra 🚀</string>
+    <string name="onboarding_subtitle">Let\'s set up your financial baseline to calculate your safe-to-spend allowance.</string>
+    <string name="onboarding_step1_title">Step 1: Commitments</string>
+    <string name="onboarding_step1_subtitle">What are your mandatory monthly utility bills and subscriptions?</string>
+    <string name="bill_name_hint">Bill Name (e.g., Rent, Internet)</string>
+    <string name="amount_label">Amount</string>
+    <string name="add_fixed_cost">Add Fixed Cost</string>
+    <string name="onboarding_step2_title">Step 2: Loans &amp; EMIs</string>
+    <string name="onboarding_step2_subtitle">Do you have any ongoing loan EMIs or debts?</string>
+    <string name="loan_name_hint">Loan Name (e.g., Car, Home)</string>
+    <string name="monthly_emi_label_onboarding">Monthly EMI Amount</string>
+    <string name="add_emi_onboarding">Add EMI</string>
+    <string name="onboarding_step3_title">The Monetra Magic ✨</string>
+    <string name="onboarding_step3_subtitle">Here is how we calculate your true Safe-to-Spend limit.</string>
+    <string name="safe_to_spend_label">Safe-to-Spend</string>
+    <string name="spend_freely_instruction">Spend freely from this allowance! Monetra will guide you daily to keep you on track.</string>
+
+    <!-- Fixed Costs (Monthly Expense Screen) -->
+    <string name="fixed_monthly_costs_title">Fixed Monthly Costs</string>
+    <string name="fixed_costs_instruction">Add recurring expenses like Rent, WiFi, Netflix, or Electricity. These will be automatically deducted from your daily budget.</string>
+    <string name="no_fixed_costs_empty">No fixed costs added yet.</string>
+    <string name="add_recurring_cost_title">Add Recurring Cost</string>
+    <string name="recurring_expense_hint">Expense Name (e.g. Rent)</string>
+    <string name="save_monthly_cost">Save Monthly Cost</string>
+    <string name="per_month_format">₹%,.0f per month</string>
+
+    <!-- Transactions / Expense List -->
+    <string name="transactions_title">Transactions</string>
+    <string name="add_transaction_cd">Add Transaction</string>
+    <string name="no_transactions_found">No transactions found</string>
+    <string name="start_tracking_instruction">Start tracking your expenses by adding a new one!</string>
+    <string name="previous_month_cd">Previous Month</string>
+    <string name="next_month_cd">Next Month</string>
+    <string name="delete_transaction_title">Delete Transaction</string>
+    <string name="delete_transaction_msg">Are you sure you want to delete this transaction?</string>
+
 </resources>
