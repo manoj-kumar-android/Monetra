@@ -86,6 +86,7 @@ class MonthlyExpenseViewModel @Inject constructor(
         viewModelScope.launch {
             addMonthlyExpense(
                 MonthlyExpense(
+                    id = state.editingId ?: 0L,
                     name = state.name.trim(),
                     amount = amount!!,
                     category = state.category,
@@ -96,6 +97,21 @@ class MonthlyExpenseViewModel @Inject constructor(
             
             _uiState.update { MonthlyExpenseUiState() }
             _uiState.update { it.copy(isAddSheetOpen = false) }
+        }
+    }
+
+    fun onEditExpense(expense: MonthlyExpense) {
+        _uiState.update {
+            it.copy(
+                editingId = expense.id,
+                name = expense.name,
+                amount = if (expense.amount % 1.0 == 0.0) expense.amount.toInt().toString() else expense.amount.toString(),
+                category = expense.category,
+                dueDay = expense.dueDay,
+                isAddSheetOpen = true,
+                nameError = null,
+                amountError = null
+            )
         }
     }
 
@@ -130,11 +146,12 @@ class MonthlyExpenseViewModel @Inject constructor(
 
     fun toggleAddSheet(isOpen: Boolean) {
         _uiState.update { it.copy(isAddSheetOpen = isOpen) }
-        if (!isOpen) _uiState.update { it.copy(name = "", amount = "", nameError = null, amountError = null, dueDay = 1) }
+        if (!isOpen) _uiState.update { it.copy(editingId = null, name = "", amount = "", nameError = null, amountError = null, dueDay = 1) }
     }
 }
 
 data class MonthlyExpenseUiState(
+    val editingId: Long? = null,
     val name: String = "",
     val amount: String = "",
     val category: String = "Bills",

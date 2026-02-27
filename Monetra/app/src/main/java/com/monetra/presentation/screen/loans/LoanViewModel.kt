@@ -135,12 +135,13 @@ class LoanViewModel @Inject constructor(
         viewModelScope.launch {
             addLoan(
                 Loan(
+                    id = state.editingId ?: 0L,
                     name = state.name.trim(),
-                    totalPrincipal = principal,
-                    annualInterestRate = rate,
+                    totalPrincipal = principal!!,
+                    annualInterestRate = rate!!,
                     monthlyEmi = emi,
                     startDate = state.startDate,
-                    tenureMonths = tenure,
+                    tenureMonths = tenure!!,
                     remainingTenure = remainingTenure,
                     category = state.category
                 )
@@ -148,6 +149,22 @@ class LoanViewModel @Inject constructor(
             _uiState.update { LoanUiState() }
             _uiState.update { it.copy(isAddSheetOpen = false) }
         }
+    }
+
+    fun onEditLoan(loan: Loan) {
+        _uiState.update {
+            it.copy(
+                editingId = loan.id,
+                name = loan.name,
+                principal = loan.totalPrincipal.toString(),
+                interestRate = loan.annualInterestRate.toString(),
+                tenure = loan.tenureMonths.toString(),
+                startDate = loan.startDate,
+                category = loan.category,
+                isAddSheetOpen = true
+            )
+        }
+        recalculateEmi()
     }
 
     fun requestDeleteLoan(loan: Loan) {
@@ -203,6 +220,7 @@ data class LoanUiState(
     val category: String = "Personal Loan",
     val calculatedEmi: Double = 0.0,
     val isAddSheetOpen: Boolean = false,
+    val editingId: Long? = null,
     // Errors
     val nameError: String? = null,
     val principalError: String? = null,

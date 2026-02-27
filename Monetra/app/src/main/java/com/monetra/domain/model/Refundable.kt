@@ -16,8 +16,6 @@ data class Refundable(
     val note: String?,
     val isPaid: Boolean = false,
     val remindMe: Boolean = false,
-    val sendSmsReminder: Boolean = false,
-    val sendSmsImmediately: Boolean = false,
     val entryType: RefundableType = RefundableType.LENT
 ) {
     val status: RefundableStatus

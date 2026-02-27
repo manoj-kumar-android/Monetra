@@ -73,7 +73,11 @@ fun RefundableScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
+        },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -294,7 +298,7 @@ private fun RefundableItemRow(
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (item.remindMe || item.sendSmsReminder) {
+                    if (item.remindMe) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             Icons.Default.NotificationsActive,

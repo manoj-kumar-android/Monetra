@@ -17,7 +17,5 @@ data class RefundableEntity(
     val note: String?,
     val isPaid: Boolean = false,
     val remindMe: Boolean = false,
-    val sendSmsReminder: Boolean = false,
-    val sendSmsImmediately: Boolean = false,
     val entryType: String = "LENT"
 )

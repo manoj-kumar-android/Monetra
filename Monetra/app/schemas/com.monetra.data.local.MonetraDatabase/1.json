@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3c1fb35bb8f8eba04e85d7d92817adaa",
+    "identityHash": "e0346081c9630e94c2016f9546fbf943",
     "entities": [
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `category` TEXT NOT NULL, `date` TEXT NOT NULL, `note` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `category` TEXT NOT NULL, `date` TEXT NOT NULL, `note` TEXT NOT NULL, `linkedBillId` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -49,6 +49,11 @@
             "columnName": "note",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "linkedBillId",
+            "columnName": "linkedBillId",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -72,7 +77,7 @@
       },
       {
         "tableName": "user_preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, `projectionRate` REAL NOT NULL, `projectionYears` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `currentSavings` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, `projectionRate` REAL NOT NULL, `projectionYears` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -95,6 +100,12 @@
           {
             "fieldPath": "monthlySavingsGoal",
             "columnName": "monthlySavingsGoal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentSavings",
+            "columnName": "currentSavings",
             "affinity": "REAL",
             "notNull": true
           },
@@ -197,7 +208,7 @@
       },
       {
         "tableName": "investments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `startDate` TEXT NOT NULL, `amount` REAL NOT NULL, `monthlyAmount` REAL NOT NULL, `interestRate` REAL NOT NULL, `currentValue` REAL NOT NULL, `frequency` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `amount` REAL NOT NULL, `monthlyAmount` REAL NOT NULL, `interestRate` REAL NOT NULL, `currentValue` REAL NOT NULL, `frequency` TEXT NOT NULL, `stepChanges` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -222,6 +233,11 @@
             "columnName": "startDate",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "endDate",
+            "columnName": "endDate",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "amount",
@@ -250,6 +266,12 @@
           {
             "fieldPath": "frequency",
             "columnName": "frequency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stepChanges",
+            "columnName": "stepChanges",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -323,7 +345,7 @@
       },
       {
         "tableName": "loans",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `totalPrincipal` REAL NOT NULL, `monthlyEmi` REAL NOT NULL, `startDate` TEXT NOT NULL, `tenureMonths` INTEGER NOT NULL, `remainingTenure` INTEGER NOT NULL, `category` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `totalPrincipal` REAL NOT NULL, `annualInterestRate` REAL NOT NULL, `monthlyEmi` REAL NOT NULL, `startDate` TEXT NOT NULL, `tenureMonths` INTEGER NOT NULL, `remainingTenure` INTEGER NOT NULL, `category` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -340,6 +362,12 @@
           {
             "fieldPath": "totalPrincipal",
             "columnName": "totalPrincipal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "annualInterestRate",
+            "columnName": "annualInterestRate",
             "affinity": "REAL",
             "notNull": true
           },
@@ -383,7 +411,7 @@
       },
       {
         "tableName": "monthly_expenses",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL, `dueDay` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -408,6 +436,156 @@
             "columnName": "category",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "dueDay",
+            "columnName": "dueDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "bill_instances",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `billId` INTEGER NOT NULL, `month` TEXT NOT NULL, `amount` REAL NOT NULL, `paidAmount` REAL NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`billId`) REFERENCES `monthly_expenses`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "billId",
+            "columnName": "billId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "month",
+            "columnName": "month",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paidAmount",
+            "columnName": "paidAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_bill_instances_billId_month",
+            "unique": true,
+            "columnNames": [
+              "billId",
+              "month"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_bill_instances_billId_month` ON `${TABLE_NAME}` (`billId`, `month`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "monthly_expenses",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "billId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "refundable",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `amount` REAL NOT NULL, `personName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `givenDate` TEXT NOT NULL, `dueDate` TEXT NOT NULL, `note` TEXT, `isPaid` INTEGER NOT NULL, `remindMe` INTEGER NOT NULL, `entryType` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personName",
+            "columnName": "personName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "givenDate",
+            "columnName": "givenDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueDate",
+            "columnName": "dueDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isPaid",
+            "columnName": "isPaid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remindMe",
+            "columnName": "remindMe",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryType",
+            "columnName": "entryType",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -420,7 +598,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3c1fb35bb8f8eba04e85d7d92817adaa')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e0346081c9630e94c2016f9546fbf943')"
     ]
   }
 }

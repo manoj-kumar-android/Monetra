@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -68,7 +69,11 @@ fun LoanManagementScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.debt_emis_title), fontWeight = FontWeight.Bold) },
@@ -124,7 +129,7 @@ fun LoanManagementScreen(
                         scope.launch { snackbarHostState.currentSnackbarData?.dismiss() }
                     }
                 ) {
-                    LoanItem(loan)
+                    LoanItem(loan, onClick = { viewModel.onEditLoan(loan) })
                 }
             }
         }
@@ -161,7 +166,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
         Text(
-            stringResource(R.string.add_new_emi),
+            if (uiState.editingId != null) stringResource(R.string.edit_loan) else stringResource(R.string.add_new_emi),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
@@ -414,7 +419,10 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
         ) {
             Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(Spacing.sm))
-            Text(stringResource(R.string.save_debt_plan), style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_debt_plan),
+                style = MaterialTheme.typography.titleMedium
+            )
         }
 
         Spacer(Modifier.height(Spacing.sm))
@@ -446,7 +454,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
 }
 
 @Composable
-private fun LoanItem(loan: Loan) {
+private fun LoanItem(loan: Loan, onClick: () -> Unit) {
     val progressColor = when {
         loan.progress > 0.8f -> Color(0xFF34C759)
         loan.progress > 0.5f -> Color(0xFFFF9500)
@@ -454,7 +462,7 @@ private fun LoanItem(loan: Loan) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))

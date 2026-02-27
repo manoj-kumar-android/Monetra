@@ -120,7 +120,9 @@ fun MainScreenContainer(
             }
         },
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
         }
     ) { innerPadding ->
         NavHost(

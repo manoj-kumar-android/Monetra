@@ -117,6 +117,9 @@ private fun helpContent(screenType: String): Pair<String, List<HelpSection>> {
                 HelpSection(
                     "Budget Progress",
                     "See how much of your monthly budget is remaining for each category. We update these values in real-time as you log new transactions."
+                ),HelpSection(
+                    "Safe To Spend",
+                    "Your Daily Safe Spending shows how much you can spend today after reserving money for savings, EMIs, and bills, and it adjusts automatically based on your spending to keep you on track."
                 )
             )
         )

@@ -1,37 +1,36 @@
 package com.monetra.presentation.screen.refundable
 
-import android.app.Application
-import android.content.ContentValues
-import android.net.Uri
-import android.telephony.SmsManager
+import android.app.NotificationManager
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.monetra.domain.model.Refundable
-import com.monetra.domain.model.RefundableType
-import com.monetra.domain.repository.RefundableRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.util.concurrent.TimeUnit
-import android.widget.Toast
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.monetra.data.worker.RefundableReminderWorker
+import com.monetra.domain.model.Refundable
+import com.monetra.domain.model.RefundableType
+import com.monetra.domain.repository.RefundableRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
 class AddEditRefundableViewModel @Inject constructor(
     private val repository: RefundableRepository,
-    private val application: Application,
+    private val application: android.app.Application,
     savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
 
+    // null = new entry, non-null = edit existing
     private val refundableId: Long? = savedStateHandle.get<Long>("id")
 
     private val _uiState = MutableStateFlow<AddEditRefundableUiState>(AddEditRefundableUiState())
@@ -49,8 +48,6 @@ class AddEditRefundableViewModel @Inject constructor(
                         dueDate = refundable.dueDate,
                         note = refundable.note ?: "",
                         remindMe = refundable.remindMe,
-                        sendSmsReminder = refundable.sendSmsReminder,
-                        sendSmsImmediately = refundable.sendSmsImmediately,
                         entryType = refundable.entryType,
                         isEdit = true,
                         isPaid = refundable.isPaid
@@ -69,8 +66,6 @@ class AddEditRefundableViewModel @Inject constructor(
             is AddEditRefundableEvent.DueDateChanged -> _uiState.value = _uiState.value.copy(dueDate = event.date)
             is AddEditRefundableEvent.NoteChanged -> _uiState.value = _uiState.value.copy(note = event.note)
             is AddEditRefundableEvent.RemindMeToggled -> _uiState.value = _uiState.value.copy(remindMe = event.toggled)
-            is AddEditRefundableEvent.SmsReminderToggled -> _uiState.value = _uiState.value.copy(sendSmsReminder = event.toggled)
-            is AddEditRefundableEvent.SmsImmediateToggled -> _uiState.value = _uiState.value.copy(sendSmsImmediately = event.toggled)
             is AddEditRefundableEvent.EntryTypeChanged -> _uiState.value = _uiState.value.copy(entryType = event.type)
             is AddEditRefundableEvent.Save -> saveRefundable()
         }
@@ -81,15 +76,13 @@ class AddEditRefundableViewModel @Inject constructor(
         val amountValue = state.amount.toDoubleOrNull() ?: return
         if (state.personName.isBlank() || state.phoneNumber.isBlank()) return
 
-        // Validation: TODAY is fine — only block times that have ALREADY PASSED.
-        // e.g. setting a 6 PM reminder at 12:41 PM today is allowed.
         val now = LocalDateTime.now()
-        if ((state.remindMe || state.sendSmsReminder) && state.dueDate.isBefore(now)) {
-            val dateLabel = if (state.dueDate.toLocalDate() == now.toLocalDate())
+        if (state.remindMe && state.dueDate.isBefore(now)) {
+            val msg = if (state.dueDate.toLocalDate() == now.toLocalDate())
                 "That time has already passed today — pick a later time."
             else
                 "Reminder date/time is in the past — pick today or a future date."
-            Toast.makeText(application, dateLabel, Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(application, msg, android.widget.Toast.LENGTH_LONG).show()
             return
         }
 
@@ -103,94 +96,56 @@ class AddEditRefundableViewModel @Inject constructor(
                 dueDate = state.dueDate,
                 note = state.note.ifBlank { null },
                 remindMe = state.remindMe,
-                sendSmsReminder = state.sendSmsReminder,
-                sendSmsImmediately = state.sendSmsImmediately,
                 entryType = state.entryType,
                 isPaid = state.isPaid
             )
-            val newId = repository.upsertRefundable(refundable)
 
-            // On edit: ALWAYS cancel the old reminder for this ID first so the
-            // previous scheduled time is forgotten. Then schedule at the new time.
-            val workerTag = "refundable_reminder_$newId"
+            // Upsert: returns new rowId for INSERT, -1 for UPDATE.
+            val upsertResult = repository.upsertRefundable(refundable)
+
+            // ── Determine the CORRECT entity ID ────────────────────────────────────
+            // For EDIT: refundableId is non-null and is the real ID.
+            // For INSERT: upsertResult is the auto-generated rowId.
+            val effectiveId: Long = refundableId ?: upsertResult
+
+            // Dismiss any currently shown notification for this entry
+            val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(effectiveId.toInt())
+
+            // ── Always cancel the existing work for this specific entry ─────────────
+            // This covers all 3 cases:
+            //   1. User updates time BEFORE notification fires → cancels the old schedule
+            //   2. User updates time AFTER notification fires  → worker already ran (no-op cancel)
+            //   3. User updates multiple times               → only the last enqueue survives
+            val workerTag = "refundable_reminder_$effectiveId"
             WorkManager.getInstance(application).cancelUniqueWork(workerTag)
 
-            // Schedule reminder only if opted in AND time is in the future
-            if (state.remindMe || state.sendSmsReminder) {
-                val delayMillis = state.dueDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - System.currentTimeMillis()
-                if (delayMillis > 0) {
-                    val inputData = Data.Builder()
-                        .putLong("refundable_id", newId)
-                        .build()
+            // ── Re-schedule only if remindMe is ON ────────────────────────────────
+            if (state.remindMe) {
+                val targetEpoch = state.dueDate
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+                val delayMillis = (targetEpoch - System.currentTimeMillis()).coerceAtLeast(0L)
 
-                    val workRequest = OneTimeWorkRequestBuilder<RefundableReminderWorker>()
-                        .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-                        .setInputData(inputData)
-                        .build()
+                val inputData = Data.Builder()
+                    .putLong("refundable_id", effectiveId)
+                    .build()
 
-                    WorkManager.getInstance(application).enqueueUniqueWork(
-                        workerTag,
-                        ExistingWorkPolicy.REPLACE,
-                        workRequest
-                    )
-                }
-            }
+                val workRequest = OneTimeWorkRequestBuilder<RefundableReminderWorker>()
+                    .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                    .setInputData(inputData)
+                    .build()
 
-            if (state.sendSmsImmediately) {
-                val immediateMsg = when (state.entryType) {
-                    RefundableType.LENT ->
-                        "Hi ${state.personName}, I've recorded that you owe me ₹${state.amount}, due on ${state.dueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"))}. - Sent via Monetra"
-                    RefundableType.BORROWED ->
-                        "Hi ${state.personName}, I've recorded my ₹${state.amount} payment to you, due on ${state.dueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"))}. I'll settle it on time. - Sent via Monetra"
-                }
-                sendSms(state.phoneNumber, immediateMsg)
+                // REPLACE ensures any residual duplicate work is wiped and replaced
+                WorkManager.getInstance(application).enqueueUniqueWork(
+                    workerTag,
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest
+                )
             }
 
             _uiState.value = _uiState.value.copy(isSaved = true)
-        }
-    }
-
-    private fun sendSms(phoneNumber: String, message: String) {
-        try {
-            val smsManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                application.getSystemService(SmsManager::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                SmsManager.getDefault()
-            }
-
-            val normalizedNumber = if (!phoneNumber.startsWith("+") && phoneNumber.length >= 10) {
-                if (phoneNumber.startsWith("91") && phoneNumber.length == 12) "+$phoneNumber"
-                else if (phoneNumber.length == 10) "+91$phoneNumber"
-                else phoneNumber
-            } else {
-                phoneNumber
-            }
-
-            val parts = smsManager.divideMessage(message)
-            if (parts.size > 1) {
-                smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, null, null)
-            } else {
-                smsManager.sendTextMessage(normalizedNumber, null, message, null, null)
-            }
-            saveSmsToSentBox(normalizedNumber, message)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun saveSmsToSentBox(phoneNumber: String, message: String) {
-        try {
-            val values = ContentValues().apply {
-                put("address", phoneNumber)
-                put("body", message)
-                put("date", System.currentTimeMillis())
-                put("read", 1)
-                put("type", 2) // MESSAGE_TYPE_SENT
-            }
-            application.contentResolver.insert(Uri.parse("content://sms/sent"), values)
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
@@ -203,8 +158,6 @@ data class AddEditRefundableUiState(
     val dueDate: LocalDateTime = LocalDateTime.now().plusWeeks(1).withHour(10).withMinute(0),
     val note: String = "",
     val remindMe: Boolean = false,
-    val sendSmsReminder: Boolean = false,
-    val sendSmsImmediately: Boolean = false,
     val entryType: RefundableType = RefundableType.LENT,
     val isEdit: Boolean = false,
     val isPaid: Boolean = false,
@@ -219,8 +172,6 @@ sealed class AddEditRefundableEvent {
     data class DueDateChanged(val date: LocalDateTime) : AddEditRefundableEvent()
     data class NoteChanged(val note: String) : AddEditRefundableEvent()
     data class RemindMeToggled(val toggled: Boolean) : AddEditRefundableEvent()
-    data class SmsReminderToggled(val toggled: Boolean) : AddEditRefundableEvent()
-    data class SmsImmediateToggled(val toggled: Boolean) : AddEditRefundableEvent()
     data class EntryTypeChanged(val type: RefundableType) : AddEditRefundableEvent()
     data object Save : AddEditRefundableEvent()
 }

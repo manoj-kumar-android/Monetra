@@ -107,7 +107,11 @@ fun InvestmentManagementScreen(
                         Text(stringResource(R.string.monthly_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                     items(monthlyInvestments) { inv ->
-                        InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
+                        InvestmentCard(
+                            inv = inv, 
+                            onDelete = { viewModel.onDeleteInvestment(inv) },
+                            onEdit = { viewModel.onEditInvestment(inv) }
+                        )
                     }
                     item { Spacer(modifier = Modifier.height(Spacing.sm)) }
                 }
@@ -117,7 +121,11 @@ fun InvestmentManagementScreen(
                         Text(stringResource(R.string.onetime_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                     items(oneTimeInvestments) { inv ->
-                        InvestmentCard(inv = inv, onDelete = { viewModel.onDeleteInvestment(inv) })
+                        InvestmentCard(
+                            inv = inv, 
+                            onDelete = { viewModel.onDeleteInvestment(inv) },
+                            onEdit = { viewModel.onEditInvestment(inv) }
+                        )
                     }
                 }
             } ?: item {
@@ -457,16 +465,13 @@ fun BreakdownRow(label: String, amount: Double) {
     }
 }
 
-
-
 @Composable
-fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
+fun InvestmentCard(inv: Investment, onDelete: () -> Unit, onEdit: () -> Unit) {
     val today = java.time.LocalDate.now()
     val invested = inv.calculateTotalInvested(today)
     val currentVal = inv.calculateCurrentValue(today)
     val returns = inv.calculateTotalReturns(today)
     val returnPercent = inv.calculateReturnPercentage(today)
-    
     val isPositive = returns >= 0
     val returnColor = if (isPositive) Color(0xFF34C759) else Color(0xFFFF3B30)
     val typeColor = Color(inv.type.colorHex)
@@ -490,7 +495,7 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onEdit() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, typeColor.copy(alpha = 0.1f))
@@ -729,7 +734,10 @@ fun AddInvestmentSheet(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Text(stringResource(R.string.add_investment), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(
+                if (uiState.editingId != null) stringResource(R.string.edit_investment) else stringResource(R.string.add_investment),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            )
 
             Text(stringResource(R.string.investment_type_label), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             InvestmentTypeGrid(selectedType = uiState.type, onTypeSelected = { onTypeChange(it) })
@@ -881,8 +889,8 @@ fun AddInvestmentSheet(
             ) {
                 Column(modifier = Modifier.padding(Spacing.md)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total Invested", style = MaterialTheme.typography.labelMedium)
-                        Text("Expected Wealth", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.total_invested_label), style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.expected_wealth_label), style = MaterialTheme.typography.labelMedium)
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("₹%,.0f".format(uiState.previewInvested), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
@@ -897,8 +905,12 @@ fun AddInvestmentSheet(
                 onClick = onSave,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(stringResource(R.string.save_investment), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                ) {
+                Text(
+                    if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_investment),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
             Spacer(Modifier.height(Spacing.sm))
         }

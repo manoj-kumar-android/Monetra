@@ -36,11 +36,12 @@ import com.monetra.data.local.dao.RefundableDao
         BillInstanceEntity::class,
         RefundableEntity::class
     ], 
-    version = 8, 
+    version = 1, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class MonetraDatabase : RoomDatabase() {
+    
     abstract val transactionDao: TransactionDao
     abstract val userPreferencesDao: UserPreferencesDao
     abstract val categoryBudgetDao: CategoryBudgetDao

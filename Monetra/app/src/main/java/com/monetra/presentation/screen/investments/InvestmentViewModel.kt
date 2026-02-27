@@ -152,6 +152,26 @@ class InvestmentViewModel @Inject constructor(
         }
     }
 
+    fun onEditInvestment(inv: Investment) {
+        _uiState.update {
+            it.copy(
+                editingId = inv.id,
+                name = inv.name,
+                type = inv.type,
+                startDate = inv.startDate,
+                amount = if (inv.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) inv.amount.toString() else "",
+                monthlyAmount = if (inv.frequency == com.monetra.domain.model.ContributionFrequency.MONTHLY) inv.monthlyAmount.toString() else "",
+                interestRate = inv.interestRate.toString(),
+                currentValue = inv.currentValue.toString(),
+                frequency = inv.frequency,
+                endDate = inv.endDate,
+                stepChanges = inv.stepChanges,
+                isAddSheetOpen = true
+            )
+        }
+        updatePreview()
+    }
+
     fun onSaveInvestment() {
         val state = _uiState.value
         var hasError = false
@@ -183,6 +203,7 @@ class InvestmentViewModel @Inject constructor(
         viewModelScope.launch {
             addInvestment(
                 Investment(
+                    id = state.editingId ?: 0L,
                     name = state.name,
                     type = state.type,
                     startDate = state.startDate,
@@ -214,6 +235,7 @@ data class InvestmentUiState(
     val previewInvested: Double = 0.0,
     val previewWealth: Double = 0.0,
     val isAddSheetOpen: Boolean = false,
+    val editingId: Long? = null,
     val nameError: String? = null,
     val amountError: String? = null,
     val monthlyAmountError: String? = null,

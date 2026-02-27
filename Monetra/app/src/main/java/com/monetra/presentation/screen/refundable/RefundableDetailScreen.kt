@@ -1,21 +1,9 @@
 package com.monetra.presentation.screen.refundable
 
-import android.Manifest
-import android.content.ContentValues
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.telephony.SmsManager
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -77,18 +65,6 @@ fun RefundableDetailScreen(
         }
     }
 
-    // Direct SMS Sending logic
-    val smsPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            refundable?.let { item ->
-                sendSmsDirectly(context, item.phoneNumber, "Hi ${item.personName}, a friendly reminder about the ₹${item.amount} due. - Sent via Monetra")
-            }
-        } else {
-            Toast.makeText(context, "Permission denied to send SMS", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -228,11 +204,11 @@ fun RefundableDetailScreen(
                             icon = Icons.Default.Sms,
                             label = "SMS",
                             onClick = {
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                                    sendSmsDirectly(context, item.phoneNumber, "Hi ${item.personName}, a friendly reminder about the ₹${item.amount} due. - Sent via Monetra")
-                                } else {
-                                    smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+                                val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("smsto:${item.phoneNumber}")
+                                    putExtra("sms_body", "Hi ${item.personName}, a friendly reminder about the ₹${item.amount} due. - Sent via Monetra")
                                 }
+                                context.startActivity(smsIntent)
                             }
                         )
                     }
@@ -532,52 +508,4 @@ private fun DetailItem(icon: ImageVector, label: String, value: String) {
     }
 }
 
-private fun sendSmsDirectly(context: android.content.Context, phoneNumber: String, message: String) {
-    try {
-        val smsManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            context.getSystemService(SmsManager::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            SmsManager.getDefault()
-        }
-
-        val normalizedNumber = if (!phoneNumber.startsWith("+") && phoneNumber.length >= 10) {
-            if (phoneNumber.startsWith("91") && phoneNumber.length == 12) "+$phoneNumber"
-            else if (phoneNumber.length == 10) "+91$phoneNumber"
-            else phoneNumber
-        } else {
-            phoneNumber
-        }
-
-        val parts = smsManager.divideMessage(message)
-        if (parts.size > 1) {
-            smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, null, null)
-        } else {
-            smsManager.sendTextMessage(normalizedNumber, null, message, null, null)
-        }
-        saveSmsToSentBox(context, normalizedNumber, message)
-        Toast.makeText(context, "Direct SMS sent to $normalizedNumber", Toast.LENGTH_SHORT).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "Direct SMS failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-        val intent = Intent(Intent.ACTION_VIEW, "sms:$phoneNumber".toUri()).apply {
-            putExtra("sms_body", message)
-        }
-        context.startActivity(intent)
-    }
-}
-
-private fun saveSmsToSentBox(context: android.content.Context, phoneNumber: String, message: String) {
-    try {
-        val values = android.content.ContentValues().apply {
-            put("address", phoneNumber)
-            put("body", message)
-            put("date", System.currentTimeMillis())
-            put("read", 1)
-            put("type", 2) // MESSAGE_TYPE_SENT
-        }
-        context.contentResolver.insert(android.net.Uri.parse("content://sms/sent"), values)
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
 

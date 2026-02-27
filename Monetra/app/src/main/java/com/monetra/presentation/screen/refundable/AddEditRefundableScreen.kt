@@ -227,16 +227,6 @@ fun AddEditRefundableScreen(
                     checked = uiState.remindMe,
                     onCheckedChange = { viewModel.onEvent(AddEditRefundableEvent.RemindMeToggled(it)) }
                 )
-                ToggleRow(
-                    label = stringResource(R.string.send_sms_reminder),
-                    checked = uiState.sendSmsReminder,
-                    onCheckedChange = { viewModel.onEvent(AddEditRefundableEvent.SmsReminderToggled(it)) }
-                )
-                ToggleRow(
-                    label = stringResource(R.string.send_sms_immediately),
-                    checked = uiState.sendSmsImmediately,
-                    onCheckedChange = { viewModel.onEvent(AddEditRefundableEvent.SmsImmediateToggled(it)) }
-                )
             }
         }
     }

@@ -233,6 +233,7 @@
     <string name="save_debt_plan">Save Debt Plan</string>
     <string name="emi_format">EMI: ₹%,.0f/mo</string>
     <string name="months_left_suffix">%d months left</string>
+    <string name="edit_loan">Edit Loan</string>
 
     <!-- Investments / Wealth -->
     <string name="wealth_intelligence_title">Wealth Intelligence</string>
@@ -250,6 +251,7 @@
     <string name="projection_horizon">Projection Horizon</string>
     <string name="total_invested_label">Total Invested</string>
     <string name="estimated_returns_label">Estimated Returns</string>
+    <string name="expected_wealth_label">Expected Wealth</string>
     <string name="final_wealth_label">Final Wealth</string>
 
     <string name="remove_investment_title">Remove Investment</string>
@@ -275,6 +277,8 @@
     <string name="current_market_value_label">Current Market Value</string>
     <string name="leave_blank_desc">Leave blank if same as amount</string>
     <string name="save_investment">Save Investment</string>
+    <string name="edit_investment">Edit Investment</string>
+    <string name="save_changes">Save Changes</string>
     <string name="asset_allocation_label">Asset Allocation</string>
 
     <string name="liquidity_hierarchy_label">Liquidity Hierarchy</string>
@@ -374,13 +378,13 @@
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Welcome to Monetra 🚀</string>
     <string name="onboarding_subtitle">Let\'s set up your financial baseline to calculate your safe-to-spend allowance.</string>
-    <string name="onboarding_step1_title">Step 1: Commitments</string>
-    <string name="onboarding_step1_subtitle">What are your mandatory monthly utility bills and subscriptions?</string>
+    <string name="onboarding_step1_title">Mandatory Commitments</string>
+    <string name="onboarding_step1_subtitle">Manage your utility bills, subscriptions, and recurring costs seamlessly.</string>
     <string name="bill_name_hint">Bill Name (e.g., Rent, Internet)</string>
     <string name="amount_label">Amount</string>
     <string name="add_fixed_cost">Add Fixed Cost</string>
-    <string name="onboarding_step2_title">Step 2: Loans &amp; EMIs</string>
-    <string name="onboarding_step2_subtitle">Do you have any ongoing loan EMIs or debts?</string>
+    <string name="onboarding_step2_title">Loans &amp; Debt</string>
+    <string name="onboarding_step2_subtitle">Add your ongoing EMIs or loan repayments to get an accurate spending limit.</string>
     <string name="loan_name_hint">Loan Name (e.g., Car, Home)</string>
     <string name="monthly_emi_label_onboarding">Monthly EMI Amount</string>
     <string name="add_emi_onboarding">Add EMI</string>
@@ -394,8 +398,9 @@
     <string name="fixed_costs_instruction">Add recurring expenses like Rent, WiFi, Netflix, or Electricity. These will be automatically deducted from your daily budget.</string>
     <string name="no_fixed_costs_empty">No fixed costs added yet.</string>
     <string name="add_recurring_cost_title">Add Recurring Cost</string>
+    <string name="edit_recurring_cost_title">Edit Recurring Cost</string>
     <string name="recurring_expense_hint">Expense Name (e.g. Rent)</string>
-    <string name="save_monthly_cost">Save Monthly Cost</string>
+    <string name="save_recurring_cost">Save Recurring Bill</string>
     <string name="per_month_format">₹%,.0f per month</string>
 
     <!-- Transactions / Expense List -->
@@ -418,8 +423,6 @@
     <string name="due_date">Due Date</string>
     <string name="note">Note (Optional)</string>
     <string name="remind_me">Remind me</string>
-    <string name="send_sms_reminder">Send SMS reminder</string>
-    <string name="send_sms_immediately">Send SMS immediately</string>
     <string name="mark_as_paid">Mark as Paid</string>
     <string name="send_reminder">Send Reminder</string>
     <string name="overdue">Overdue</string>
@@ -431,6 +434,6 @@
     <string name="delete_entry">Delete Entry</string>
     <string name="entry_details">Entry Details</string>
     <string name="confirm_delete_refundable">Are you sure you want to delete this entry?</string>
-    <string name="phone_instruction">Please enter the correct phone number for SMS reminders (e.g., +91...)</string>
+    <string name="phone_instruction">Enter the person\'s phone number to allow manual SMS reminders.</string>
     <string name="invalid_phone">Please enter a valid phone number</string>
 </resources>

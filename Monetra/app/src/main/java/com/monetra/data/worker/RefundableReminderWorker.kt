@@ -1,10 +1,10 @@
 package com.monetra.data.worker
 
 import android.app.NotificationChannel
-import android.content.ContentValues
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
-import android.telephony.SmsManager
+import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -25,127 +25,100 @@ class RefundableReminderWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val specificId = inputData.getLong("refundable_id", -1L)
 
-        // Only handle specifically scheduled reminders.
-        // The daily-batch path was removed — it caused reminders to repeat every day.
-        // Reminders are fire-and-forget: scheduled once, fired once, then flags cleared.
         if (specificId == -1L) return Result.success()
 
         val item = repository.getRefundableById(specificId)
 
-        // Guard: skip if item is gone, already paid, or flags already cleared
         if (item == null || item.isPaid) return Result.success()
-        if (!item.remindMe && !item.sendSmsReminder) return Result.success()
+        if (!item.remindMe) return Result.success()
 
-        var modified = false
-
-        if (item.remindMe) {
-            // Notification message depends on who owes whom
-            val (title, body) = when (item.entryType) {
-                RefundableType.LENT ->
-                    "💰 Payment Due" to "${item.personName} owes you ₹${item.amount}. Time to collect!"
-                RefundableType.BORROWED ->
-                    "⚠️ Payment Reminder" to "You owe ₹${item.amount} to ${item.personName}. Don't forget to pay!"
-            }
-            showNotification(title, body, item.id)
-            modified = true
+        val (title, body) = when (item.entryType) {
+            RefundableType.LENT ->
+                "💰 Payment Due" to "${item.personName} owes you ₹${item.amount}. Time to collect!"
+            RefundableType.BORROWED ->
+                "⚠️ Payment Reminder" to "You owe ₹${item.amount} to ${item.personName}. Don't forget to pay!"
         }
 
-        if (item.sendSmsReminder) {
-            // SMS message is sent to the OTHER person's number
-            val smsBody = when (item.entryType) {
-                RefundableType.LENT ->
-                    // I lent money → SMS to borrower: remind them to pay me back
-                    "Hi ${item.personName}, this is a friendly reminder that you have ₹${item.amount} due. Kindly settle it at your earliest. - Sent via Monetra"
-                RefundableType.BORROWED ->
-                    // I borrowed money → SMS to lender: inform them I'll pay
-                    "Hi ${item.personName}, I wanted to inform you that I'm aware of the ₹${item.amount} I owe you and will be settling it soon. Thank you for your patience. - Sent via Monetra"
-            }
-            sendSms(item.phoneNumber, smsBody)
-            modified = true
+        val smsBody = when (item.entryType) {
+            RefundableType.LENT ->
+                "Hi ${item.personName}, this is a friendly reminder that you have ₹${item.amount} due. Kindly settle it at your earliest. - Sent via Monetra"
+            else -> null // No SMS button for BORROWED or others
         }
 
-        // Fire-and-forget: clear flags so this reminder is NEVER sent again
-        if (modified) {
-            repository.upsertRefundable(item.copy(remindMe = false, sendSmsReminder = false))
-        }
+        showNotification(title, body, item.id, item.phoneNumber, smsBody, item.entryType)
 
         return Result.success()
     }
 
-    private fun showNotification(title: String, message: String, id: Long) {
+    private fun showNotification(
+        title: String, 
+        message: String, 
+        id: Long, 
+        phoneNumber: String, 
+        smsBody: String?, 
+        entryType: RefundableType
+    ) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "refundable_reminders"
 
         val channel = NotificationChannel(channelId, "Refundable Reminders", NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(channel)
 
-        val deepLinkIntent = android.content.Intent(
-            android.content.Intent.ACTION_VIEW,
+        val deepLinkIntent = Intent(
+            Intent.ACTION_VIEW,
             "monetra://refundable?id=$id".toUri(),
             applicationContext,
             com.monetra.MainActivity::class.java
         ).apply {
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = android.app.PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             applicationContext,
             id.toInt(),
             deepLinkIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+        // OK Action
+        val okIntent = Intent(applicationContext, NotificationReceiver::class.java).apply {
+            action = "ACTION_OK"
+            putExtra("notification_id", id.toInt())
+        }
+        val okPendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            id.toInt() + 1000,
+            okIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setContentIntent(pendingIntent)
+            .setOngoing(true) // Cannot be dismissed by swipe
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
+            .setAutoCancel(false) // Only dismissed by button action
+            .addAction(0, "OK", okPendingIntent)
 
-        notificationManager.notify(id.toInt(), notification)
-    }
-
-    private fun sendSms(phoneNumber: String, message: String) {
-        try {
-            val smsManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                applicationContext.getSystemService(SmsManager::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                SmsManager.getDefault()
+        // Send Reminder Action - Only for LENT
+        if (entryType == RefundableType.LENT && smsBody != null) {
+            val sendIntent = Intent(applicationContext, NotificationActionActivity::class.java).apply {
+                action = "ACTION_SEND_REMINDER"
+                putExtra("notification_id", id.toInt())
+                putExtra("phone_number", phoneNumber)
+                putExtra("sms_body", smsBody)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
-
-            val normalizedNumber = when {
-                phoneNumber.startsWith("+") -> phoneNumber
-                phoneNumber.startsWith("91") && phoneNumber.length == 12 -> "+$phoneNumber"
-                phoneNumber.length == 10 -> "+91$phoneNumber"
-                else -> phoneNumber
-            }
-
-            val parts = smsManager.divideMessage(message)
-            if (parts.size > 1) {
-                smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, null, null)
-            } else {
-                smsManager.sendTextMessage(normalizedNumber, null, message, null, null)
-            }
-            saveSmsToSentBox(normalizedNumber, message)
-        } catch (e: Exception) {
-            e.printStackTrace()
+            val sendPendingIntent = PendingIntent.getActivity(
+                applicationContext,
+                id.toInt() + 2000,
+                sendIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.addAction(0, "Send Reminder", sendPendingIntent)
         }
-    }
 
-    private fun saveSmsToSentBox(phoneNumber: String, message: String) {
-        try {
-            val values = ContentValues().apply {
-                put("address", phoneNumber)
-                put("body", message)
-                put("date", System.currentTimeMillis())
-                put("read", 1)
-                put("type", 2)
-            }
-            applicationContext.contentResolver.insert("content://sms/sent".toUri(), values)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        notificationManager.notify(id.toInt(), builder.build())
     }
 }

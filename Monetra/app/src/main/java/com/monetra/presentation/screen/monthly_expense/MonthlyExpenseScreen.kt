@@ -66,7 +66,11 @@ fun MonthlyExpenseScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Recurring Fixed Bills", fontWeight = FontWeight.Bold) },
@@ -135,7 +139,7 @@ fun MonthlyExpenseScreen(
                         }
                     }
                 ) {
-                    BillItem(model)
+                    BillItem(model, onClick = { viewModel.onEditExpense(model.rule) })
                 }
             }
         }
@@ -159,7 +163,7 @@ fun MonthlyExpenseScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 Text(
-                    "Setup Recurring Bill",
+                    if (uiState.editingId != null) stringResource(R.string.edit_recurring_cost_title) else stringResource(R.string.add_recurring_cost_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -254,7 +258,7 @@ fun MonthlyExpenseScreen(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Save Recurring Bill")
+                    Text(if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_recurring_cost))
                 }
                 Spacer(Modifier.height(Spacing.sm))
             }
@@ -341,7 +345,7 @@ fun SwipeToDeleteContainer(
 }
 
 @Composable
-fun BillItem(model: BillUiModel) {
+fun BillItem(model: BillUiModel, onClick: () -> Unit) {
     val status = model.instance?.status ?: BillStatus.PENDING
     val statusColor = when (status) {
         BillStatus.PAID -> Color(0xFF34C759)
@@ -350,7 +354,7 @@ fun BillItem(model: BillUiModel) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))

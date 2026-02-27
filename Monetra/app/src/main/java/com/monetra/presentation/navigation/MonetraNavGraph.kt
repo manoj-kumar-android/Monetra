@@ -5,23 +5,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.toRoute
-import androidx.navigation.navDeepLink
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
+import androidx.navigation.toRoute
+import com.monetra.MainViewModel
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
-import com.monetra.presentation.screen.settings.SettingsScreen
 import com.monetra.presentation.screen.budgets.BudgetsScreen
+import com.monetra.presentation.screen.lock.LockScreen
+import com.monetra.presentation.screen.settings.SettingsScreen
 import com.monetra.presentation.screen.simulator.WhatIfSimulatorScreen
 import kotlinx.serialization.Serializable
 
@@ -64,15 +62,27 @@ sealed interface Screen {
 
     @Serializable
     data class RefundableDetails(val id: Long) : Screen
+
+    @Serializable
+    data class Lock(val goToDashboard: Boolean = true) : Screen
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonetraNavGraph(
     navController: NavHostController = rememberNavController(),
-    startDestination: Screen = Screen.Onboarding
+    startDestination: Screen = Screen.Onboarding,
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Listen for relock events from MainActivity (app returned from background)
+    LaunchedEffect(Unit) {
+        mainViewModel.relockEvent.collect { goToDashboard ->
+            navController.navigate(Screen.Lock(goToDashboard = goToDashboard)) {
+                popUpTo(0) { inclusive = false }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -98,6 +108,18 @@ fun MonetraNavGraph(
             )
         }
     ) {
+        composable<Screen.Lock> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.Lock>()
+            LockScreen(
+                onAuthenticated = {
+                    val destination = if (args.goToDashboard) Screen.TransactionList else Screen.Welcome
+                    navController.navigate(destination) {
+                        popUpTo(Screen.Lock(args.goToDashboard)) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable<Screen.TransactionList> {
             MainScreenContainer(
                 onNavigateToAdd = {

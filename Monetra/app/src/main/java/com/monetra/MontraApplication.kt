@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class MontraApplication : Application(), Configuration.Provider {
-    
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -28,7 +28,6 @@ class MontraApplication : Application(), Configuration.Provider {
     private fun scheduleRefundableReminders() {
         val workRequest = PeriodicWorkRequestBuilder<com.monetra.data.worker.RefundableReminderWorker>(1, TimeUnit.DAYS)
             .build()
-        
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "refundable_reminders",
             ExistingPeriodicWorkPolicy.KEEP,
@@ -39,7 +38,6 @@ class MontraApplication : Application(), Configuration.Provider {
     private fun scheduleFinancialInsights() {
         val workRequest = PeriodicWorkRequestBuilder<InsightWorker>(12, TimeUnit.HOURS)
             .build()
-        
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "financial_insights",
             ExistingPeriodicWorkPolicy.KEEP,
@@ -50,7 +48,6 @@ class MontraApplication : Application(), Configuration.Provider {
     private fun scheduleEmiReminders() {
         val workRequest = PeriodicWorkRequestBuilder<EmiReminderWorker>(1, TimeUnit.DAYS)
             .build()
-        
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "emi_reminders",
             ExistingPeriodicWorkPolicy.KEEP,

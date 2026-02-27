@@ -48,8 +48,6 @@ class RefundableRepositoryImpl(
         note = note,
         isPaid = isPaid,
         remindMe = remindMe,
-        sendSmsReminder = sendSmsReminder,
-        sendSmsImmediately = sendSmsImmediately,
         entryType = runCatching { RefundableType.valueOf(entryType) }.getOrDefault(RefundableType.LENT)
     )
 
@@ -63,8 +61,6 @@ class RefundableRepositoryImpl(
         note = note,
         isPaid = isPaid,
         remindMe = remindMe,
-        sendSmsReminder = sendSmsReminder,
-        sendSmsImmediately = sendSmsImmediately,
         entryType = entryType.name
     )
 }
