@@ -149,20 +149,18 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
     var showDatePicker by remember { mutableStateOf(false) }
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
-    // LazyColumn cooperates with ModalBottomSheet's drag handler;
-    // verticalScroll conflicts with it and causes the "freeze" bug.
-    LazyColumn(
-        contentPadding = PaddingValues(
-            start = Spacing.xl,
-            end = Spacing.xl,
-            top = Spacing.md,
-            bottom = 64.dp
-        ),
-        modifier = Modifier.fillMaxWidth().imePadding()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Spacing.xl)
+            .padding(top = Spacing.md)
+            .padding(bottom = 64.dp)
+            .navigationBarsPadding()
+            .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                Text(
+        Text(
             stringResource(R.string.add_new_emi),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
@@ -419,9 +417,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
             Text(stringResource(R.string.save_debt_plan), style = MaterialTheme.typography.titleMedium)
         }
 
-        Spacer(Modifier.height(Spacing.lg))
-            }
-        }
+        Spacer(Modifier.height(Spacing.sm))
     }
 
     // ── Date Picker Dialog ──────────────────────────────────────────────

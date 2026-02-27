@@ -18,6 +18,7 @@ import com.monetra.ui.theme.Elevation
 import com.monetra.ui.theme.SemanticExpense
 import com.monetra.ui.theme.SemanticIncome
 import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +27,6 @@ fun SummaryScreen(
     viewModel: SummaryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var selectedTab by remember { mutableIntStateOf(1) } // Default to Monthly
     val tabs = listOf("Weekly", "Monthly", "Yearly")
 
     Scaffold(
@@ -47,47 +47,32 @@ fun SummaryScreen(
             modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
             val pagerState = rememberPagerState(initialPage = 1, pageCount = { tabs.size })
-            
-            // Sync FROM selectedTab TO Pager
-            LaunchedEffect(selectedTab) {
-                if (pagerState.currentPage != selectedTab) {
-                    pagerState.animateScrollToPage(selectedTab)
-                }
-            }
-            
-            // Sync FROM Pager TO selectedTab (only when settled)
-            LaunchedEffect(pagerState) {
-                snapshotFlow { pagerState.settledPage }.collect { page ->
-                    if (selectedTab != page) {
-                        selectedTab = page
-                    }
-                }
-            }
+            val scope = rememberCoroutineScope()
 
             TabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = pagerState.currentPage,
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.primary,
                 divider = {}
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = { Text(title) }
                     )
                 }
             }
 
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.Center))
-                }
-            } else {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { page ->
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                if (uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.Center))
+                    }
+                } else {
                     Box(modifier = Modifier.fillMaxSize().padding(Spacing.lg).verticalScroll(rememberScrollState())) {
                         when (page) {
                             0 -> uiState.weeklySummary?.let { SummaryDetailCard(it) }
