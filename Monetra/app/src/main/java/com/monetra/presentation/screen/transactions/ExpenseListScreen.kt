@@ -165,75 +165,83 @@ fun ExpenseListScreen(
             }
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            when (val state = uiState) {
-                is ExpenseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is ExpenseUiState.Error -> Text(state.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
-                is ExpenseUiState.Success -> {
-                    val pagerState = rememberPagerState(
-                        initialPage = Int.MAX_VALUE / 2,
-                        pageCount = { Int.MAX_VALUE }
-                    )
+        val pagerState = rememberPagerState(
+            initialPage = Int.MAX_VALUE / 2,
+            pageCount = { Int.MAX_VALUE }
+        )
 
-                    val initialMonth = remember { YearMonth.now() }
+        val initialMonth = remember { YearMonth.now() }
+        val scope = rememberCoroutineScope()
 
-                    // Sync FROM Pager TO ViewModel only when user has fully settled on a page
-                    LaunchedEffect(pagerState) {
-                        snapshotFlow { pagerState.settledPage }.collect { page ->
-                            val monthsOffset = page - (Int.MAX_VALUE / 2)
-                            val targetMonth = initialMonth.plusMonths(monthsOffset.toLong())
-                            if (targetMonth != state.selectedMonth) {
-                                viewModel.onMonthSelected(targetMonth)
-                            }
+        // Derive month from pager for instant header updates during swipe
+        val visibleMonth = remember(pagerState.currentPage) {
+            initialMonth.plusMonths((pagerState.currentPage - (Int.MAX_VALUE / 2)).toLong())
+        }
+
+        // Sync FROM Pager TO ViewModel only when user has fully settled on a page
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.settledPage }.collect { page ->
+                val monthsOffset = page - (Int.MAX_VALUE / 2)
+                val targetMonth = initialMonth.plusMonths(monthsOffset.toLong())
+                viewModel.onMonthSelected(targetMonth)
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            MonthSelector(
+                selectedMonth = visibleMonth,
+                isCurrentMonth = visibleMonth == YearMonth.now(),
+                onMonthSelected = { month ->
+                    val targetOffset = java.time.temporal.ChronoUnit.MONTHS.between(initialMonth, month).toInt()
+                    val targetPage = (Int.MAX_VALUE / 2) + targetOffset
+                    if (pagerState.currentPage != targetPage) {
+                        scope.launch {
+                            pagerState.animateScrollToPage(targetPage)
                         }
                     }
+                },
+                onResetMonth = {
+                    if (pagerState.currentPage != Int.MAX_VALUE / 2) {
+                        scope.launch {
+                            pagerState.animateScrollToPage(Int.MAX_VALUE / 2)
+                        }
+                    }
+                    viewModel.onResetMonth()
+                }
+            )
 
-                    val scope = rememberCoroutineScope()
-
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        MonthSelector(
-                            selectedMonth = state.selectedMonth,
-                            isCurrentMonth = state.isCurrentMonth,
-                            onMonthSelected = { month ->
-                                val targetOffset = java.time.temporal.ChronoUnit.MONTHS.between(initialMonth, month).toInt()
-                                val targetPage = (Int.MAX_VALUE / 2) + targetOffset
-                                if (pagerState.currentPage != targetPage) {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(targetPage)
-                                    }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.Top,
+                beyondViewportPageCount = 1
+            ) { page ->
+                val pageMonth = remember(page) {
+                    initialMonth.plusMonths((page - (Int.MAX_VALUE / 2)).toLong())
+                }
+                
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (val state = uiState) {
+                        is ExpenseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        is ExpenseUiState.Error -> Text(state.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
+                        is ExpenseUiState.Success -> {
+                            // Only show content if this page represents the currently selected month
+                            if (pageMonth == state.selectedMonth) {
+                                PullToRefreshBox(
+                                    isRefreshing = state.isRefreshing,
+                                    onRefresh = viewModel::refresh,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    TransactionListContent(
+                                        state = state,
+                                        onFilterSelected = viewModel::onFilterSelected,
+                                        onTransactionClick = onNavigateToEdit,
+                                        onDeleteClick = viewModel::onDeleteClick
+                                    )
                                 }
-                            },
-                            onResetMonth = {
-                                if (pagerState.currentPage != Int.MAX_VALUE / 2) {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(Int.MAX_VALUE / 2)
-                                    }
-                                }
-                                viewModel.onResetMonth()
-                            }
-                        )
-
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.Top,
-                            beyondViewportPageCount = 1
-                        ) { page ->
-                            // Each page independently computes its own month — no blank pages during swipe
-                            val pageMonth = remember(page) {
-                                initialMonth.plusMonths((page - (Int.MAX_VALUE / 2)).toLong())
-                            }
-                            PullToRefreshBox(
-                                isRefreshing = state.isRefreshing && pageMonth == state.selectedMonth,
-                                onRefresh = viewModel::refresh,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                TransactionListContent(
-                                    state = state,
-                                    onFilterSelected = viewModel::onFilterSelected,
-                                    onTransactionClick = onNavigateToEdit,
-                                    onDeleteClick = viewModel::onDeleteClick
-                                )
+                            } else {
+                                // While swiping, show a loader for the month being loaded
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
                         }
                     }
@@ -241,7 +249,8 @@ fun ExpenseListScreen(
             }
         }
     }
-}
+    }
+
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
