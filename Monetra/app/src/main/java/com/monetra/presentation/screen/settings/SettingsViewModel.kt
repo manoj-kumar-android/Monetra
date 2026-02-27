@@ -97,8 +97,8 @@ class SettingsViewModel @Inject constructor(
         }
         
         val goal = currentState.monthlySavingsGoal.toDoubleOrNull() ?: 0.0
-        if (goal > income) {
-            _uiState.update { it.copy(savingsError = "Savings goal cannot exceed income") }
+        if (goal >= income) {
+            _uiState.update { it.copy(savingsError = "Savings goal must be less than monthly income") }
             hasError = true
         }
 

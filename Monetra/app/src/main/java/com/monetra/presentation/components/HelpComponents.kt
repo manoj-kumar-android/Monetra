@@ -22,8 +22,8 @@ import com.monetra.ui.theme.Spacing
 import com.monetra.R
 
 data class HelpSection(
-    val titleResId: Int,
-    val descriptionResId: Int
+    val title: String,
+    val description: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,13 +69,13 @@ fun ScreenHelpDialog(
                         ) {
                             Column(modifier = Modifier.padding(Spacing.sm)) {
                                 Text(
-                                    text = stringResource(section.titleResId),
+                                    text = section.title,
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.height(Spacing.xs))
                                 Text(
-                                    text = stringResource(section.descriptionResId),
+                                    text = section.description,
                                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

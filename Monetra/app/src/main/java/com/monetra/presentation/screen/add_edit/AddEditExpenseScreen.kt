@@ -286,7 +286,7 @@ private fun AddEditExpenseContent(
                 modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
             )
             
-            EmojiCategoryGrid(category, onCategoryChange)
+            EmojiCategoryGrid(isIncome, category, onCategoryChange)
             
             if (amountError != null) ErrorText(amountError)
             if (titleError != null) ErrorText(titleError)
@@ -346,21 +346,32 @@ private fun GroupedTextField(
 }
 
 @Composable
-private fun EmojiCategoryGrid(selected: String, onSelect: (String) -> Unit) {
-    val categories = listOf(
+private fun EmojiCategoryGrid(isIncome: Boolean, selected: String, onSelect: (String) -> Unit) {
+    val expenseCategories = listOf(
         "General" to (R.string.cat_general to "💰"),
         "Food" to (R.string.cat_food to "🍔"),
         "Transport" to (R.string.cat_transport to "🚗"),
         "Shopping" to (R.string.cat_shopping to "🛍️"),
-        "Fun" to (R.string.cat_fun to "🎭"),
+        "Groceries" to (R.string.cat_groceries to "🛒"),
         "Bills" to (R.string.cat_bills to "💡"),
+        "Rent" to (R.string.cat_rent to "🏠"),
+        "Subscription" to (R.string.cat_subscription to "🔄"),
+        "Fun" to (R.string.cat_fun to "🎭"),
         "Health" to (R.string.cat_health to "🏥"),
-        "Salary" to (R.string.cat_salary to "💸")
+        "Mobile Recharge" to (R.string.cat_mobile_recharge to "📱")
     )
+
+    val incomeCategories = listOf(
+        "Salary" to (R.string.cat_salary to "💸"),
+        "Refund" to (R.string.cat_refund to "🔙"),
+        "Gift" to (R.string.cat_gift to "🎁")
+    )
+
+    val categories = if (isIncome) incomeCategories else expenseCategories
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = Modifier.fillMaxWidth().height(180.dp),
+        modifier = Modifier.fillMaxWidth().height(if (isIncome) 100.dp else 240.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {

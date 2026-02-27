@@ -34,7 +34,7 @@ class CalculateSafeToSpendUseCase @Inject constructor(
         return combine(
             userPreferenceRepository.getUserPreferences(),
             loanRepository.getTotalMonthlyEmi(),
-            monthlyExpenseRepository.getTotalMonthlyExpenseAmount(),
+            monthlyExpenseRepository.getTotalReservedAmountForMonth(currentMonth),
             transactionRepository.getTotalExpense(currentMonth),
             transactionRepository.getTotalExpenseBetweenDates(today, today),
             budgetRepository.getCategoryBudgets(currentMonth),
@@ -57,8 +57,8 @@ class CalculateSafeToSpendUseCase @Inject constructor(
             val budgetedCategories = budgets.filter { it.limit > 0 }.map { it.categoryName }.toSet()
 
             // 1. Monthly Baseline (Total money available for flexible spending this month)
-            // Flexible spending = Income - Mandatory (EMI + Fixed Bills) - Savings Goal
-            // Budget limits are NOT deducted here as per user request.
+            // Flexible spending = Income - Mandatory (EMI + Reserved Fixed Bills) - Savings Goal
+            // We use reservedAmount (remaining) to avoid double-deducting segments already paid.
             val monthlyBaseline = (prefs.monthlyIncome - prefs.monthlySavingsGoal - totalEmi - totalMonthlyExpense)
             
             // 2. Total spent this month BEFORE today

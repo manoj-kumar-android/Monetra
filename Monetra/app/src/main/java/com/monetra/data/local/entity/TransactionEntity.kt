@@ -21,7 +21,8 @@ data class TransactionEntity(
     val type: TransactionType,
     val category: String,
     val date: LocalDate,
-    val note: String
+    val note: String,
+    val linkedBillId: Long? = null
 )
 
 fun TransactionEntity.toDomainModel(): Transaction {
@@ -32,7 +33,8 @@ fun TransactionEntity.toDomainModel(): Transaction {
         type = type,
         category = category,
         date = date,
-        note = note
+        note = note,
+        linkedBillId = linkedBillId
     )
 }
 
@@ -44,6 +46,7 @@ fun Transaction.toEntity(): TransactionEntity {
         type = type,
         category = category,
         date = date,
-        note = note
+        note = note,
+        linkedBillId = linkedBillId
     )
 }

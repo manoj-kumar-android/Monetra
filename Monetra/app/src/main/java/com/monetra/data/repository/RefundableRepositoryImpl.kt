@@ -1,0 +1,70 @@
+package com.monetra.data.repository
+
+import com.monetra.data.local.dao.RefundableDao
+import com.monetra.data.local.entity.RefundableEntity
+import com.monetra.domain.model.Refundable
+import com.monetra.domain.model.RefundableType
+import com.monetra.domain.repository.RefundableRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+class RefundableRepositoryImpl(
+    private val dao: RefundableDao
+) : RefundableRepository {
+
+    override fun getAllRefundables(): Flow<List<Refundable>> {
+        return dao.getAllRefundables().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun observeRefundableById(id: Long): Flow<Refundable?> {
+        return dao.getRefundableFlowById(id).map { it?.toDomain() }
+    }
+
+    override suspend fun getRefundableById(id: Long): Refundable? {
+        return dao.getRefundableById(id)?.toDomain()
+    }
+
+    override suspend fun upsertRefundable(refundable: Refundable): Long {
+        return dao.upsertRefundable(refundable.toEntity())
+    }
+
+    override suspend fun deleteRefundable(refundable: Refundable) {
+        dao.deleteRefundable(refundable.toEntity())
+    }
+
+    override suspend fun updatePaidStatus(id: Long, isPaid: Boolean) {
+        dao.updatePaidStatus(id, isPaid)
+    }
+
+    private fun RefundableEntity.toDomain() = Refundable(
+        id = id,
+        amount = amount,
+        personName = personName,
+        phoneNumber = phoneNumber,
+        givenDate = givenDate,
+        dueDate = dueDate,
+        note = note,
+        isPaid = isPaid,
+        remindMe = remindMe,
+        sendSmsReminder = sendSmsReminder,
+        sendSmsImmediately = sendSmsImmediately,
+        entryType = runCatching { RefundableType.valueOf(entryType) }.getOrDefault(RefundableType.LENT)
+    )
+
+    private fun Refundable.toEntity() = RefundableEntity(
+        id = id,
+        amount = amount,
+        personName = personName,
+        phoneNumber = phoneNumber,
+        givenDate = givenDate,
+        dueDate = dueDate,
+        note = note,
+        isPaid = isPaid,
+        remindMe = remindMe,
+        sendSmsReminder = sendSmsReminder,
+        sendSmsImmediately = sendSmsImmediately,
+        entryType = entryType.name
+    )
+}

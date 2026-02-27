@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.toRoute
+import androidx.navigation.navDeepLink
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
@@ -38,9 +39,6 @@ sealed interface Screen {
     data class AddEditTransaction(val transactionId: Long? = null) : Screen
 
     @Serializable
-    data object MonthlyReport : Screen
-
-    @Serializable
     data object Settings : Screen
 
     @Serializable
@@ -60,6 +58,12 @@ sealed interface Screen {
 
     @Serializable
     data class Help(val screenType: String) : Screen
+
+    @Serializable
+    data class AddEditRefundable(val id: Long? = null) : Screen
+
+    @Serializable
+    data class RefundableDetails(val id: Long) : Screen
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,9 +108,6 @@ fun MonetraNavGraph(
                     keyboardController?.hide()
                     navController.navigate(Screen.AddEditTransaction(transactionId))
                 },
-                onNavigateToReport = {
-                    navController.navigate(Screen.MonthlyReport)
-                },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings)
                 },
@@ -119,14 +120,20 @@ fun MonetraNavGraph(
                 onNavigateToInvestments = {
                     navController.navigate(Screen.Investments)
                 },
-                onNavigateToSimulator = {
-                    navController.navigate(Screen.WhatIfSimulator)
-                },
                 onNavigateToFixedExpenses = {
                     navController.navigate(Screen.FixedExpenses)
                 },
                 onNavigateToHelp = { screenType ->
                     navController.navigate(Screen.Help(screenType))
+                },
+                onNavigateToAddRefundable = {
+                    navController.navigate(Screen.AddEditRefundable(null))
+                },
+                onNavigateToEditRefundable = { id ->
+                    navController.navigate(Screen.AddEditRefundable(id))
+                },
+                onNavigateToRefundableDetails = { id ->
+                    navController.navigate(Screen.RefundableDetails(id))
                 }
             )
         }
@@ -145,16 +152,6 @@ fun MonetraNavGraph(
             )
         }
 
-        composable<Screen.MonthlyReport> {
-            com.monetra.presentation.screen.report.MonthlyReportScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToSimulator = {
-                    navController.navigate(Screen.WhatIfSimulator)
-                }
-            )
-        }
 
         composable<Screen.AddEditTransaction> {
             AddEditExpenseScreen(
@@ -198,6 +195,25 @@ fun MonetraNavGraph(
             com.monetra.presentation.screen.monthly_expense.MonthlyExpenseScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHelp = { navController.navigate(Screen.Help("FIXED_COSTS")) }
+            )
+        }
+
+        composable<Screen.AddEditRefundable> {
+            com.monetra.presentation.screen.refundable.AddEditRefundableScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<Screen.RefundableDetails>(
+            deepLinks = listOf(
+                navDeepLink<Screen.RefundableDetails>(basePath = "monetra://refundable")
+            )
+        ) {
+            com.monetra.presentation.screen.refundable.RefundableDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onEditClick = { id -> 
+                    navController.navigate(Screen.AddEditRefundable(id))
+                }
             )
         }
         

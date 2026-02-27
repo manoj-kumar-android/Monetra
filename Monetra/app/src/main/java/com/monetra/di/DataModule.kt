@@ -60,6 +60,10 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideRefundableDao(db: MonetraDatabase): RefundableDao = db.refundableDao
+
+    @Provides
+    @Singleton
     fun provideTransactionRepository(dao: TransactionDao): TransactionRepository = TransactionRepositoryImpl(dao)
 
     @Provides
@@ -96,4 +100,8 @@ object DataModule {
     @Provides
     @Singleton
     fun provideMonthlyExpenseRepository(dao: MonthlyExpenseDao): MonthlyExpenseRepository = MonthlyExpenseRepositoryImpl(dao)
+
+    @Provides
+    @Singleton
+    fun provideRefundableRepository(dao: RefundableDao): RefundableRepository = RefundableRepositoryImpl(dao)
 }

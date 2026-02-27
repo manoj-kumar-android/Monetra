@@ -78,9 +78,6 @@ fun WhatIfSimulatorScreen(
                 },
                 actions = {
                     HelpIconButton(onClick = onNavigateToHelp)
-                    IconButton(onClick = { viewModel.reset() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reset_all))
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
@@ -207,17 +204,7 @@ private fun SimulatorContent(
 
         FutureProjectionGraph(result)
 
-        androidx.compose.animation.AnimatedVisibility(visible = hasAnyChange) {
-            OutlinedButton(
-                onClick = onReset,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text(stringResource(R.string.reset_all_params))
-            }
-        }
+
 
         Spacer(modifier = Modifier.height(Spacing.xxl))
     }
@@ -263,16 +250,6 @@ private fun AnimatedStatusBanner(result: SimulationResult, hasAnyChange: Boolean
             modifier = Modifier.padding(Spacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (!hasAnyChange) {
-                Text(
-                    stringResource(R.string.adjust_sliders_hint),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(Spacing.md))
-            }
-
             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(140.dp)) {
                 CircularProgressIndicator(
                     progress = { 1f },

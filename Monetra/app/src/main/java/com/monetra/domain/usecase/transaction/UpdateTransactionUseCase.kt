@@ -1,13 +1,63 @@
 package com.monetra.domain.usecase.transaction
 
+import com.monetra.domain.model.BillStatus
 import com.monetra.domain.model.Transaction
+import com.monetra.domain.model.TransactionType
+import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.TransactionRepository
+import java.time.YearMonth
 import javax.inject.Inject
 
 class UpdateTransactionUseCase @Inject constructor(
-    private val repository: TransactionRepository
+    private val repository: TransactionRepository,
+    private val monthlyExpenseRepository: MonthlyExpenseRepository
 ) {
     suspend operator fun invoke(transaction: Transaction) {
-        repository.updateTransaction(transaction)
+        val oldTransaction = repository.getTransactionById(transaction.id)
+        
+        // 1. Undo old link if it existed
+        if (oldTransaction?.linkedBillId != null) {
+            val oldInstance = monthlyExpenseRepository.getInstanceById(oldTransaction.linkedBillId)
+            if (oldInstance != null) {
+                val revertedPaidAmount = (oldInstance.paidAmount - oldTransaction.amount).coerceAtLeast(0.0)
+                val revertedStatus = when {
+                    revertedPaidAmount >= oldInstance.amount -> BillStatus.PAID
+                    revertedPaidAmount > 0 -> BillStatus.PARTIAL
+                    else -> BillStatus.PENDING
+                }
+                monthlyExpenseRepository.insertBillInstance(
+                    oldInstance.copy(paidAmount = revertedPaidAmount, status = revertedStatus)
+                )
+            }
+        }
+
+        var finalTransaction = transaction.copy(linkedBillId = null)
+
+        // 2. Apply new link if it's an expense
+        if (transaction.type == TransactionType.EXPENSE) {
+            val month = YearMonth.from(transaction.date)
+            val rules = monthlyExpenseRepository.getMonthlyExpensesByCategory(transaction.category)
+            
+            for (rule in rules) {
+                val instance = monthlyExpenseRepository.getInstanceByBillAndMonth(rule.id, month)
+                if (instance != null && instance.status != BillStatus.PAID) {
+                    val newPaidAmount = instance.paidAmount + transaction.amount
+                    val newStatus = when {
+                        newPaidAmount >= instance.amount -> BillStatus.PAID
+                        newPaidAmount > 0 -> BillStatus.PARTIAL
+                        else -> BillStatus.PENDING
+                    }
+                    
+                    monthlyExpenseRepository.insertBillInstance(
+                        instance.copy(paidAmount = newPaidAmount, status = newStatus)
+                    )
+                    
+                    finalTransaction = transaction.copy(linkedBillId = instance.id)
+                    break
+                }
+            }
+        }
+
+        repository.updateTransaction(finalTransaction)
     }
 }

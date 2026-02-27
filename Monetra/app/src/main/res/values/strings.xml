@@ -100,54 +100,68 @@
     <string name="help_fixed_costs_guide_title">Fixed Bills Guide</string>
 
     <!-- Dashboard Help Content -->
-    <string name="help_dashboard_step1_title">Step 1: Check \'Safe to Spend\'</string>
-    <string name="help_dashboard_step1_desc">This is your primary guide. It shows exactly how much money you can spend TODAY to stay on track for your monthly goals.\n\n(Aaj kitne paise kharch kar sakte hain ye card bata raha hai.)</string>
-    <string name="help_dashboard_step2_title">Step 2: Watch the Liquid Bar</string>
-    <string name="help_dashboard_step2_desc">As you spend, the bar fills up. If you overspend today, Monetra automatically borrows from your tomorrow\'s budget to keep your savings safe.\n\n(Progress bar bharega toh matlab aaj ka limit khatam ho raha hai.)</string>
-    <string name="help_dashboard_step3_title">Step 3: Monitor \'Monthly Health\'</string>
-    <string name="help_dashboard_step3_desc">See the \'Waterfall\' breakdown. Monetra takes your Salary, subtracts your Savings Goal, EMIs, and Fixed Bills. What remains is your \'Allowance\' for the month.\n\n(Salary se savings aur EMI nikalne ke baad jo bachega, wahi aapka asli kharcha hai.)</string>
+    <string name="help_dashboard_step1_title">1. Your \'Safe to Spend\' Limit</string>
+    <string name="help_dashboard_step1_desc">This is your daily financial compass. Monetra calculates exactly how much cash you can spend TODAY to survive the month successfully while hitting your savings goal. It dynamically subtracts Fixed Bills, Loans, and Categories. Just stay below this number!</string>
+    <string name="help_dashboard_step2_title">2. Liquid Bar &amp; Overspending</string>
+    <string name="help_dashboard_step2_desc">The Progress Bar visually shows your spending threshold. If you overspend today, Monetra instantly borrows money from your TOMORROW\'S daily limit. It enforces discipline by strictly locking your remaining spending rhythm.</string>
+    <string name="help_dashboard_step3_title">3. Monthly Health &amp; Insights</string>
+    <string name="help_dashboard_step3_desc">Observe the \'Waterfall\' breakdown below the Safe to Spend card. Monetra automatically takes your monthly income, strips away Debt EMIs, strips away your Fixed Bills, locks your Savings Goal, and gives you real visibility over your Free Cash.</string>
 
     <!-- Assistant Help Content -->
-    <string name="help_assistant_step1_title">Step 1: Use the \'Impact Checker\'</string>
-    <string name="help_assistant_step1_desc">Thinking of buying something? Enter the price. The Coach checks three things:\n• GOAL CHECK: Do you have enough extra cash after meeting your monthly savings target?\n• PACING CHECK: Is this cost more than 3 days of your usual spending?\n• SURVIVAL CHECK: Is this a \'Big Purchase\' costing more than 15 days of your survival budget?\n\n(Naya kharcha karne se pehle amount daalein, Monetra aapki bachat aur survival budget check karke sahi salah dega.)</string>
-    <string name="help_assistant_step2_title">Step 2: Understand the \'Verdict\'</string>
-    <string name="help_assistant_step2_desc">🟢 Safe: Enjoy! No impact on your goals.\n🟡 Savings Risk: This uses money meant for your savings target. You\'ll need to cut back later.\n🔴 Big Purchase!: This costs many days of your life\'s earnings and hits your emergency stash.\n\n(Green matlab safe, Yellow matlab bachat kam hogi, Red matlab bada kharcha jo emergency stash ko asar karega.)</string>
-    <string name="help_assistant_step3_title">Step 3: Follow \'Daily Pocket Money\'</string>
-    <string name="help_assistant_step3_desc">This is your \'Goldilocks\' number. If you stay below this every day, your savings goal is 100% guaranteed. If you overspend today, Monetra reduces tomorrow\'s amount to keep you safe.\n\n(Ye aapka safe limit hai. Isse kam kharcha karenge toh mahine ke end mein bachat pakki hai.)</string>
-    <string name="help_assistant_step4_title">Step 4: Watch your \'Essential Stash\'</string>
-    <string name="help_assistant_step4_desc">Calculated as: [Total Cash] ÷ [Fixed Bills + Survival Spend]. It tells you exactly how many months you can survive if your income stops today. Target: 6 months.\n\n(Survival Runway: Bina naukri ke ghar kitne mahine chalega. Target 6 mahine rakhein.)</string>
+    <string name="help_assistant_step1_title">1. Impact Checker</string>
+    <string name="help_assistant_step1_desc">Before you make any impulse purchase, use the Impact Checker. Enter the item\'s price, and the Assistant will simulate the effect on your wealth. It verifies if you have the buffer to buy it without hurting your goals.</string>
+    <string name="help_assistant_step2_title">2. Reading the Verdict</string>
+    <string name="help_assistant_step2_desc">🟢 Safe: Buy it! No impact on your savings.\n🟡 Savings Risk: This threatens your monthly savings goal.\n🔴 Big Purchase!: This costs significant days of your life\'s earnings and will drain your emergency stash.</string>
+    <string name="help_assistant_step3_title">3. Daily Pocket Money Tracking</string>
+    <string name="help_assistant_step3_desc">Strictly follow the \'Pocket Money\' boundary given. If you remain within this Goldilocks range, you are Mathematically Guaranteed to hit your monthly savings goal.</string>
+    <string name="help_assistant_step4_title">4. Essential Stash (Runway)</string>
+    <string name="help_assistant_step4_desc">Your Financial Runway is calculated using [Total Liquid Cash] ÷ [Fixed Bills + Survival Spend]. It highlights exactly how many months you can survive if your income abruptly stops. Target: 6 to 9 months.</string>
 
     <!-- Transactions Help Content -->
-    <string name="help_transactions_step1_title">Step 1: Track as you go</string>
-    <string name="help_transactions_step1_desc">Tap the \'+\' button to add spends. Monetra categorizes them to help you find \'Money Leakage\' later.\n\n(Kharcha hote hi add karein taaki hisaab hamesha up-to-date rahe.)</string>
-    <string name="help_transactions_step2_title">Step 2: Swipe to Navigate</string>
-    <string name="help_transactions_step2_desc">Swipe left or right on the list to jump between months. No buttons needed—smooth and fluid.\n\n(Mahina badalne ke liye bas swipe karein.)</string>
+    <string name="help_transactions_step1_title">1. Log Spends Quickly</string>
+    <string name="help_transactions_step1_desc">Tap the floating \'+\' button to record new transactions instantly. Ensure you categorize them correctly (e.g., Food, Travel) so the Dashboard and Monthly Report can generate accurate spending patterns.</string>
+    <string name="help_transactions_step2_title">2. Swipe-to-Delete Timeline</string>
+    <string name="help_transactions_step2_desc">Want to delete an accidental entry? Just swipe left on the entry! A massive, premium \"Mark Delete\" UI will emerge. Best part? Monetra offers an immediate \"Undo\" snackbar just in case you swipe by mistake.</string>
 
     <!-- Simulator Help Content -->
-    <string name="help_simulator_step1_title">Step 1: Plan \'What-If\' Scenarios</string>
-    <string name="help_simulator_step1_desc">What if you get a 20% hike? What if you buy a car? Enter these scenarios to see your future.\n\n(Nayi job ya naye kharche ka asar agle 1 saal ki bachat pe dekhein.)</string>
-    <string name="help_simulator_step2_title">Step 2: 12-Month Projection</string>
-    <string name="help_simulator_step2_desc">Watch the graph predict your net worth for the next year. It accounts for your salary, current spending habits, and existing debts.\n\n(Ye aapka agle 1 saal ki bachat ka sateek andaza lagata hai.)</string>
+    <string name="help_simulator_step1_title">1. \'What-If\' Financial Scenarios</string>
+    <string name="help_simulator_step1_desc">Thinking of a new job? Wondering what happens if you take an expensive Car Loan? Enter these \"What If\" values into the simulator to test life decisions digitally before making them.</string>
+    <string name="help_simulator_step2_title">2. 12-Month Reality Projection</string>
+    <string name="help_simulator_step2_desc">Monetra\'s algorithm calculates the exact impact of your \'What-If\' scenario over the next 365 days. It will warn you if taking that loan pushes you into \"CRITICAL\" EMI stress limits.</string>
 
     <!-- Loans Help Content -->
-    <string name="help_loans_step1_title">Centralize your Debt</string>
-    <string name="help_loans_step1_desc">Add all your EMIs here. Monetra prioritizes these as \'Committed Spend\' and removes them from your \'Safe to Spend\' immediately.\n\n(Saare EMI yahan add karein, ye sabse pehle salary se deduct hote hain.)</string>
+    <string name="help_loans_step1_title">1. Your Unified Debt Tracker</string>
+    <string name="help_loans_step1_desc">Add all active EMIs, Personal, and Home Loans here. Monetra prioritizes these as \"Committed Expenditures\" and removes them directly from your Salary before calculating anything else.</string>
 
     <!-- Investments Help Content -->
-    <string name="help_investments_step1_title">1. Portfolio Creation</string>
-    <string name="help_investments_step1_desc">Begin by adding your assets. Group them into Monthly (SIPs) or One-time (FDs, Stocks, Gold). Monetra uses this frequency to correctly calculate your future growth and current worth.\n\n(Apne investments add karein: SIP mahine ke liye aur Stocks/Gold ek baar ke liye.)</string>
-    <string name="help_investments_step2_title">2. Survival Status &amp; Runway</string>
-    <string name="help_investments_step2_desc">The Hero Card at the top tells you your \'Financial Runway\'. This is exactly how many months you can maintain your current lifestyle if your income stops today. A healthy target is 6 months.\n\n(Ye card batata hai ki bina income ke aapka ghar kitne mahine chal sakta hai.)</string>
-    <string name="help_investments_step3_title">3. Liquidity Hierarchy</string>
-    <string name="help_investments_step3_desc">Not all money is easy to spend. Monetra categorizes your wealth into:\n• Liquid: Cash/Savings available instantly.\n• Semi-liquid: Stocks/Mutual Funds (takes 2-3 days).\n• Locked: PPF, EPF, Real Estate (not for emergencies).\n\n(Paise kitni jaldi hath mein aayenge: Cash turant, Stocks 2 din, Real Estate lock rehta hai.)</string>
-    <string name="help_investments_step4_title">4. Asset Allocation &amp; Insights</string>
-    <string name="help_investments_step4_desc">Check the visual breakdown of your portfolio. The Smart Assistant provides real-time nudges, like warning if you have too much cash idle or too little in emergency funds.\n\n(Apne assets ka batwaara dekhein aur AI coach ki sahi salah lein.)</string>
+    <string name="help_investments_step1_title">1. Setup Your Portfolio</string>
+    <string name="help_investments_step1_desc">Navigate to the Portfolio Screen to set up your current financial reality. Add your total Savings, total Investment Value, and total Loan Debts to calculate your true Net Worth instantly.</string>
+    <string name="help_investments_step2_title">2. Financial Score Nudges</string>
+    <string name="help_investments_step2_desc">Monetra reviews your Portfolio to give you a Financial Health Score (Poor to Excellent). Nudges will warn you if too much money is sitting idly in cash or if your loan obligations represent a dangerous percentage.</string>
+    <string name="help_investments_step3_title">3. Track Free Money</string>
+    <string name="help_investments_step3_desc">The \"Free Money\" card is your liquidity indicator. It calculates what extra cash is comfortably available AFTER clearing off all loans, budgets, and investments limits. Positive means you are thriving.</string>
+    <string name="help_investments_step4_title">4. Manage Portfolios Faster</string>
+    <string name="help_investments_step4_desc">Use the highly accessible \"Manage\" chips block at the bottom of the Portfolio Screen to instantly jump into your specific Loan logs, Expense logs, and Investment profiles.</string>
     <string name="help_investments_step5_title">5. Wealth Projection Simulator</string>
-    <string name="help_investments_step5_desc">Use the sliders at the bottom to simulate your future wealth. Adjust the expected return rate and projection years to see how your net worth grows over time with Compound Interest.\n\n(Future net worth dekhein: Return rate aur saal badalkar simulation karein.)</string>
+    <string name="help_investments_step5_desc">Analyze exactly how rich you will be down the line. Add your expected Return on Investment %, enter your projection horizon in years, and watch how Compound Interest exponentially grows your Net Worth over a decade.</string>
 
     <!-- Fixed Costs Help Content -->
-    <string name="help_fixed_costs_step1_title">Automate Fixed Spends</string>
-    <string name="help_fixed_costs_step1_desc">Add Rent, Internet, and Electricity. These are reserved automatically every month so you never miss a payment.\n\n(Pakke kharche jaise kiraaya ya bill yahan add karein.)</string>
+    <string name="help_fixed_costs_step1_title">1. Handle Monthly Obligations</string>
+    <string name="help_fixed_costs_step1_desc">Log your Rent, Electricity, Internet bills, and subscriptions here. Unlike daily spending, these are automatically \"reserved\" off the top of your salary to prevent you from accidentally burning money needed for housing.</string>
+
+    <!-- Refundable Help Content -->
+    <string name="help_refundable_guide_title">Refundables Guide</string>
+    <string name="help_refundable_step1_title">1. Track Money Owed</string>
+    <string name="help_refundable_step1_desc">Did you lend money to a friend? Did you pay for team lunch? Track those \"To Be Refunded\" entries here safely. They won\'t pollute your actual expense log.</string>
+    <string name="help_refundable_step2_title">2. Swipe Filters &amp; Paid Management</string>
+    <string name="help_refundable_step2_desc">Smoothly swipe left or right to switch between \"Pending\", \"Paid\", or \"Overdue\" tabs. Need to mark an item as collected? Just swipe the individual row to instantly mark it as Paid and return the money to your Dashboard.</string>
+
+    <!-- Budgets Help Content -->
+    <string name="help_budgets_guide_title">Budgets Guide</string>
+    <string name="help_budgets_step1_title">1. Granular Spend Caps</string>
+    <string name="help_budgets_step1_desc">Allocate explicit spending ceilings for Food, Fun, Transport, and Shopping. Monetra dynamically enforces these caps throughout your app, throwing warnings if you approach the specified boundary.</string>
+    <string name="help_budgets_step2_title">2. Category Isolation</string>
+    <string name="help_budgets_step2_desc">Instead of guessing where your money goes, Budgets gives you progress bars specifically for those high-leakage categories. Easily distinguish if your \"Food\" limit is failing while your \"Shopping\" is safe.</string>
 
     <string name="help_general_title">General Help</string>
     <string name="help_general_desc">Explore categories to master your money with Monetra.</string>
@@ -161,6 +175,12 @@
     <string name="cat_bills">Bills</string>
     <string name="cat_health">Health</string>
     <string name="cat_salary">Salary</string>
+    <string name="cat_refund">Refund</string>
+    <string name="cat_gift">Gift</string>
+    <string name="cat_rent">Rent</string>
+    <string name="cat_groceries">Groceries</string>
+    <string name="cat_subscription">Subscription</string>
+    <string name="cat_mobile_recharge">Mobile Recharge</string>
 
     <!-- Report / Analysis -->
     <string name="monthly_analysis_title">Monthly Analysis</string>
@@ -231,8 +251,7 @@
     <string name="total_invested_label">Total Invested</string>
     <string name="estimated_returns_label">Estimated Returns</string>
     <string name="final_wealth_label">Final Wealth</string>
-    <string name="yearly_milestones">Yearly Milestones</string>
-    <string name="projected_wealth_label">Projected Wealth</string>
+
     <string name="remove_investment_title">Remove Investment</string>
     <string name="remove_investment_msg">Remove \"%s\" from your portfolio?</string>
     <string name="remove">Remove</string>
@@ -257,7 +276,7 @@
     <string name="leave_blank_desc">Leave blank if same as amount</string>
     <string name="save_investment">Save Investment</string>
     <string name="asset_allocation_label">Asset Allocation</string>
-    <string name="smart_assistant_label">Smart Assistant</string>
+
     <string name="liquidity_hierarchy_label">Liquidity Hierarchy</string>
     <string name="liquid_label">Liquid</string>
     <string name="semi_liquid_label">Semi-liquid</string>
@@ -327,7 +346,7 @@
     <string name="edit_limit">Edit Limit</string>
 
     <!-- Snapshot -->
-    <string name="snapshot_title_header">Financial Snapshot</string>
+    <string name="snapshot_title_header">Portfolio Snapshot</string>
     <string name="monthly_overview">Monthly Overview</string>
     <string name="monthly_salary_label">Monthly Salary</string>
     <string name="savings_analysis">Savings Analysis</string>
@@ -389,4 +408,29 @@
     <string name="delete_transaction_title">Delete Transaction</string>
     <string name="delete_transaction_msg">Are you sure you want to delete this transaction?</string>
 
+    <!-- Refundable / Money Given -->
+    <string name="refundable_title">Refundable</string>
+    <string name="give_money">Give Money</string>
+    <string name="person_name">Person Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="amount">Amount</string>
+    <string name="given_date">Given Date</string>
+    <string name="due_date">Due Date</string>
+    <string name="note">Note (Optional)</string>
+    <string name="remind_me">Remind me</string>
+    <string name="send_sms_reminder">Send SMS reminder</string>
+    <string name="send_sms_immediately">Send SMS immediately</string>
+    <string name="mark_as_paid">Mark as Paid</string>
+    <string name="send_reminder">Send Reminder</string>
+    <string name="overdue">Overdue</string>
+    <string name="pending">Pending</string>
+    <string name="paid">Paid</string>
+    <string name="all">All</string>
+    <string name="add_entry">Add Entry</string>
+    <string name="edit_entry">Edit Entry</string>
+    <string name="delete_entry">Delete Entry</string>
+    <string name="entry_details">Entry Details</string>
+    <string name="confirm_delete_refundable">Are you sure you want to delete this entry?</string>
+    <string name="phone_instruction">Please enter the correct phone number for SMS reminders (e.g., +91...)</string>
+    <string name="invalid_phone">Please enter a valid phone number</string>
 </resources>

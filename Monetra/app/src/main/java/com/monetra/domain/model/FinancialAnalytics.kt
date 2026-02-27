@@ -6,17 +6,29 @@ data class Loan(
     val id: Long = 0L,
     val name: String,
     val totalPrincipal: Double,
-    val monthlyEmi: Double,
+    val annualInterestRate: Double = 0.0, // in %, e.g. 8.5 for 8.5%
+    val monthlyEmi: Double,               // calculated and stored
     val startDate: LocalDate,
     val tenureMonths: Int,
     val remainingTenure: Int,
     val category: String = "Personal"
 ) {
-    val remainingBalance: Double 
+    val remainingBalance: Double
         get() = monthlyEmi * remainingTenure
-        
+
     val progress: Float
         get() = if (tenureMonths > 0) (tenureMonths - remainingTenure).toFloat() / tenureMonths else 1f
+
+    companion object {
+        /** Standard reducing-balance EMI formula */
+        fun calculateEmi(principal: Double, annualRatePercent: Double, tenureMonths: Int): Double {
+            if (principal <= 0 || tenureMonths <= 0) return 0.0
+            if (annualRatePercent <= 0) return principal / tenureMonths // zero-interest simple split
+            val monthlyRate = annualRatePercent / 12.0 / 100.0
+            val factor = Math.pow(1 + monthlyRate, tenureMonths.toDouble())
+            return principal * monthlyRate * factor / (factor - 1)
+        }
+    }
 }
 
 data class BurnRateAnalysis(

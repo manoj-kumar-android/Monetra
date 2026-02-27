@@ -56,11 +56,13 @@ class InvestmentViewModel @Inject constructor(
         val sanitized = v.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
         _uiState.update { it.copy(amount = sanitized, amountError = null) } 
+        updatePreview()
     }
     fun onMonthlyAmountChange(v: String) { 
         val sanitized = v.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
         _uiState.update { it.copy(monthlyAmount = sanitized, monthlyAmountError = null) } 
+        updatePreview()
     }
     fun onInterestRateChange(v: String) {
         val sanitized = v.filter { it.isDigit() || it == '.' }
@@ -68,18 +70,77 @@ class InvestmentViewModel @Inject constructor(
         val rate = sanitized.toDoubleOrNull() ?: 0.0
         if (rate > 30.0) return // Limit as requested
         _uiState.update { it.copy(interestRate = sanitized, interestRateError = null) }
+        updatePreview()
     }
     fun onCurrentValueChange(v: String) {
         val sanitized = v.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
         _uiState.update { it.copy(currentValue = sanitized, currentValueError = null) }
+        updatePreview()
     }
     fun onStartDateChange(date: java.time.LocalDate) {
         if (date.isAfter(java.time.LocalDate.now())) return
         _uiState.update { it.copy(startDate = date) }
+        updatePreview()
+    }
+    fun onEndDateChange(date: java.time.LocalDate?) {
+        _uiState.update { it.copy(endDate = date) }
+        updatePreview()
     }
     fun onTypeChange(type: InvestmentType) {
         _uiState.update { it.copy(type = type, frequency = type.defaultFrequency) }
+        updatePreview()
+    }
+    fun onAddStepChange(amount: Double, effectiveDate: java.time.LocalDate) {
+        _uiState.update {
+            val updated = it.stepChanges.toMutableList()
+            updated.add(com.monetra.domain.model.StepChange(amount, effectiveDate))
+            updated.sortBy { step -> step.effectiveDate }
+            it.copy(stepChanges = updated)
+        }
+        updatePreview()
+    }
+    fun onRemoveStepChange(stepChange: com.monetra.domain.model.StepChange) {
+        _uiState.update {
+            val updated = it.stepChanges.toMutableList()
+            updated.remove(stepChange)
+            it.copy(stepChanges = updated)
+        }
+        updatePreview()
+    }
+
+    private fun updatePreview() {
+        val state = _uiState.value
+        val amount = state.amount.toDoubleOrNull() ?: 0.0
+        val monthlyAmount = state.monthlyAmount.toDoubleOrNull() ?: 0.0
+        val interestRate = state.interestRate.toDoubleOrNull() ?: 0.0
+        val currentValueInput = state.currentValue.toDoubleOrNull() ?: 0.0
+
+        val tempInvestment = Investment(
+            name = "Preview",
+            type = state.type,
+            startDate = state.startDate,
+            endDate = state.endDate,
+            amount = if (state.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) amount else 0.0,
+            monthlyAmount = if (state.frequency == com.monetra.domain.model.ContributionFrequency.MONTHLY) monthlyAmount else 0.0,
+            interestRate = interestRate,
+            currentValue = if (currentValueInput > 0) currentValueInput else if (state.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) amount else 0.0,
+            frequency = state.frequency,
+            stepChanges = state.stepChanges
+        )
+
+        // Assuming future projection if calculating preview logic based on end date,
+        // Calculate wealth to now or end date (domain logic handles it if today parameter is passed)
+        // If end date is in the future, we pass limit date
+        val limitDate = state.endDate ?: java.time.LocalDate.now()
+        val calcDate = if (limitDate.isAfter(java.time.LocalDate.now())) limitDate else java.time.LocalDate.now()
+
+        _uiState.update {
+            it.copy(
+                previewInvested = tempInvestment.calculateTotalInvested(calcDate),
+                previewWealth = tempInvestment.calculateCurrentValue(calcDate)
+            )
+        }
     }
     fun onDeleteInvestment(investment: Investment) {
         viewModelScope.launch { deleteInvestment(investment) }
@@ -129,7 +190,9 @@ class InvestmentViewModel @Inject constructor(
                     monthlyAmount = if (state.frequency == com.monetra.domain.model.ContributionFrequency.MONTHLY) monthlyAmount else 0.0,
                     interestRate = interestRate,
                     currentValue = if (currentValueInput > 0) currentValueInput else if (state.frequency == com.monetra.domain.model.ContributionFrequency.ONE_TIME) amount else 0.0,
-                    frequency = state.frequency
+                    frequency = state.frequency,
+                    endDate = state.endDate,
+                    stepChanges = state.stepChanges
                 )
             )
             _uiState.update { InvestmentUiState() }
@@ -146,6 +209,10 @@ data class InvestmentUiState(
     val interestRate: String = "0",
     val currentValue: String = "",
     val frequency: com.monetra.domain.model.ContributionFrequency = com.monetra.domain.model.ContributionFrequency.MONTHLY,
+    val endDate: java.time.LocalDate? = null,
+    val stepChanges: List<com.monetra.domain.model.StepChange> = emptyList(),
+    val previewInvested: Double = 0.0,
+    val previewWealth: Double = 0.0,
     val isAddSheetOpen: Boolean = false,
     val nameError: String? = null,
     val amountError: String? = null,

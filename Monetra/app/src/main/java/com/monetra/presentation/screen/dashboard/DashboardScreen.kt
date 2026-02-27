@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +46,6 @@ import com.monetra.ui.theme.Spacing
 fun DashboardScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
-    onNavigateToReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onManageBudgetsClick: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
@@ -74,9 +74,6 @@ fun DashboardScreen(
                 ),
                 actions = {
                     HelpIconButton(onClick = onNavigateToHelp)
-                    IconButton(onClick = onNavigateToReport) {
-                        Icon(Icons.Default.DateRange, contentDescription = stringResource(R.string.monthly_report))
-                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
@@ -191,43 +188,13 @@ private fun DashboardContent(
             )
         }
 
-        // INSIGHTS & MONTHLY SUMMARY
+        // INSIGHTS & FIXED COSTS
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-            ) {
-                // Projection / Intelligence integrated here instead of a separate card
-                InsightBadgeCard(
-                    status = state.intelligence.burnRateStatus,
-                    message = state.intelligence.comparisonText,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                MetricCard(
-                    title = stringResource(R.string.fixed_bills),
-                    amount = state.fixedCosts,
-                    subtitle = stringResource(R.string.monthly_commit),
-                    icon = Icons.Default.Notifications,
-                    modifier = Modifier.weight(1f).clickable(onClick = onFixedCostsClick),
-                    color = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            }
+            PremiumFixedBillsCard(
+                amount = state.fixedCosts,
+                onClick = onFixedCostsClick
+            )
         }
-
-        // FINANCIAL RUNWAY / SUMMARY
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Text(
-                    text = stringResource(R.string.monthly_health),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(horizontal = Spacing.xs)
-                )
-                MonthlySummaryCard(summary = state.summary)
-            }
-        }
-
-
 
         // BUDGET BREAKDOWN (Plan)
         item {
@@ -249,30 +216,34 @@ private fun DashboardContent(
             }
         }
 
-        // RECENT TRANSACTIONS HEADER
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.recent_activity),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
-                TextButton(onClick = onSeeAllTransactions) {
-                    Text(stringResource(R.string.see_all), style = MaterialTheme.typography.labelLarge)
+        if (state.recentTransactions.isNotEmpty()) {
+            // RECENT TRANSACTIONS HEADER
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.recent_activity),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    if (state.recentTransactions.size > 3) {
+                        TextButton(onClick = onSeeAllTransactions) {
+                            Text(stringResource(R.string.see_all), style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                 }
             }
-        }
-
-        // TRANSACTIONS
-        items(state.recentTransactions) { transaction ->
-            TransactionRow(
-                item = transaction,
-                onClick = { onTransactionClick(transaction.id) },
-                onDelete = {}
-            )
+    
+            // TRANSACTIONS
+            items(state.recentTransactions) { transaction ->
+                TransactionRow(
+                    item = transaction,
+                    onClick = { onTransactionClick(transaction.id) },
+                    onDelete = {}
+                )
+            }
         }
         
         item {
@@ -284,96 +255,159 @@ private fun DashboardContent(
 @Composable
 private fun SafeToSpendCard(amount: String, limit: String, percent: Float) {
     val isOverspent = amount.startsWith("−") || amount.startsWith("-")
-    val animatedPercent by animateFloatAsState(targetValue = percent, label = "STSProgress")
+    val progress = (1f - percent).coerceIn(0f, 1f)
+    val animatedProgress by animateFloatAsState(targetValue = progress, label = "STSProgress")
     
-    val baseColor = if (isOverspent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-    val containerColor = if (isOverspent) baseColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+    val statusColor = when {
+        isOverspent -> MaterialTheme.colorScheme.error
+        progress > 0.9f -> MaterialTheme.colorScheme.error
+        progress > 0.7f -> Color(0xFFFF9500)
+        else -> MaterialTheme.colorScheme.primary
+    }
 
     Card(
-        modifier = Modifier.fillMaxWidth().height(200.dp),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, baseColor.copy(alpha = 0.1f))
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, statusColor.copy(alpha = 0.3f))
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Background Liquid Effect
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (isOverspent) 1f else animatedPercent)
-                    .fillMaxHeight()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                baseColor.copy(alpha = 0.15f),
-                                baseColor.copy(alpha = 0.05f)
-                            )
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier.padding(Spacing.xl).fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(statusColor)
+                )
+                Spacer(modifier = Modifier.width(Spacing.md))
+                Text(
+                    text = stringResource(R.string.safe_to_spend_today),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.Bottom
                 ) {
                     Column {
+                        Text(stringResource(R.string.todays_allowance), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            text = stringResource(R.string.safe_to_spend_today),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.daily_budget_format, limit),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = baseColor.copy(alpha = 0.7f)
+                            amount,
+                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
+                            color = statusColor
                         )
                     }
-                    
-                    Surface(
-                        shape = CircleShape,
-                        color = baseColor.copy(alpha = 0.1f),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            if (isOverspent) Icons.Default.Info else Icons.Default.Notifications,
-                            contentDescription = null,
-                            tint = baseColor,
-                            modifier = Modifier.padding(Spacing.sm)
-                        )
-                    }
+                    Text(
+                        stringResource(R.string.limit_format, limit.replace(",", "").replace("₹", "").toDoubleOrNull() ?: 0.0),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
                 }
 
-                Column {
-                    Text(
-                        text = amount,
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    
-                    // Simple progress bar for a cleaner look
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     LinearProgressIndicator(
-                        progress = { if (isOverspent) 1f else animatedPercent },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                        color = baseColor,
-                        trackColor = baseColor.copy(alpha = 0.1f),
+                        progress = { if (isOverspent) 1f else animatedProgress },
+                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
+                        color = statusColor,
+                        trackColor = statusColor.copy(alpha = 0.1f),
                         strokeCap = StrokeCap.Round
                     )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.spent_today_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.used_percent_format, if (isOverspent) 100 else (progress * 100).toInt()), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = statusColor)
+                    }
+                }
+                
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(Spacing.sm).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                        Text(
+                            if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.pacing_tip_format, limit.replace(",", "").replace("₹", "").toDoubleOrNull() ?: 0.0),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+private fun PremiumFixedBillsCard(amount: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Fancy abstract shapes
+            Box(Modifier.matchParentSize()) {
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .offset(x = 220.dp, y = (-30).dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
+                )
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .offset(x = (-30).dp, y = 60.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f))
+                )
+            }
 
-
-
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.tertiary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🧾", fontSize = 24.sp)
+                }
+                Spacer(modifier = Modifier.width(Spacing.md))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.fixed_bills),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.monthly_commit),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+                Text(
+                    text = amount,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+    }
+}

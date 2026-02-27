@@ -48,12 +48,20 @@ fun SummaryScreen(
         ) {
             val pagerState = rememberPagerState(initialPage = 1, pageCount = { tabs.size })
             
+            // Sync FROM selectedTab TO Pager
             LaunchedEffect(selectedTab) {
-                pagerState.animateScrollToPage(selectedTab)
+                if (pagerState.currentPage != selectedTab) {
+                    pagerState.animateScrollToPage(selectedTab)
+                }
             }
             
-            LaunchedEffect(pagerState.currentPage) {
-                selectedTab = pagerState.currentPage
+            // Sync FROM Pager TO selectedTab (only when settled)
+            LaunchedEffect(pagerState) {
+                snapshotFlow { pagerState.settledPage }.collect { page ->
+                    if (selectedTab != page) {
+                        selectedTab = page
+                    }
+                }
             }
 
             TabRow(

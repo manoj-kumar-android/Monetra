@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.monetra.ui.theme.Spacing
 
 @Composable
@@ -28,24 +29,55 @@ fun MetricCard(
     color: Color
 ) {
     Card(
-        modifier = modifier.height(120.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, color.copy(alpha = 0.2f))
+        modifier = modifier.height(130.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, color.copy(alpha = 0.30f))
     ) {
-        Column(modifier = Modifier.padding(Spacing.lg).fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Subtle background accent
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(90.dp)
                     .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                    .background(color.copy(alpha = 0.08f))
+                    .align(Alignment.TopEnd)
+            )
+            Column(
+                modifier = Modifier.fillMaxSize().padding(Spacing.lg),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = color)
-            }
-            Column {
-                Text(text = amount, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-                Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(color.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = color)
+                    }
+                    Column {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = color
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                Text(
+                    text = amount,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -223,6 +255,90 @@ fun WealthProjectionSummaryCard(
                     Text("Returns: ₹%,.0f".format(projection.totalReturns), style = MaterialTheme.typography.labelSmall, color = Color(0xFF34C759))
                 }
             }
+        }
+    }
+}
+@Composable
+fun BalanceSummaryCard(
+    actualBalance: String,
+    reservedAmount: String,
+    availableBalance: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+        border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+    ) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Available to Use",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = availableBalance,
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🛡️", fontSize = 24.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Total Balance",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = actualBalance,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Reserved Amount",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = reservedAmount,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(Spacing.md))
+            Text(
+                text = "Reserved for pending bills",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }

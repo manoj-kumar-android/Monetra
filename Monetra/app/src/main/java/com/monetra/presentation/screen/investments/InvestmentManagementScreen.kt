@@ -85,11 +85,7 @@ fun InvestmentManagementScreen(
                     AllocationSection(intel.assetAllocation)
                 }
 
-                if (intel.insights.isNotEmpty()) {
-                    item {
-                        WealthInsightsSection(intel.insights)
-                    }
-                }
+
 
                 item {
                     ProjectionCard(
@@ -144,6 +140,9 @@ fun InvestmentManagementScreen(
             onTypeChange = viewModel::onTypeChange,
             onInterestRateChange = viewModel::onInterestRateChange,
             onStartDateChange = viewModel::onStartDateChange,
+            onEndDateChange = viewModel::onEndDateChange,
+            onAddStepChange = viewModel::onAddStepChange,
+            onRemoveStepChange = viewModel::onRemoveStepChange,
             onSave = viewModel::onSaveInvestment,
             onDismiss = { viewModel.toggleAddSheet(false) }
         )
@@ -289,29 +288,7 @@ fun AllocationSection(allocation: List<com.monetra.domain.model.AssetAllocationI
     }
 }
 
-@Composable
-fun WealthInsightsSection(insights: List<com.monetra.domain.model.WealthInsight>) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(R.string.smart_assistant_label), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-        insights.forEach { insight ->
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Row(modifier = Modifier.padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    }
-                    Spacer(modifier = Modifier.width(Spacing.md))
-                    Column {
-                        Text(insight.title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                        Text(insight.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-        }
-    }
-}
+
 
 @Composable
 fun LiquidityBreakdownSection(intel: WealthIntelligence) {
@@ -442,16 +419,6 @@ fun ProjectionCard(
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(Spacing.xl))
-
-            Text(stringResource(R.string.yearly_milestones), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-            Spacer(modifier = Modifier.height(Spacing.md))
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                projection.yearlyMilestones.keys.sorted().filter { it in listOf(1, 5, 10, 20, 30) }.forEach { year ->
-                    MilestoneRow(year, projection.yearlyMilestones[year] ?: 0.0)
-                }
-            }
         }
     }
 }
@@ -490,31 +457,7 @@ fun BreakdownRow(label: String, amount: Double) {
     }
 }
 
-@Composable
-fun MilestoneRow(year: Int, amount: Double) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            shape = CircleShape,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("Y$year", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-            }
-        }
-        Spacer(modifier = Modifier.width(Spacing.md))
-        Text(stringResource(R.string.projected_wealth_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.weight(1f))
-        Text("₹%,.0f".format(amount), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black))
-    }
-}
+
 
 @Composable
 fun InvestmentCard(inv: Investment, onDelete: () -> Unit) {
@@ -654,42 +597,119 @@ fun AddInvestmentSheet(
     onTypeChange: (com.monetra.domain.model.InvestmentType) -> Unit,
     onInterestRateChange: (String) -> Unit,
     onStartDateChange: (java.time.LocalDate) -> Unit,
+    onEndDateChange: (java.time.LocalDate?) -> Unit,
+    onAddStepChange: (Double, java.time.LocalDate) -> Unit,
+    onRemoveStepChange: (com.monetra.domain.model.StepChange) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showStepDialog by remember { mutableStateOf(false) }
     
-    if (showDatePicker) {
+    if (showStartDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = uiState.startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
-            selectableDates = object : androidx.compose.material3.SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis <= System.currentTimeMillis()
-                }
-
-                override fun isSelectableYear(year: Int): Boolean {
-                    return year <= java.time.LocalDate.now().year
-                }
-            }
+            initialSelectedDateMillis = uiState.startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { showStartDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        val date = java.time.Instant.ofEpochMilli(it)
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDate()
-                        onStartDateChange(date)
+                        onStartDateChange(java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate())
                     }
-                    showDatePicker = false
-                }) { Text(stringResource(R.string.ok)) }
+                    showStartDatePicker = false
+                }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") }
             }
-        ) {
-            DatePicker(state = datePickerState)
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (showEndDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.endDate?.atStartOfDay(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli() ?: System.currentTimeMillis()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        onEndDateChange(java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate())
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel") }
+            }
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (showStepDialog) {
+        var stepAmount by remember { mutableStateOf("") }
+        var stepDate by remember { mutableStateOf(java.time.LocalDate.now()) }
+        var showStepDatePicker by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { showStepDialog = false },
+            title = { Text("Add Step-Up/Down") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    OutlinedTextField(
+                        value = stepAmount,
+                        onValueChange = { stepAmount = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("New Monthly Amount") },
+                        prefix = { Text("₹") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = stepDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Effective Date") },
+                        trailingIcon = {
+                            IconButton(onClick = { showStepDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable { showStepDatePicker = true }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val amt = stepAmount.toDoubleOrNull() ?: 0.0
+                    if (amt > 0) {
+                        onAddStepChange(amt, stepDate)
+                        showStepDialog = false
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStepDialog = false }) { Text("Cancel") }
+            }
+        )
+
+        if (showStepDatePicker) {
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = stepDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showStepDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            stepDate = java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        }
+                        showStepDatePicker = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showStepDatePicker = false }) { Text("Cancel") }
+                }
+            ) { DatePicker(state = datePickerState) }
         }
     }
 
@@ -701,10 +721,12 @@ fun AddInvestmentSheet(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = Spacing.xl)
                 .padding(bottom = 48.dp)
-                .animateContentSize(),
+                .navigationBarsPadding()
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Text(stringResource(R.string.add_investment), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
@@ -760,11 +782,11 @@ fun AddInvestmentSheet(
                 }
 
                 val needsInterest = uiState.type !in listOf(
-                    InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
+                    InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD,
                     InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE,
                     InvestmentType.CASH
                 )
-                
+
                 if (needsInterest) {
                     OutlinedTextField(
                         value = uiState.interestRate,
@@ -778,22 +800,62 @@ fun AddInvestmentSheet(
                 }
             }
 
-            OutlinedTextField(
-                value = uiState.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy")),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.start_date_label)) },
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                OutlinedTextField(
+                    value = uiState.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Start Date") },
+                    trailingIcon = {
+                        IconButton(onClick = { showStartDatePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier.weight(1f).clickable { showStartDatePicker = true },
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                OutlinedTextField(
+                    value = uiState.endDate?.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")) ?: "Ongoing",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("End Date (Optional)") },
+                    trailingIcon = {
+                        IconButton(onClick = { showEndDatePicker = true }) {
+                            Icon(if (uiState.endDate == null) Icons.Default.CalendarToday else Icons.Default.Close, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier.weight(1f).clickable { if (uiState.endDate != null) onEndDateChange(null) else showEndDatePicker = true },
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+
+            if (uiState.frequency == ContributionFrequency.MONTHLY) {
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Text("Step-Up/Down History", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+
+                uiState.stepChanges.forEach { step ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("₹%,.0f from ${step.effectiveDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy"))}".format(step.amount), style = MaterialTheme.typography.bodyMedium)
+                        IconButton(onClick = { onRemoveStepChange(step) }) {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
+                        }
                     }
-                },
-                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
-                shape = RoundedCornerShape(12.dp)
-            )
+                }
+
+                TextButton(onClick = { showStepDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Add Step Change")
+                }
+            }
 
             val isMarketBased = uiState.type in listOf(
-                InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
+                InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD,
                 InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE
             )
 
@@ -806,8 +868,27 @@ fun AddInvestmentSheet(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { Text(stringResource(R.string.leave_blank_desc), style = MaterialTheme.typography.labelSmall) }
+                    supportingText = { Text("Leave blank for auto-calculation based on returns profile", style = MaterialTheme.typography.labelSmall) }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Total Invested", style = MaterialTheme.typography.labelMedium)
+                        Text("Expected Wealth", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("₹%,.0f".format(uiState.previewInvested), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text("₹%,.0f".format(uiState.previewWealth), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(Spacing.sm))
@@ -819,6 +900,7 @@ fun AddInvestmentSheet(
             ) {
                 Text(stringResource(R.string.save_investment), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
+            Spacer(Modifier.height(Spacing.sm))
         }
     }
 }

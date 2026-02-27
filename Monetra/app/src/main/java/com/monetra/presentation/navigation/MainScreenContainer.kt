@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PriceCheck
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +44,7 @@ sealed interface BottomNavScreen {
     data object Transactions : BottomNavScreen
     
     @Serializable
-    data object Assistant : BottomNavScreen
+    data object Refundable : BottomNavScreen
 
     @Serializable
     data object Summary : BottomNavScreen
@@ -59,14 +60,15 @@ data class BottomNavItem(
 fun MainScreenContainer(
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
-    onNavigateToReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onManageBudgetsClick: () -> Unit,
     onNavigateToLoans: () -> Unit,
     onNavigateToInvestments: () -> Unit,
-    onNavigateToSimulator: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
-    onNavigateToHelp: (String) -> Unit
+    onNavigateToHelp: (String) -> Unit,
+    onNavigateToAddRefundable: () -> Unit,
+    onNavigateToEditRefundable: (Long) -> Unit,
+    onNavigateToRefundableDetails: (Long) -> Unit
 ) {
     val nestedNavController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -74,8 +76,8 @@ fun MainScreenContainer(
     val navItems = listOf(
         BottomNavItem("Dashboard", Icons.Default.Home, BottomNavScreen.Dashboard),
         BottomNavItem("Transactions", Icons.AutoMirrored.Filled.List, BottomNavScreen.Transactions),
-        BottomNavItem("Assistant", Icons.Default.Face, BottomNavScreen.Assistant),
-        BottomNavItem("Snapshot", Icons.Default.Star, BottomNavScreen.Summary)
+        BottomNavItem("Refundable", Icons.Default.PriceCheck, BottomNavScreen.Refundable),
+        BottomNavItem("Portfolio", Icons.Default.Star, BottomNavScreen.Summary)
     )
 
     Scaffold(
@@ -133,7 +135,6 @@ fun MainScreenContainer(
                 com.monetra.presentation.screen.dashboard.DashboardScreen(
                     onNavigateToAdd = onNavigateToAdd,
                     onNavigateToEdit = onNavigateToEdit,
-                    onNavigateToReport = onNavigateToReport,
                     onNavigateToSettings = onNavigateToSettings,
                     onManageBudgetsClick = onManageBudgetsClick,
                     onNavigateToFixedExpenses = onNavigateToFixedExpenses,
@@ -157,17 +158,18 @@ fun MainScreenContainer(
                     onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") }
                 )
             }
-            composable<BottomNavScreen.Assistant> {
-                com.monetra.presentation.screen.planning.PlanningScreen(
-                    onNavigateToLoans = { onNavigateToLoans() },
-                    onNavigateToInvestments = { onNavigateToInvestments() },
-                    onNavigateToSimulator = { onNavigateToSimulator() },
-                    onNavigateToHelp = { onNavigateToHelp("ASSISTANT") }
+            composable<BottomNavScreen.Refundable> {
+                com.monetra.presentation.screen.refundable.RefundableScreen(
+                    onAddEntryClick = onNavigateToAddRefundable,
+                    onEntryClick = onNavigateToRefundableDetails,
+                    onNavigateToHelp = { onNavigateToHelp("REFUNDABLE") }
                 )
             }
             composable<BottomNavScreen.Summary> {
-                SnapshotScreen(
-                    onNavigateToHelp = { onNavigateToHelp("SNAPSHOT") }
+                com.monetra.presentation.screen.portfolio.PortfolioScreen(
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToLoans = onNavigateToLoans,
+                    onNavigateToInvestments = onNavigateToInvestments
                 )
             }
         }

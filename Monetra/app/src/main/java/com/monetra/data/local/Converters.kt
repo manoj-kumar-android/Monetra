@@ -5,6 +5,7 @@ import com.monetra.domain.model.TransactionType
 import com.monetra.domain.model.GoalCategory
 import com.monetra.domain.model.InvestmentType
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
@@ -16,6 +17,16 @@ class Converters {
     @TypeConverter
     fun dateToTimestamp(date: LocalDate?): String? {
         return date?.format(DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+
+    @TypeConverter
+    fun fromDateTimeTimestamp(value: String?): LocalDateTime? {
+        return value?.let { LocalDateTime.parse(it) }
+    }
+
+    @TypeConverter
+    fun dateTimeToTimestamp(date: LocalDateTime?): String? {
+        return date?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     }
 
     @TypeConverter
@@ -55,5 +66,24 @@ class Converters {
     @TypeConverter
     fun fromContributionFrequency(frequency: com.monetra.domain.model.ContributionFrequency): String {
         return frequency.name
+    }
+    @TypeConverter
+    fun toBillStatus(value: String): com.monetra.domain.model.BillStatus {
+        return enumValueOf<com.monetra.domain.model.BillStatus>(value)
+    }
+
+    @TypeConverter
+    fun fromBillStatus(status: com.monetra.domain.model.BillStatus): String {
+        return status.name
+    }
+
+    @TypeConverter
+    fun fromYearMonth(value: java.time.YearMonth?): String? {
+        return value?.toString()
+    }
+
+    @TypeConverter
+    fun toYearMonth(value: String?): java.time.YearMonth? {
+        return value?.let { java.time.YearMonth.parse(it) }
     }
 }

@@ -15,4 +15,5 @@ data class Transaction(
     val category: String,
     val date: LocalDate,
     val note: String = "",
+    val linkedBillId: Long? = null
 )

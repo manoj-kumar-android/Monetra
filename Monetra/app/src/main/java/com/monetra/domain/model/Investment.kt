@@ -8,16 +8,23 @@ enum class ContributionFrequency {
     ONE_TIME, MONTHLY
 }
 
+data class StepChange(
+    val amount: Double,
+    val effectiveDate: LocalDate
+)
+
 data class Investment(
     val id: Long = 0L,
     val name: String,
     val type: InvestmentType,
     val startDate: LocalDate,
+    val endDate: LocalDate? = null,
     val amount: Double = 0.0, // Lump sum amount (Principal for ONE_TIME)
     val monthlyAmount: Double = 0.0, // Recurring amount (Principal for MONTHLY)
     val interestRate: Double = 0.0,
     val currentValue: Double = 0.0,
-    val frequency: ContributionFrequency
+    val frequency: ContributionFrequency,
+    val stepChanges: List<StepChange> = emptyList()
 ) {
     /**
      * Total months elapsed since the investment started.
@@ -34,14 +41,54 @@ data class Investment(
     }
 
     /**
+     * Calculates the real total invested and the real current value using compound logic based on the timeline.
+     */
+    private fun calculateRealWealth(today: LocalDate = LocalDate.now()): Pair<Double, Double> {
+        val limitDate = endDate?.let { if (it.isBefore(today)) it else today } ?: today
+        if (limitDate.isBefore(startDate)) return Pair(0.0, 0.0)
+
+        var totalInvested = 0.0
+        var currentValueAccumulated = 0.0
+
+        val totalMonths = ChronoUnit.MONTHS.between(startDate, limitDate).toInt() + 1
+
+        if (frequency == ContributionFrequency.MONTHLY) {
+            val r = interestRate / 12.0 / 100.0
+            
+            for (i in 0 until totalMonths) {
+                val contributionDate = startDate.plusMonths(i.toLong())
+                val effectiveAmount = stepChanges
+                    .filter { !it.effectiveDate.isAfter(contributionDate) }
+                    .maxByOrNull { it.effectiveDate }?.amount ?: monthlyAmount
+                
+                totalInvested += effectiveAmount
+                val remainingMonths = totalMonths - i
+                
+                if (r > 0) {
+                    currentValueAccumulated += effectiveAmount * (1 + r).pow(remainingMonths.toDouble())
+                } else {
+                    currentValueAccumulated += effectiveAmount
+                }
+            }
+        } else {
+            totalInvested = amount
+            val yearsElapsed = ChronoUnit.DAYS.between(startDate, limitDate) / 365.25
+            val r = interestRate / 100.0
+            if (r > 0) {
+                currentValueAccumulated = amount * (1 + r).pow(yearsElapsed)
+            } else {
+                currentValueAccumulated = amount
+            }
+        }
+
+        return Pair(totalInvested, currentValueAccumulated)
+    }
+
+    /**
      * The actual amount of money the user has "put in" to this investment.
      */
     fun calculateTotalInvested(today: LocalDate = LocalDate.now()): Double {
-        val months = monthsElapsed(today)
-        return when (frequency) {
-            ContributionFrequency.ONE_TIME -> amount
-            ContributionFrequency.MONTHLY -> monthlyAmount * months
-        }
+        return calculateRealWealth(today).first
     }
 
     /**
@@ -49,34 +96,18 @@ data class Investment(
      * Some types are MARKET-based (user edits), others are LOGIC-based (interest rate).
      */
     fun calculateCurrentValue(today: LocalDate = LocalDate.now()): Double {
-        return when (type) {
-            // Market-based: Return the stored currentValue (which is user-editable)
+        // If the user has explicitly set a current value that isn't overridden by logic, use it if market-based
+        if (type in listOf(
             InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.GOLD, 
-            InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE -> currentValue
-
-            // Cash: Always equals principal
-            InvestmentType.CASH -> amount
-
-            // Insurance: User rule "monthly premium × monthsElapsed"
-            InvestmentType.INSURANCE -> monthlyAmount * monthsElapsed(today)
-
-            // Logic-based: Calculate using interest rate
-            else -> {
-                val months = monthsElapsed(today)
-                if (frequency == ContributionFrequency.MONTHLY) {
-                    val r = interestRate / 12.0 / 100.0
-                    if (r > 0 && months > 0) {
-                        // Formula: P * [((1 + r)^n - 1) / r] * (1 + r)
-                        monthlyAmount * ((1 + r).pow(months.toDouble()) - 1) / r * (1 + r)
-                    } else {
-                        monthlyAmount * months.toDouble()
-                    }
-                } else {
-                    // One-time: P * (1 + r)^t
-                    amount * (1 + interestRate / 100.0).pow(yearsElapsed(today))
-                }
-            }
+            InvestmentType.MUTUAL_FUND, InvestmentType.OTHER, InvestmentType.REAL_ESTATE
+        )) {
+            return currentValue
         }
+
+        if (type == InvestmentType.CASH) return calculateRealWealth(today).first
+        if (type == InvestmentType.INSURANCE) return calculateRealWealth(today).first
+
+        return calculateRealWealth(today).second
     }
 
     /**

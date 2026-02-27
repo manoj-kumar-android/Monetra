@@ -22,6 +22,18 @@ class MontraApplication : Application(), Configuration.Provider {
         super.onCreate()
         scheduleFinancialInsights()
         scheduleEmiReminders()
+        scheduleRefundableReminders()
+    }
+
+    private fun scheduleRefundableReminders() {
+        val workRequest = PeriodicWorkRequestBuilder<com.monetra.data.worker.RefundableReminderWorker>(1, TimeUnit.DAYS)
+            .build()
+        
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "refundable_reminders",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
 
     private fun scheduleFinancialInsights() {

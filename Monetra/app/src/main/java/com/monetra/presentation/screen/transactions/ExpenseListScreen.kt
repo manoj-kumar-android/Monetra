@@ -58,6 +58,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -173,50 +174,66 @@ fun ExpenseListScreen(
                         initialPage = Int.MAX_VALUE / 2,
                         pageCount = { Int.MAX_VALUE }
                     )
-                    
+
                     val initialMonth = remember { YearMonth.now() }
-                    
-                    LaunchedEffect(pagerState.currentPage) {
-                        val monthsOffset = pagerState.currentPage - (Int.MAX_VALUE / 2)
-                        viewModel.onMonthSelected(initialMonth.plusMonths(monthsOffset.toLong()))
-                    }
-                    
-                    LaunchedEffect(state.selectedMonth) {
-                        val targetOffset = java.time.temporal.ChronoUnit.MONTHS.between(initialMonth, state.selectedMonth).toInt()
-                        val targetPage = (Int.MAX_VALUE / 2) + targetOffset
-                        if (pagerState.currentPage != targetPage) {
-                            pagerState.animateScrollToPage(targetPage)
+
+                    // Sync FROM Pager TO ViewModel only when user has fully settled on a page
+                    LaunchedEffect(pagerState) {
+                        snapshotFlow { pagerState.settledPage }.collect { page ->
+                            val monthsOffset = page - (Int.MAX_VALUE / 2)
+                            val targetMonth = initialMonth.plusMonths(monthsOffset.toLong())
+                            if (targetMonth != state.selectedMonth) {
+                                viewModel.onMonthSelected(targetMonth)
+                            }
                         }
                     }
+
+                    val scope = rememberCoroutineScope()
 
                     Column(modifier = Modifier.fillMaxSize()) {
                         MonthSelector(
                             selectedMonth = state.selectedMonth,
                             isCurrentMonth = state.isCurrentMonth,
-                            onMonthSelected = viewModel::onMonthSelected,
-                            onResetMonth = viewModel::onResetMonth
+                            onMonthSelected = { month ->
+                                val targetOffset = java.time.temporal.ChronoUnit.MONTHS.between(initialMonth, month).toInt()
+                                val targetPage = (Int.MAX_VALUE / 2) + targetOffset
+                                if (pagerState.currentPage != targetPage) {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(targetPage)
+                                    }
+                                }
+                            },
+                            onResetMonth = {
+                                if (pagerState.currentPage != Int.MAX_VALUE / 2) {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(Int.MAX_VALUE / 2)
+                                    }
+                                }
+                                viewModel.onResetMonth()
+                            }
                         )
-                        
+
                         HorizontalPager(
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.Top,
+                            beyondViewportPageCount = 1
                         ) { page ->
+                            // Each page independently computes its own month — no blank pages during swipe
+                            val pageMonth = remember(page) {
+                                initialMonth.plusMonths((page - (Int.MAX_VALUE / 2)).toLong())
+                            }
                             PullToRefreshBox(
-                                isRefreshing = state.isRefreshing && page == pagerState.currentPage,
+                                isRefreshing = state.isRefreshing && pageMonth == state.selectedMonth,
                                 onRefresh = viewModel::refresh,
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                // Only show content if this page represents the currently selected month
-                                // This prevents flickering or showing wrong data while swiping
-                                if (page == (Int.MAX_VALUE / 2) + java.time.temporal.ChronoUnit.MONTHS.between(initialMonth, state.selectedMonth).toInt()) {
-                                    TransactionListContent(
-                                        state = state,
-                                        onFilterSelected = viewModel::onFilterSelected,
-                                        onTransactionClick = onNavigateToEdit,
-                                        onDeleteClick = viewModel::onDeleteClick
-                                    )
-                                }
+                                TransactionListContent(
+                                    state = state,
+                                    onFilterSelected = viewModel::onFilterSelected,
+                                    onTransactionClick = onNavigateToEdit,
+                                    onDeleteClick = viewModel::onDeleteClick
+                                )
                             }
                         }
                     }

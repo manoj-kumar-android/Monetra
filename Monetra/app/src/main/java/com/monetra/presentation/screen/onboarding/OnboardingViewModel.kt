@@ -32,6 +32,9 @@ class OnboardingViewModel @Inject constructor(
     private val _savingsGoal = MutableStateFlow("")
     val savingsGoal = _savingsGoal.asStateFlow()
 
+    private val _savingsError = MutableStateFlow<String?>(null)
+    val savingsError = _savingsError.asStateFlow()
+
     val fixedCosts = monthlyExpenseRepo.getAllMonthlyExpenses()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -55,6 +58,15 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun nextStep() {
+        if (_currentStep.value == 0) {
+            val incomeVal = _income.value.toDoubleOrNull() ?: 0.0
+            val savingsVal = _savingsGoal.value.toDoubleOrNull() ?: 0.0
+            if (savingsVal >= incomeVal && incomeVal > 0) {
+                _savingsError.value = "Savings goal must be less than monthly income"
+                return
+            }
+            _savingsError.value = null
+        }
         if (_currentStep.value < 3) {
             _currentStep.value += 1
         }
@@ -76,19 +88,22 @@ class OnboardingViewModel @Inject constructor(
 
     fun setSavingsGoal(value: String) {
         _savingsGoal.value = value
+        _savingsError.value = null // clear error on change
     }
 
     fun savePreferences() {
+        val incomeVal = _income.value.toDoubleOrNull() ?: 0.0
+        val savingsVal = _savingsGoal.value.toDoubleOrNull() ?: 0.0
+        // Clamp savings to be strictly less than income before saving
+        val clampedSavings = if (savingsVal >= incomeVal && incomeVal > 0) incomeVal * 0.9 else savingsVal
         viewModelScope.launch {
-            val incomeVal = _income.value.toDoubleOrNull() ?: 0.0
-            val savingsVal = _savingsGoal.value.toDoubleOrNull() ?: 0.0
             val nameVal = _name.value.ifBlank { "there" }
             val currentPref = userPreferenceRepo.getUserPreferences().firstOrNull() ?: UserPreferences(ownerName = nameVal, monthlyIncome = 0.0, monthlySavingsGoal = 0.0)
             userPreferenceRepo.saveUserPreferences(
                 currentPref.copy(
                     ownerName = nameVal,
                     monthlyIncome = incomeVal,
-                    monthlySavingsGoal = savingsVal,
+                    monthlySavingsGoal = clampedSavings,
                     isOnboardingCompleted = true
                 )
             )

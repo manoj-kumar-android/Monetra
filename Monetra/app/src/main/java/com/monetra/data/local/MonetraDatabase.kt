@@ -19,6 +19,9 @@ import com.monetra.data.local.entity.GoalEntity
 import com.monetra.data.local.entity.InvestmentEntity
 import com.monetra.data.local.entity.LoanEntity
 import com.monetra.data.local.entity.MonthlyExpenseEntity
+import com.monetra.data.local.entity.BillInstanceEntity
+import com.monetra.data.local.entity.RefundableEntity
+import com.monetra.data.local.dao.RefundableDao
 
 @Database(
     entities = [
@@ -29,9 +32,11 @@ import com.monetra.data.local.entity.MonthlyExpenseEntity
         InvestmentEntity::class,
         MonthlyReportEntity::class,
         LoanEntity::class,
-        MonthlyExpenseEntity::class
+        MonthlyExpenseEntity::class,
+        BillInstanceEntity::class,
+        RefundableEntity::class
     ], 
-    version = 1, 
+    version = 8, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -44,4 +49,5 @@ abstract class MonetraDatabase : RoomDatabase() {
     abstract val monthlyReportDao: MonthlyReportDao
     abstract val loanDao: LoanDao
     abstract val monthlyExpenseDao: MonthlyExpenseDao
+    abstract val refundableDao: RefundableDao
 }

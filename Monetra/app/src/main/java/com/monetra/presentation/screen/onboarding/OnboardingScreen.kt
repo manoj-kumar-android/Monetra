@@ -37,6 +37,7 @@ fun OnboardingScreen(
     val income by viewModel.income.collectAsStateWithLifecycle()
     val name by viewModel.name.collectAsStateWithLifecycle()
     val savings by viewModel.savingsGoal.collectAsStateWithLifecycle()
+    val savingsError by viewModel.savingsError.collectAsStateWithLifecycle()
     val fixedCosts by viewModel.fixedCosts.collectAsStateWithLifecycle()
     val loans by viewModel.loans.collectAsStateWithLifecycle()
 
@@ -94,7 +95,7 @@ fun OnboardingScreen(
                 }, label = "OnboardingTransition"
             ) { step ->
                 when (step) {
-                    0 -> SalarySetupStep(name, viewModel::setName, income, viewModel::setIncome, savings, viewModel::setSavingsGoal)
+                    0 -> SalarySetupStep(name, viewModel::setName, income, viewModel::setIncome, savings, viewModel::setSavingsGoal, savingsError)
                     1 -> FixedCostsStep(fixedCosts, viewModel::addQuickFixedCost)
                     2 -> EMIsStep(loans, viewModel::addQuickEmi)
                     3 -> CalculationStep(
@@ -116,7 +117,8 @@ private fun SalarySetupStep(
     income: String,
     onIncomeChange: (String) -> Unit,
     savings: String,
-    onSavingsChange: (String) -> Unit
+    onSavingsChange: (String) -> Unit,
+    savingsError: String? = null
 ) {
     Column(modifier = Modifier.padding(Spacing.xl).fillMaxSize(), verticalArrangement = Arrangement.Center) {
         Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
@@ -167,7 +169,9 @@ private fun SalarySetupStep(
             ),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            isError = savingsError != null,
+            supportingText = if (savingsError != null) {{ Text(savingsError, color = MaterialTheme.colorScheme.error) }} else null
         )
     }
 }

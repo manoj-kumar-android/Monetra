@@ -34,7 +34,8 @@ class DashboardViewModel @Inject constructor(
     private val detectRecurringExpenses: DetectRecurringExpensesUseCase,
     private val getWeeklySummary: GetWeeklySummaryUseCase,
     private val monthlyExpenseRepository: MonthlyExpenseRepository,
-    private val loanRepository: LoanRepository
+    private val loanRepository: LoanRepository,
+    private val prepareMonthlyBills: PrepareMonthlyBillsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
@@ -43,7 +44,11 @@ class DashboardViewModel @Inject constructor(
     private val selectedMonth = YearMonth.now()
 
     init {
-        observeDashboardData()
+        viewModelScope.launch {
+            // Ensure bill instances for the current month exist before observing data
+            prepareMonthlyBills(selectedMonth)
+            observeDashboardData()
+        }
     }
 
     private fun observeDashboardData() {
@@ -57,7 +62,7 @@ class DashboardViewModel @Inject constructor(
                 detectRecurringExpenses(),
                 getCategoryBudgets(selectedMonth),
                 getTransactions(selectedMonth),
-                monthlyExpenseRepository.getTotalMonthlyExpenseAmount(),
+                monthlyExpenseRepository.getTotalReservedAmountForMonth(selectedMonth),
                 loanRepository.getTotalMonthlyEmi()
             ) { results ->
                 val summary = results[0] as com.monetra.domain.model.MonthlySummary
@@ -68,7 +73,7 @@ class DashboardViewModel @Inject constructor(
                 val rec = results[5] as List<com.monetra.domain.model.RecurringExpense>
                 val budgets = results[6] as List<com.monetra.domain.model.CategoryBudget>
                 val txs = results[7] as List<com.monetra.domain.model.Transaction>
-                val fixedAmount = results[8] as Double
+                val currentReserved = results[8] as Double
                 val totalEmi = results[9] as Double
 
                 // Guard: if no income set, signal user to complete setup
@@ -90,7 +95,7 @@ class DashboardViewModel @Inject constructor(
                     summary = summary.toSummaryUiModel(pref.ownerName),
                     weeklyExpense = "₹%,.0f".format(weekly.totalExpense.coerceAtLeast(0.0)),
                     weeklyActivity = (0..6).map { 0.5f },
-                    fixedCosts = "₹%,.0f".format(fixedAmount.coerceAtLeast(0.0)),
+                    fixedCosts = "₹%,.0f".format(currentReserved), 
                     income = pref.monthlyIncome,
                     savingsGoal = pref.monthlySavingsGoal,
                     totalEmi = totalEmi,
@@ -132,10 +137,16 @@ class DashboardViewModel @Inject constructor(
             "Food" -> "🍔"
             "Transport" -> "🚗"
             "Shopping" -> "🛍️"
-            "Entertainment" -> "🎭"
-            "Utilities" -> "💡"
+            "Entertainment", "Fun" -> "🎭"
+            "Utilities", "Bills" -> "💡"
             "Salary" -> "💸"
             "Gift" -> "🎁"
+            "Rent" -> "🏠"
+            "Groceries" -> "🛒"
+            "Subscription" -> "🔄"
+            "Health" -> "🏥"
+            "Refund" -> "🔙"
+            "Mobile Recharge" -> "📱"
             else -> "💰"
         }
     )
@@ -145,6 +156,8 @@ class DashboardViewModel @Inject constructor(
         formattedBalance = "₹%,.2f".format(balance),
         formattedIncome = "₹%,.2f".format(totalIncome),
         formattedExpense = "₹%,.2f".format(totalExpense),
+        formattedReserved = "₹%,.2f".format(reservedAmount),
+        formattedAvailable = "₹%,.2f".format(availableBalance)
     )
 
     private fun com.monetra.domain.model.CategoryBudget.toUiModel() = CategoryBudgetUiModel(

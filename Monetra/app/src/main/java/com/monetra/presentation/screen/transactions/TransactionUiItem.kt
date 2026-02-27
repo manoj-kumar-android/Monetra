@@ -45,4 +45,6 @@ data class SummaryUiModel(
     val formattedBalance: String,
     val formattedIncome: String,
     val formattedExpense: String,
+    val formattedReserved: String = "₹0.00",
+    val formattedAvailable: String = "₹0.00"
 )
