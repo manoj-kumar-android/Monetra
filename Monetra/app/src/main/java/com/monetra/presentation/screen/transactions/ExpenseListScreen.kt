@@ -104,6 +104,7 @@ fun ExpenseListScreen(
                 ExpenseEvent.NavigateToAdd -> onNavigateToAdd()
                 is ExpenseEvent.ShowUndoSnackbar -> {
                     coroutineScope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
                         val result = snackbarHostState.showSnackbar(
                             message = event.message,
                             actionLabel = "Undo"

@@ -25,7 +25,7 @@ sealed interface Route : NavKey {
     @Serializable
     data object Onboarding : Route
     @Serializable
-    data object TransactionList : Route
+    data class TransactionList(val initialTab: String? = null) : Route
     @Serializable
     data class AddEditTransaction(val transactionId: Long? = null) : Route
     @Serializable
@@ -57,10 +57,33 @@ sealed interface Route : NavKey {
 @Composable
 fun MonetraNavGraph(
     backStack: NavBackStack<NavKey>,
-    mainViewModel: MainViewModel = hiltViewModel()
+    mainViewModel: MainViewModel = hiltViewModel(),
+    initialRefundableId: Long? = null
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val isDashboardUser by mainViewModel.isDashboardUser.collectAsState()
+    val pendingRefundableId by mainViewModel.pendingRefundableId.collectAsState()
+
+    // Handle deep link when unlocked
+    val isLocked by mainViewModel.isLocked.collectAsState()
+    LaunchedEffect(pendingRefundableId, isLocked) {
+        if (pendingRefundableId != null && !isLocked) {
+            // Check if detail is already on top
+            val currentRoute = backStack.lastOrNull()
+            if (currentRoute !is Route.RefundableDetails || currentRoute.id != pendingRefundableId) {
+                val id = mainViewModel.consumePendingRefundableId()
+                if (id != null) {
+                    // Ensure the backstack has the Refundable tab under the detail
+                    // We only add it if the current top isn't already the TransactionList with Refundable tab
+                    val rootRoute = Route.TransactionList(initialTab = "Refundable")
+                    if (backStack.lastOrNull() != rootRoute) {
+                        backStack.navigateTo(rootRoute)
+                    }
+                    backStack.navigateTo(Route.RefundableDetails(id))
+                }
+            }
+        }
+    }
 
     // Listen for relock events from MainActivity
     LaunchedEffect(Unit) {
@@ -118,10 +141,28 @@ fun MonetraNavGraph(
                                 // If we were relocked (pushed Lock on top of a screen), just pop back
                                 if (backStack.size > 1) {
                                     backStack.removeAt(backStack.lastIndex)
+                                    // If we had a pending deep link during relock, handle it
+                                    mainViewModel.consumePendingRefundableId()?.let { id ->
+                                        // Ensure Refundable Tab is under details
+                                        val rootRoute = Route.TransactionList(initialTab = "Refundable")
+                                        if (backStack.lastOrNull() != rootRoute) {
+                                            backStack.navigateTo(rootRoute)
+                                        }
+                                        backStack.navigateTo(Route.RefundableDetails(id))
+                                    }
                                 } else {
                                     // Cold start: clear lock and go to destination
                                     backStack.clear()
-                                    backStack.add(if (isDashboardUser) Route.TransactionList else Route.Welcome)
+                                    val id = mainViewModel.consumePendingRefundableId()
+                                    if (id != null) {
+                                        // Inject backstack: Dashboard -> Refundable Tab -> Details
+                                        // We add the base Dashboard first to ensure the best back behavior
+                                        backStack.add(Route.TransactionList()) 
+                                        backStack.add(Route.TransactionList(initialTab = "Refundable"))
+                                        backStack.add(Route.RefundableDetails(id))
+                                    } else {
+                                        backStack.add(if (isDashboardUser) Route.TransactionList() else Route.Welcome)
+                                    }
                                 }
                                 mainViewModel.setLocked(false)
                             }
@@ -133,6 +174,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         MainScreenContainer(
                             isTopLevel = backStack.lastOrNull() is Route.TransactionList,
+                            initialTab = key.initialTab,
                             onNavigateToAdd = {
                                 keyboardController?.hide()
                                 backStack.navigateTo(Route.AddEditTransaction(null))
@@ -306,7 +348,7 @@ fun MonetraNavGraph(
                         com.monetra.presentation.screen.onboarding.OnboardingScreen(
                             onComplete = {
                                 backStack.clear()
-                                backStack.add(Route.TransactionList)
+                                backStack.add(Route.TransactionList())
                             }
                         )
                     }

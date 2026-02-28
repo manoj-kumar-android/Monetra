@@ -57,52 +57,51 @@ fun MonetraSnackbar(
 
     Surface(
         modifier = modifier
-            .padding(Spacing.md)
-            .fillMaxWidth()
-            .padding(bottom = 8.dp), // Extra padding from bottom for premium floating look
-        shape = RoundedCornerShape(20.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp) // Reduced outer padding
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp), // Slightly smaller corner radius
         color = containerColor,
-        tonalElevation = 8.dp, // Higher elevation for better separation
-        shadowElevation = 4.dp,
+        tonalElevation = 4.dp, // Lowered elevation for slimmer look
+        shadowElevation = 2.dp,
         border = BorderStroke(1.dp, borderColor)
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp), // Reduced inner padding
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp) // Reduced icon size
             )
-
+ 
             Text(
                 text = snackbarData.visuals.message,
-                style = MaterialTheme.typography.bodyMedium.copy(
+                style = MaterialTheme.typography.bodySmall.copy( // Smaller typography
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.1.sp,
-                    lineHeight = 20.sp
+                    lineHeight = 16.sp
                 ),
                 color = contentColor,
                 modifier = Modifier.weight(1f)
             )
-
+ 
             snackbarData.visuals.actionLabel?.let { actionLabel ->
                 TextButton(
                     onClick = { snackbarData.performAction() },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = actionLabel.uppercase(),
-                        style = MaterialTheme.typography.labelLarge.copy(
+                        style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Black,
-                            letterSpacing = 0.8.sp
+                            letterSpacing = 0.5.sp
                         )
                     )
                 }
@@ -112,7 +111,7 @@ fun MonetraSnackbar(
             IconButton(
                 onClick = { snackbarData.dismiss() },
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(28.dp) // Reduced size
                     .clip(CircleShape)
                     .background(contentColor.copy(alpha = 0.05f))
             ) {
@@ -120,7 +119,7 @@ fun MonetraSnackbar(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
                     tint = contentColor.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(14.dp) // Reduced icon size
                 )
             }
         }

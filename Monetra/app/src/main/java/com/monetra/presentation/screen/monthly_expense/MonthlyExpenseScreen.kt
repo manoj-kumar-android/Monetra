@@ -56,6 +56,7 @@ fun MonthlyExpenseScreen(
     // Show undo snackbar whenever a delete is pending
     LaunchedEffect(uiState.pendingDeleteExpense) {
         val item = uiState.pendingDeleteExpense ?: return@LaunchedEffect
+        snackbarHostState.currentSnackbarData?.dismiss()
         val result = snackbarHostState.showSnackbar(
             message = "\"${item.name}\" deleted",
             actionLabel = "UNDO",

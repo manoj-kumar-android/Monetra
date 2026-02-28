@@ -102,6 +102,7 @@ fun SavingsListScreen(
                         onDelete = {
                             viewModel.deleteSavings(saving)
                             scope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
                                 val result = snackbarHostState.showSnackbar(
                                     message = "${saving.bankName} deleted",
                                     actionLabel = "Undo",

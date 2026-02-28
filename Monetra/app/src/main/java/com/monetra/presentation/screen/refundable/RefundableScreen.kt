@@ -1,5 +1,11 @@
 package com.monetra.presentation.screen.refundable
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -23,11 +29,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,12 +66,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -168,13 +184,10 @@ fun RefundableScreen(
                 }
 
                 if (pageRefundables.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "No entries found",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    RefundableEmptyState(
+                        filter = filter,
+                        onAddClick = onAddEntryClick
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -201,6 +214,7 @@ fun RefundableScreen(
                                 onDelete = { 
                                     viewModel.deleteRefundable(item)
                                     scope.launch {
+                                        snackbarHostState.currentSnackbarData?.dismiss()
                                         val result = snackbarHostState.showSnackbar(
                                             message = "Refundable entry deleted",
                                             actionLabel = "Undo",
@@ -362,6 +376,139 @@ private fun RefundableItemRow(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RefundableEmptyState(
+    filter: RefundableFilter,
+    onAddClick: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "empty_state_anim")
+    
+    // Floating animation for the emoji
+    val floatAnim by infiniteTransition.animateFloat(
+        initialValue = -10f,
+        targetValue = 10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float_anim"
+    )
+
+    // Breathing animation for the background glow
+    val scaleAnim by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale_anim"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Spacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            val tint = if (filter == RefundableFilter.PENDING) Color(0xFFFFCC00) else MaterialTheme.colorScheme.primary
+            
+            // Animated background glow
+            Box(
+                modifier = Modifier
+                    .size(160.dp)
+                    .graphicsLayer {
+                        scaleX = scaleAnim
+                        scaleY = scaleAnim
+                        alpha = 0.15f
+                    }
+                    .background(tint, CircleShape)
+            )
+            
+            // Animated main icon
+            val iconSize = 84.dp
+            Box(
+                modifier = Modifier
+                    .graphicsLayer { translationY = floatAnim }
+                    .size(iconSize),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when(filter) {
+                        RefundableFilter.ALL -> Icons.Default.ReceiptLong
+                        RefundableFilter.PENDING -> Icons.Default.Handshake
+                        RefundableFilter.OVERDUE -> Icons.Default.Alarm
+                        RefundableFilter.PAID -> Icons.Default.TaskAlt
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    tint = tint
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.xl))
+
+        Text(
+            text = when(filter) {
+                RefundableFilter.ALL -> "No Money Lent or Borrowed"
+                RefundableFilter.PENDING -> "All Settled Up!"
+                RefundableFilter.OVERDUE -> "No Overdue Payments"
+                RefundableFilter.PAID -> "No Paid Records"
+            },
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 0.5.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.xs))
+
+        Text(
+            text = when(filter) {
+                RefundableFilter.ALL -> "You haven't lent or borrowed any money yet. Track them here."
+                RefundableFilter.PENDING -> "You have no pending dues to receive or pay back."
+                RefundableFilter.OVERDUE -> "Great! No one is running late on their payments."
+                RefundableFilter.PAID -> "Settled entries will appear here for your records."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = Spacing.lg)
+        )
+
+        if (filter == RefundableFilter.ALL || filter == RefundableFilter.PENDING) {
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.alpha(0.7f)
+            ) {
+                Text(
+                    text = "Tap ",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp).background(MaterialTheme.colorScheme.primary, CircleShape).padding(2.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+                Text(
+                    text = " below to start",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

@@ -56,6 +56,7 @@ data class BottomNavItem(
 @Composable
 fun MainScreenContainer(
     isTopLevel: Boolean = true,
+    initialTab: String? = null,
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -69,7 +70,9 @@ fun MainScreenContainer(
     onNavigateToRefundableDetails: (Long) -> Unit,
     onNavigateToSavings: () -> Unit
 ) {
-    var selectedTabStr by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("Dashboard") }
+    var selectedTabStr by androidx.compose.runtime.saveable.rememberSaveable { 
+        mutableStateOf(initialTab ?: "Dashboard") 
+    }
     val selectedTab = remember(selectedTabStr) {
         when(selectedTabStr) {
             "Transactions" -> BottomNavScreen.Transactions

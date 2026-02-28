@@ -110,6 +110,7 @@ fun LoanManagementScreen(
     // Show undo snackbar whenever a delete is pending
     LaunchedEffect(uiState.pendingDeleteLoan) {
         val item = uiState.pendingDeleteLoan ?: return@LaunchedEffect
+        snackbarHostState.currentSnackbarData?.dismiss()
         val result = snackbarHostState.showSnackbar(
             message = "\"${item.name}\" EMI deleted",
             actionLabel = "UNDO",

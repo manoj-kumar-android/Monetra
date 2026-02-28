@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -28,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.domain.model.RefundableType
 import com.monetra.ui.theme.Spacing
+
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,7 +42,7 @@ fun AddEditRefundableScreen(
     onNavigateBack: () -> Unit,
     viewModel: AddEditRefundableViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(id) {
         viewModel.loadRefundable(id)
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,8 +52,13 @@ fun AddEditRefundableScreen(
         if (uiState.isSaved) {
             onNavigateBack()
             viewModel.onSaveConsumed()
-        }
+        }}
+        val handleBack = {
+        viewModel.onExit()
+        onNavigateBack()
     }
+
+    BackHandler(onBack = handleBack)
 
     val contactPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickContact()
@@ -133,7 +140,7 @@ fun AddEditRefundableScreen(
             TopAppBar(
                 title = { Text(if (uiState.isEdit) stringResource(R.string.edit_entry) else stringResource(R.string.add_entry)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },

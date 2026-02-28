@@ -27,58 +27,117 @@ import javax.inject.Inject
 class AddEditRefundableViewModel @Inject constructor(
     private val repository: RefundableRepository,
     private val application: android.app.Application,
-    savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
 
     private var refundableId: Long? = null
 
-    private val _uiState = MutableStateFlow<AddEditRefundableUiState>(AddEditRefundableUiState())
+    private val _uiState = MutableStateFlow<AddEditRefundableUiState>(
+        // Initial state doesn't use SavedStateHandle directly anymore to avoid pre-filling wrong data
+        // before loadRefundable checks the ID.
+        AddEditRefundableUiState()
+    )
     val uiState: StateFlow<AddEditRefundableUiState> = _uiState.asStateFlow()
 
     fun loadRefundable(id: Long?) {
-        // Reset state immediately on entry
+        this.refundableId = id
+
+        // Check if we should clear SavedStateHandle because the ID has changed
+        val lastSavedId = savedStateHandle.get<Long>("last_id")
+        if (savedStateHandle.contains("last_id") && lastSavedId != (id ?: -1L)) {
+            clearSessionData()
+        }
+        savedStateHandle["last_id"] = id ?: -1L
+        
         if (id == null) {
             this.refundableId = null
-            _uiState.value = AddEditRefundableUiState()
+            // Restore from SavedStateHandle if available (for current session)
+            _uiState.value = AddEditRefundableUiState(
+                amount = savedStateHandle.get<String>("amount") ?: "",
+                personName = savedStateHandle.get<String>("personName") ?: "",
+                phoneNumber = savedStateHandle.get<String>("phoneNumber") ?: "",
+                givenDate = savedStateHandle.get<String>("givenDate")?.let { LocalDate.parse(it) } ?: LocalDate.now(),
+                dueDate = savedStateHandle.get<String>("dueDate")?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now().plusWeeks(1).withHour(10).withMinute(0),
+                note = savedStateHandle.get<String>("note") ?: "",
+                remindMe = savedStateHandle.get<Boolean>("remindMe") ?: true,
+                entryType = savedStateHandle.get<RefundableType>("entryType") ?: RefundableType.LENT
+            )
             return
         }
         
         this.refundableId = id
         viewModelScope.launch {
             repository.getRefundableById(id)?.let { refundable ->
+                // Only load if state is still default (not restored from SavedStateHandle with user changes)
+                // Actually, for EDIT, we should probably prefer the restored state if any.
+                // But for the FIRST load, we need to populate from DB.
                 _uiState.value = AddEditRefundableUiState(
-                    amount = refundable.amount.toString(),
-                    personName = refundable.personName,
-                    phoneNumber = refundable.phoneNumber,
-                    givenDate = refundable.givenDate,
-                    dueDate = refundable.dueDate,
-                    note = refundable.note ?: "",
-                    remindMe = refundable.remindMe,
-                    entryType = refundable.entryType,
+                    amount = savedStateHandle.get<String>("amount") ?: refundable.amount.toString(),
+                    personName = savedStateHandle.get<String>("personName") ?: refundable.personName,
+                    phoneNumber = savedStateHandle.get<String>("phoneNumber") ?: refundable.phoneNumber,
+                    givenDate = savedStateHandle.get<String>("givenDate")?.let { LocalDate.parse(it) } ?: refundable.givenDate,
+                    dueDate = savedStateHandle.get<String>("dueDate")?.let { LocalDateTime.parse(it) } ?: refundable.dueDate,
+                    note = savedStateHandle.get<String>("note") ?: (refundable.note ?: ""),
+                    remindMe = savedStateHandle.get<Boolean>("remindMe") ?: refundable.remindMe,
+                    entryType = savedStateHandle.get<RefundableType>("entryType") ?: refundable.entryType,
                     isEdit = true,
                     isPaid = refundable.isPaid,
                     isSaved = false
                 )
             } ?: run {
-                _uiState.value = AddEditRefundableUiState(isSaved = false)
+                _uiState.value = _uiState.value.copy(isSaved = false)
             }
         }
     }
-
+    
     fun onSaveConsumed() {
         _uiState.value = _uiState.value.copy(isSaved = false)
     }
 
+    fun onExit() {
+        clearSessionData()
+    }
+
+    private fun clearSessionData() {
+        listOf("amount", "personName", "phoneNumber", "givenDate", "dueDate", "note", "remindMe", "entryType")
+            .forEach { savedStateHandle.remove<Any>(it) }
+        savedStateHandle.remove<Long>("last_id")
+    }
+
     fun onEvent(event: AddEditRefundableEvent) {
         when (event) {
-            is AddEditRefundableEvent.AmountChanged -> _uiState.value = _uiState.value.copy(amount = event.amount)
-            is AddEditRefundableEvent.PersonNameChanged -> _uiState.value = _uiState.value.copy(personName = event.name)
-            is AddEditRefundableEvent.PhoneNumberChanged -> _uiState.value = _uiState.value.copy(phoneNumber = event.number)
-            is AddEditRefundableEvent.GivenDateChanged -> _uiState.value = _uiState.value.copy(givenDate = event.date)
-            is AddEditRefundableEvent.DueDateChanged -> _uiState.value = _uiState.value.copy(dueDate = event.date)
-            is AddEditRefundableEvent.NoteChanged -> _uiState.value = _uiState.value.copy(note = event.note)
-            is AddEditRefundableEvent.RemindMeToggled -> _uiState.value = _uiState.value.copy(remindMe = event.toggled)
-            is AddEditRefundableEvent.EntryTypeChanged -> _uiState.value = _uiState.value.copy(entryType = event.type)
+            is AddEditRefundableEvent.AmountChanged -> {
+                _uiState.value = _uiState.value.copy(amount = event.amount)
+                savedStateHandle["amount"] = event.amount
+            }
+            is AddEditRefundableEvent.PersonNameChanged -> {
+                _uiState.value = _uiState.value.copy(personName = event.name)
+                savedStateHandle["personName"] = event.name
+            }
+            is AddEditRefundableEvent.PhoneNumberChanged -> {
+                _uiState.value = _uiState.value.copy(phoneNumber = event.number)
+                savedStateHandle["phoneNumber"] = event.number
+            }
+            is AddEditRefundableEvent.GivenDateChanged -> {
+                _uiState.value = _uiState.value.copy(givenDate = event.date)
+                savedStateHandle["givenDate"] = event.date.toString()
+            }
+            is AddEditRefundableEvent.DueDateChanged -> {
+                _uiState.value = _uiState.value.copy(dueDate = event.date)
+                savedStateHandle["dueDate"] = event.date.toString()
+            }
+            is AddEditRefundableEvent.NoteChanged -> {
+                _uiState.value = _uiState.value.copy(note = event.note)
+                savedStateHandle["note"] = event.note
+            }
+            is AddEditRefundableEvent.RemindMeToggled -> {
+                _uiState.value = _uiState.value.copy(remindMe = event.toggled)
+                savedStateHandle["remindMe"] = event.toggled
+            }
+            is AddEditRefundableEvent.EntryTypeChanged -> {
+                _uiState.value = _uiState.value.copy(entryType = event.type)
+                savedStateHandle["entryType"] = event.type
+            }
             is AddEditRefundableEvent.Save -> saveRefundable()
         }
     }
@@ -158,6 +217,8 @@ class AddEditRefundableViewModel @Inject constructor(
             }
 
             _uiState.value = _uiState.value.copy(isSaved = true)
+            // Clear SavedStateHandle background data but keep in-memory UI state for transition
+            clearSessionData()
         }
     }
 }

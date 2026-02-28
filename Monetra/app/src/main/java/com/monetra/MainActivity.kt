@@ -1,5 +1,6 @@
 package com.monetra
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -36,28 +37,44 @@ class MainActivity : FragmentActivity() {
         }
 
         enableEdgeToEdge()
+
+        // Detect Deep Link early
+        val intentData = intent?.data
+        if (intentData?.scheme == "monetra" && intentData.host == "refundable") {
+            intentData.getQueryParameter("id")?.toLongOrNull()?.let { id ->
+                viewModel.setPendingRefundableId(id)
+            }
+        }
+
         setContent {
             val isReady by viewModel.isReady.collectAsStateWithLifecycle()
             val isDashboardUser by viewModel.isDashboardUser.collectAsStateWithLifecycle()
             
-            // Moving rememberNavBackStack into the `if (isReady)` block
-            // to ensure it takes the correct start destination.
-            // The Lock screen logic is also moved inside the if (isReady) block
             MonetraTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (isReady) {
-                        // In Navigation 3, the backstack is a SnapshotStateList<Any>.
-                        // We initialize it with the first route when it's empty, and
-                        // push the Lock screen immediately to prevent a launch blink.
-                        val baseRoute = if (isDashboardUser) Route.TransactionList else Route.Welcome
+                        val baseRoute = if (isDashboardUser) Route.TransactionList() else Route.Welcome
                         val backStack = rememberNavBackStack(baseRoute as NavKey, Route.Lock as NavKey)
 
                         MonetraNavGraph(backStack = backStack)
                     }
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        
+        // Handle deep link if activity is already running
+        val intentData = intent.data
+        if (intentData?.scheme == "monetra" && intentData.host == "refundable") {
+            intentData.getQueryParameter("id")?.toLongOrNull()?.let { id ->
+                viewModel.setPendingRefundableId(id)
             }
         }
     }

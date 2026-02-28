@@ -98,7 +98,7 @@ class RefundableReminderWorker @AssistedInject constructor(
             .setContentIntent(pendingIntent)
             .setOngoing(true) // Cannot be dismissed by swipe
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(false) // Only dismissed by button action
+            .setAutoCancel(true) // Dismiss when clicked
             .addAction(0, "OK", okPendingIntent)
 
         // Send Reminder Action - Only for LENT
