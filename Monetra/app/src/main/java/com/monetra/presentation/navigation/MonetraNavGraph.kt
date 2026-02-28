@@ -48,6 +48,10 @@ sealed interface Route : NavKey {
     data class RefundableDetails(val id: Long) : Route
     @Serializable
     data object Lock : Route
+    @Serializable
+    data object SavingsList : Route
+    @Serializable
+    data class AddEditSavings(val id: Long? = null) : Route
 }
 
 @Composable
@@ -128,6 +132,7 @@ fun MonetraNavGraph(
                 is Route.TransactionList -> {
                     NavEntry(key) {
                         MainScreenContainer(
+                            isTopLevel = backStack.lastOrNull() is Route.TransactionList,
                             onNavigateToAdd = {
                                 keyboardController?.hide()
                                 backStack.navigateTo(Route.AddEditTransaction(null))
@@ -162,7 +167,29 @@ fun MonetraNavGraph(
                             },
                             onNavigateToRefundableDetails = { id ->
                                 backStack.navigateTo(Route.RefundableDetails(id))
+                            },
+                            onNavigateToSavings = {
+                                backStack.navigateTo(Route.SavingsList)
                             }
+                        )
+                    }
+                }
+
+                is Route.SavingsList -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.savings.SavingsListScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onAddSavingsClick = { backStack.navigateTo(Route.AddEditSavings(null)) },
+                            onSavingsClick = { id -> backStack.navigateTo(Route.AddEditSavings(id)) }
+                        )
+                    }
+                }
+
+                is Route.AddEditSavings -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.savings.AddEditSavingsScreen(
+                            id = (key as Route.AddEditSavings).id,
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
                         )
                     }
                 }

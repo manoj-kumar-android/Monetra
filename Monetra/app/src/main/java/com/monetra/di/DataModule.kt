@@ -23,7 +23,10 @@ object DataModule {
             app,
             MonetraDatabase::class.java,
             "monetra_db"
-        ).fallbackToDestructiveMigration(dropAllTables = true).build()
+        )
+        .addMigrations(MonetraDatabase.MIGRATION_1_2)
+        .fallbackToDestructiveMigration(dropAllTables = true)
+        .build()
     }
 
     @Provides
@@ -61,6 +64,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideRefundableDao(db: MonetraDatabase): RefundableDao = db.refundableDao
+
+    @Provides
+    @Singleton
+    fun provideSavingDao(db: MonetraDatabase): SavingDao = db.savingDao
 
     @Provides
     @Singleton
@@ -104,4 +111,8 @@ object DataModule {
     @Provides
     @Singleton
     fun provideRefundableRepository(dao: RefundableDao): RefundableRepository = RefundableRepositoryImpl(dao)
+
+    @Provides
+    @Singleton
+    fun provideSavingRepository(dao: SavingDao): SavingRepository = SavingRepositoryImpl(dao)
 }

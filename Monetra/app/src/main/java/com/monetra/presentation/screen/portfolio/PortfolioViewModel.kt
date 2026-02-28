@@ -15,15 +15,12 @@ class PortfolioViewModel @Inject constructor(
     private val userPreferenceRepository: UserPreferenceRepository,
     private val loanRepository: LoanRepository,
     private val investmentRepository: InvestmentRepository,
-    private val monthlyExpenseRepository: MonthlyExpenseRepository
+    private val monthlyExpenseRepository: MonthlyExpenseRepository,
+    private val savingRepository: SavingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PortfolioUiState>(PortfolioUiState.Loading)
     val uiState: StateFlow<PortfolioUiState> = _uiState.asStateFlow()
-
-    // For the edit savings dialog
-    private val _showSavingsDialog = MutableStateFlow(false)
-    val showSavingsDialog = _showSavingsDialog.asStateFlow()
 
     init {
         observePortfolio()
@@ -34,11 +31,11 @@ class PortfolioViewModel @Inject constructor(
             userPreferenceRepository.getUserPreferences(),
             loanRepository.getAllLoans(),
             investmentRepository.getInvestments(),
-            monthlyExpenseRepository.getAllMonthlyExpenses()
-        ) { prefs, loans, investments, expenses ->
+            monthlyExpenseRepository.getAllMonthlyExpenses(),
+            savingRepository.getTotalSavingAmount()
+        ) { prefs, loans, investments, expenses, saving ->
             val income = prefs.monthlyIncome
-            val savings = prefs.currentSavings
-
+            
             // Only consider non-paid loans
             val activeLoans = loans.filter { it.remainingTenure > 0 }
             val totalLoanRemaining = activeLoans.sumOf { it.totalPrincipal * (it.remainingTenure.toDouble() / it.tenureMonths.toDouble()).coerceIn(0.0, 1.0) }
@@ -49,7 +46,7 @@ class PortfolioViewModel @Inject constructor(
             val totalMonthlyExpenses = expenses.sumOf { it.amount }
 
             // Core calculations
-            val netWorth = savings + totalInvestmentValue - totalLoanRemaining
+            val netWorth = saving + totalInvestmentValue - totalLoanRemaining
             val freeMoney = income - totalMonthlyExpenses - totalEmi - totalMonthlyInvestment
 
             // Financial Score: Monthly Investment / Income
@@ -73,7 +70,7 @@ class PortfolioViewModel @Inject constructor(
 
             val portfolio = PortfolioData(
                 monthlyIncome = income,
-                currentSavings = savings,
+                currentSavings = saving,
                 totalInvestmentValue = totalInvestmentValue,
                 totalLoanRemaining = totalLoanRemaining,
                 totalMonthlyEmi = totalEmi,
@@ -99,17 +96,6 @@ class PortfolioViewModel @Inject constructor(
         .onEach { _uiState.value = it }
         .launchIn(viewModelScope)
     }
-
-    fun updateCurrentSavings(newSavings: Double) {
-        viewModelScope.launch {
-            val current = userPreferenceRepository.getUserPreferences().first()
-            userPreferenceRepository.saveUserPreferences(current.copy(currentSavings = newSavings))
-            _showSavingsDialog.value = false
-        }
-    }
-
-    fun openSavingsDialog() { _showSavingsDialog.value = true }
-    fun closeSavingsDialog() { _showSavingsDialog.value = false }
 }
 
 sealed interface PortfolioUiState {

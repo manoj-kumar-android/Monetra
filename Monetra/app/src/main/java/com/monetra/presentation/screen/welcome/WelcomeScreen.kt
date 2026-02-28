@@ -59,10 +59,10 @@ fun WelcomeScreen(onNavigateToOnboarding: () -> Unit) {
     var ctaVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(200);  card1 = true
-        delay(150);  card2 = true
-        delay(150);  card3 = true
-        delay(200);  ctaVisible = true
+        card1 = true
+        card2 = true
+        card3 = true
+        ctaVisible = true
     }
 
     Box(

@@ -3,25 +3,8 @@ package com.monetra.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.monetra.data.local.dao.TransactionDao
-import com.monetra.data.local.dao.UserPreferencesDao
-import com.monetra.data.local.dao.CategoryBudgetDao
-import com.monetra.data.local.dao.GoalDao
-import com.monetra.data.local.dao.InvestmentDao
-import com.monetra.data.local.dao.MonthlyReportDao
-import com.monetra.data.local.dao.LoanDao
-import com.monetra.data.local.dao.MonthlyExpenseDao
-import com.monetra.data.local.entity.MonthlyReportEntity
-import com.monetra.data.local.entity.TransactionEntity
-import com.monetra.data.local.entity.UserPreferencesEntity
-import com.monetra.data.local.entity.CategoryBudgetEntity
-import com.monetra.data.local.entity.GoalEntity
-import com.monetra.data.local.entity.InvestmentEntity
-import com.monetra.data.local.entity.LoanEntity
-import com.monetra.data.local.entity.MonthlyExpenseEntity
-import com.monetra.data.local.entity.BillInstanceEntity
-import com.monetra.data.local.entity.RefundableEntity
-import com.monetra.data.local.dao.RefundableDao
+import com.monetra.data.local.dao.*
+import com.monetra.data.local.entity.*
 
 @Database(
     entities = [
@@ -34,9 +17,10 @@ import com.monetra.data.local.dao.RefundableDao
         LoanEntity::class,
         MonthlyExpenseEntity::class,
         BillInstanceEntity::class,
-        RefundableEntity::class
+        RefundableEntity::class,
+        SavingEntity::class
     ], 
-    version = 1, 
+    version = 2, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -51,4 +35,23 @@ abstract class MonetraDatabase : RoomDatabase() {
     abstract val loanDao: LoanDao
     abstract val monthlyExpenseDao: MonthlyExpenseDao
     abstract val refundableDao: RefundableDao
+    abstract val savingDao: SavingDao
+
+    companion object {
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `savings` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `bankName` TEXT NOT NULL, 
+                        `amount` REAL NOT NULL, 
+                        `interestRate` REAL, 
+                        `note` TEXT
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+    }
 }

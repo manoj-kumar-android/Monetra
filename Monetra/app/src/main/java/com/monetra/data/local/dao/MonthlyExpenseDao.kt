@@ -8,7 +8,6 @@ import java.time.YearMonth
 
 @Dao
 interface MonthlyExpenseDao {
-    // --- MonthlyExpense (Rules) ---
     @Query("SELECT * FROM monthly_expenses")
     fun getAllMonthlyExpenses(): Flow<List<MonthlyExpenseEntity>>
 

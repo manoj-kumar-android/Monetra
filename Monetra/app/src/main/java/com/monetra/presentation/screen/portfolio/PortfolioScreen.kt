@@ -33,10 +33,10 @@ fun PortfolioScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToLoans: () -> Unit,
     onNavigateToInvestments: () -> Unit,
+    onNavigateToSavings: () -> Unit,
     viewModel: PortfolioViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val showSavingsDialog by viewModel.showSavingsDialog.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -84,20 +84,13 @@ fun PortfolioScreen(
                 is PortfolioUiState.Success -> {
                     PortfolioDashboard(
                         data = state.data,
-                        onEditSavings = viewModel::openSavingsDialog,
+                        onNavigateToSavings = onNavigateToSavings,
                         onNavigateToLoans = onNavigateToLoans,
                         onNavigateToInvestments = onNavigateToInvestments
                     )
                 }
             }
         }
-    }
-
-    if (showSavingsDialog) {
-        EditSavingsDialog(
-            onDismiss = viewModel::closeSavingsDialog,
-            onConfirm = viewModel::updateCurrentSavings
-        )
     }
 }
 
@@ -163,7 +156,7 @@ private fun SetupItem(emoji: String, desc: String) {
 @Composable
 private fun PortfolioDashboard(
     data: PortfolioData,
-    onEditSavings: () -> Unit,
+    onNavigateToSavings: () -> Unit,
     onNavigateToLoans: () -> Unit,
     onNavigateToInvestments: () -> Unit
 ) {
@@ -190,7 +183,7 @@ private fun PortfolioDashboard(
                 savings = data.currentSavings,
                 investments = data.totalInvestmentValue,
                 loanRemaining = data.totalLoanRemaining,
-                onEditSavings = onEditSavings,
+                onNavigateToSavings = onNavigateToSavings,
                 onNavigateToInvestments = onNavigateToInvestments,
                 onNavigateToLoans = onNavigateToLoans
             )
@@ -323,7 +316,7 @@ private fun FinancialBreakdownRow(
     savings: Double,
     investments: Double,
     loanRemaining: Double,
-    onEditSavings: () -> Unit,
+    onNavigateToSavings: () -> Unit,
     onNavigateToInvestments: () -> Unit,
     onNavigateToLoans: () -> Unit
 ) {
@@ -337,8 +330,7 @@ private fun FinancialBreakdownRow(
             value = savings,
             emoji = "🏦",
             color = Color(0xFF34C759),
-            editable = true,
-            onClick = onEditSavings
+            onClick = onNavigateToSavings
         )
         MiniStatCard(
             modifier = Modifier.weight(1f),
@@ -366,7 +358,6 @@ private fun MiniStatCard(
     value: Double,
     emoji: String,
     color: Color,
-    editable: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -403,9 +394,6 @@ private fun MiniStatCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(emoji, fontSize = 18.sp)
-                    }
-                    if (editable) {
-                        Icon(Icons.Default.Edit, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
                     }
                 }
                 Column {
@@ -569,48 +557,4 @@ private fun PortfolioCard(
             content()
         }
     }
-}
-
-@Composable
-private fun EditSavingsDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (Double) -> Unit
-) {
-    var text by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Update Current Savings") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Text(
-                    "Enter your current total savings / bank balance.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it.filter { c -> c.isDigit() || c == '.' } },
-                    label = { Text("Savings Amount") },
-                    prefix = { Text("₹ ") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    text.toDoubleOrNull()?.let { onConfirm(it) }
-                },
-                enabled = text.toDoubleOrNull() != null
-            ) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    )
 }

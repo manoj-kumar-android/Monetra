@@ -342,9 +342,6 @@ class TransactionListViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = _uiState.value as? ExpenseUiState.Success ?: return@launch
             _uiState.value = currentState.copy(isRefreshing = true)
-            // A fake delay to give users a clear visual cue that something happened
-            // Since Room emits updates instantly via flow, a true refresh isn't needed for local DB.
-            kotlinx.coroutines.delay(600)
             
             val updatedState = _uiState.value as? ExpenseUiState.Success ?: return@launch
             _uiState.value = updatedState.copy(isRefreshing = false)

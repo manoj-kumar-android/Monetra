@@ -55,6 +55,7 @@ data class BottomNavItem(
 
 @Composable
 fun MainScreenContainer(
+    isTopLevel: Boolean = true,
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -65,10 +66,11 @@ fun MainScreenContainer(
     onNavigateToHelp: (String) -> Unit,
     onNavigateToAddRefundable: () -> Unit,
     onNavigateToEditRefundable: (Long) -> Unit,
-    onNavigateToRefundableDetails: (Long) -> Unit
+    onNavigateToRefundableDetails: (Long) -> Unit,
+    onNavigateToSavings: () -> Unit
 ) {
     var selectedTabStr by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("Dashboard") }
-    var selectedTab = remember(selectedTabStr) {
+    val selectedTab = remember(selectedTabStr) {
         when(selectedTabStr) {
             "Transactions" -> BottomNavScreen.Transactions
             "Refundable" -> BottomNavScreen.Refundable
@@ -77,7 +79,7 @@ fun MainScreenContainer(
         }
     }
 
-    BackHandler(enabled = selectedTab != BottomNavScreen.Dashboard) {
+    BackHandler(enabled = isTopLevel && selectedTab != BottomNavScreen.Dashboard) {
         selectedTabStr = "Dashboard"
     }
 
@@ -158,7 +160,8 @@ fun MainScreenContainer(
                     com.monetra.presentation.screen.portfolio.PortfolioScreen(
                         onNavigateToSettings = onNavigateToSettings,
                         onNavigateToLoans = onNavigateToLoans,
-                        onNavigateToInvestments = onNavigateToInvestments
+                        onNavigateToInvestments = onNavigateToInvestments,
+                        onNavigateToSavings = onNavigateToSavings
                     )
                 }
             }

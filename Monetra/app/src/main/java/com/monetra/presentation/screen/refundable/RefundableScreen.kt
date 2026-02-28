@@ -4,24 +4,59 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,11 +67,10 @@ import com.monetra.R
 import com.monetra.domain.model.Refundable
 import com.monetra.domain.model.RefundableStatus
 import com.monetra.presentation.components.HelpIconButton
-import com.monetra.ui.theme.Spacing
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import kotlinx.coroutines.launch
 import com.monetra.presentation.screen.monthly_expense.SwipeToDeleteContainer
+import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.launch
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,11 +83,11 @@ fun RefundableScreen(
     val allRefundables by viewModel.allRefundables.collectAsStateWithLifecycle()
     val currentFilter by viewModel.filter.collectAsStateWithLifecycle()
 
-    val pagerState = rememberPagerState(pageCount = { RefundableFilter.values().size })
+    val pagerState = rememberPagerState(pageCount = { RefundableFilter.entries.size })
 
     // Sync FROM ViewModel TO Pager
     LaunchedEffect(currentFilter) {
-        val targetPage = RefundableFilter.values().indexOf(currentFilter)
+        val targetPage = RefundableFilter.entries.indexOf(currentFilter)
         if (pagerState.currentPage != targetPage) {
             pagerState.animateScrollToPage(targetPage)
         }
@@ -123,7 +157,7 @@ fun RefundableScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.Top
             ) { page ->
-                val filter = RefundableFilter.values()[page]
+                val filter = RefundableFilter.entries[page]
                 val pageRefundables = allRefundables.filter {
                     when (filter) {
                         RefundableFilter.ALL -> true
@@ -153,7 +187,6 @@ fun RefundableScreen(
                         // Staggered entry animation
                         val isVisible = remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) {
-                            kotlinx.coroutines.delay(index * 50L)
                             isVisible.value = true
                         }
 
@@ -206,7 +239,7 @@ private fun RefundableFilterBar(
             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        RefundableFilter.values().forEach { filter ->
+        RefundableFilter.entries.forEach { filter ->
             FilterChip(
                 selected = selectedFilter == filter,
                 onClick = { onFilterSelected(filter) },
@@ -243,10 +276,7 @@ private fun RefundableItemRow(
     Card(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                // Subtle lift on interactions if we were using a state-based modifier
-            },
+            .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
