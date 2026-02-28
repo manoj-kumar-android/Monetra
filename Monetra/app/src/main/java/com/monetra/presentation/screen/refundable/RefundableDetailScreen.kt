@@ -51,10 +51,14 @@ import androidx.core.net.toUri
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RefundableDetailScreen(
+    id: Long,
     onNavigateBack: () -> Unit,
     onEditClick: (Long) -> Unit,
     viewModel: RefundableDetailViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(id) {
+        viewModel.loadRefundable(id)
+    }
     val refundable by viewModel.refundable.collectAsStateWithLifecycle()
     val isDeleted by viewModel.isDeleted.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -15,13 +15,22 @@ import javax.inject.Inject
 @HiltViewModel
 class RefundableDetailViewModel @Inject constructor(
     private val repository: RefundableRepository,
-    private val application: Application,
-    savedStateHandle: SavedStateHandle
+    private val application: Application
 ) : ViewModel() {
 
-    private val refundableId: Long = savedStateHandle.get<Long>("id") ?: -1L
+    private val _refundableId = MutableStateFlow(-1L)
+    val refundableId: StateFlow<Long> = _refundableId.asStateFlow()
 
-    val refundable: StateFlow<Refundable?> = repository.observeRefundableById(refundableId)
+    fun loadRefundable(id: Long) {
+        _refundableId.value = id
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val refundable: StateFlow<Refundable?> = _refundableId
+        .flatMapLatest { id ->
+            if (id == -1L) flowOf(null)
+            else repository.observeRefundableById(id)
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -29,8 +38,10 @@ class RefundableDetailViewModel @Inject constructor(
         )
 
     fun markAsPaid(isPaid: Boolean) {
+        val id = _refundableId.value
+        if (id == -1L) return
         viewModelScope.launch {
-            repository.updatePaidStatus(refundableId, isPaid)
+            repository.updatePaidStatus(id, isPaid)
             if (isPaid) {
                 cancelReminder()
             }
@@ -46,8 +57,9 @@ class RefundableDetailViewModel @Inject constructor(
     }
 
     private fun cancelReminder() {
-        if (refundableId != -1L) {
-            WorkManager.getInstance(application).cancelUniqueWork("refundable_reminder_$refundableId")
+        val id = _refundableId.value
+        if (id != -1L) {
+            WorkManager.getInstance(application).cancelUniqueWork("refundable_reminder_$id")
         }
     }
 

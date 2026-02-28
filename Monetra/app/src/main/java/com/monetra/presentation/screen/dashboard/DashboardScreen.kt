@@ -157,7 +157,7 @@ private fun DashboardContent(
         // GREETING SECTION
         item {
             Column(modifier = Modifier.padding(bottom = Spacing.sm)) {
-                val hour = java.time.LocalTime.now().hour
+                val hour = remember { java.time.LocalTime.now().hour }
                 val greeting = when {
                     hour < 12 -> stringResource(R.string.good_morning)
                     hour < 17 -> stringResource(R.string.good_afternoon)

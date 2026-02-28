@@ -82,6 +82,13 @@ fun LockScreen(
         biometricPrompt.authenticate(promptInfo)
     }
 
+    // Automatically trigger biometric prompt when the screen is shown
+    LaunchedEffect(activity) {
+        if (activity != null) {
+            showBiometricPrompt()
+        }
+    }
+
     // Full screen lock UI
     Box(
         modifier = Modifier

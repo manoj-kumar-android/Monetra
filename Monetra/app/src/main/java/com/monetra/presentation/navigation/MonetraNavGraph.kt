@@ -1,20 +1,15 @@
 package com.monetra.presentation.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navDeepLink
-import androidx.navigation.toRoute
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.ui.NavDisplay
 import com.monetra.MainViewModel
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
 import com.monetra.presentation.screen.budgets.BudgetsScreen
@@ -23,241 +18,284 @@ import com.monetra.presentation.screen.settings.SettingsScreen
 import com.monetra.presentation.screen.simulator.WhatIfSimulatorScreen
 import kotlinx.serialization.Serializable
 
-sealed interface Screen {
+@Serializable
+sealed interface Route : NavKey {
     @Serializable
-    data object Welcome : Screen
-
+    data object Welcome : Route
     @Serializable
-    data object Onboarding : Screen
-
+    data object Onboarding : Route
     @Serializable
-    data object TransactionList : Screen
-
+    data object TransactionList : Route
     @Serializable
-    data class AddEditTransaction(val transactionId: Long? = null) : Screen
-
+    data class AddEditTransaction(val transactionId: Long? = null) : Route
     @Serializable
-    data object Settings : Screen
-
+    data object Settings : Route
     @Serializable
-    data object Budgets : Screen
-
+    data object Budgets : Route
     @Serializable
-    data object WhatIfSimulator : Screen
-
+    data object WhatIfSimulator : Route
     @Serializable
-    data object Loans : Screen
-
+    data object Loans : Route
     @Serializable
-    data object Investments : Screen
-
+    data object Investments : Route
     @Serializable
-    data object FixedExpenses : Screen
-
+    data object FixedExpenses : Route
     @Serializable
-    data class Help(val screenType: String) : Screen
-
+    data class Help(val screenType: String) : Route
     @Serializable
-    data class AddEditRefundable(val id: Long? = null) : Screen
-
+    data class AddEditRefundable(val id: Long? = null) : Route
     @Serializable
-    data class RefundableDetails(val id: Long) : Screen
-
+    data class RefundableDetails(val id: Long) : Route
     @Serializable
-    data class Lock(val goToDashboard: Boolean = true) : Screen
+    data object Lock : Route
 }
 
 @Composable
 fun MonetraNavGraph(
-    navController: NavHostController = rememberNavController(),
-    startDestination: Screen = Screen.Onboarding,
+    backStack: NavBackStack<NavKey>,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
+    val isDashboardUser by mainViewModel.isDashboardUser.collectAsState()
 
-    // Listen for relock events from MainActivity (app returned from background)
+    // Listen for relock events from MainActivity
     LaunchedEffect(Unit) {
-        mainViewModel.relockEvent.collect { goToDashboard ->
-            navController.navigate(Screen.Lock(goToDashboard = goToDashboard)) {
-                popUpTo(0) { inclusive = false }
+        mainViewModel.relockEvent.collect {
+            backStack.navigateTo(Route.Lock)
+        }
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = {
+            val lastRoute = backStack.lastOrNull()
+            if (lastRoute is Route.Lock) {
+                // Security: Don't allow backing out of the lock screen.
+                // If there's only one item (Lock), or if we were relocked on top of something,
+                // the safest thing to do is let the activity handle it (which usually finishes/minimizes).
+                // In Navigation3, if we don't handle it, it bubbles up.
+                // However, we want to ensure we don't pop the Lock screen to reveal what's under it.
+                // So we do nothing here, which prevents the backStack.removeAt below.
+            } else if (backStack.size > 1) {
+                backStack.removeAt(backStack.lastIndex)
+            }
+        },
+        // Use the decorator that provides ViewModelStore support
+/*
+        transitionSpec = { direction ->
+            val (enter, exit) = if (direction == NavDisplay.Direction.Forward) {
+                slideInHorizontally(
+                    initialOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                ) + fadeIn(animationSpec = tween(200)) to
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> -fullWidth / 4 },
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        )
+            } else {
+                slideInHorizontally(
+                    initialOffsetX = { fullWidth -> -fullWidth / 4 },
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                ) to
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> fullWidth },
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        ) + fadeOut(animationSpec = tween(200))
+            }
+            NavTransition(enter, exit)
+        } as AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform,
+*/
+        entryProvider = { key ->
+            when (key) {
+                is Route.Lock -> {
+                    NavEntry(key) {
+                        LockScreen(
+                            onAuthenticated = {
+                                // If we were relocked (pushed Lock on top of a screen), just pop back
+                                if (backStack.size > 1) {
+                                    backStack.removeAt(backStack.lastIndex)
+                                } else {
+                                    // Cold start: clear lock and go to destination
+                                    backStack.clear()
+                                    backStack.add(if (isDashboardUser) Route.TransactionList else Route.Welcome)
+                                }
+                                mainViewModel.setLocked(false)
+                            }
+                        )
+                    }
+                }
+
+                is Route.TransactionList -> {
+                    NavEntry(key) {
+                        MainScreenContainer(
+                            onNavigateToAdd = {
+                                keyboardController?.hide()
+                                backStack.navigateTo(Route.AddEditTransaction(null))
+                            },
+                            onNavigateToEdit = { transactionId ->
+                                keyboardController?.hide()
+                                backStack.navigateTo(Route.AddEditTransaction(transactionId))
+                            },
+                            onNavigateToSettings = {
+                                backStack.navigateTo(Route.Settings)
+                            },
+                            onManageBudgetsClick = {
+                                backStack.navigateTo(Route.Budgets)
+                            },
+                            onNavigateToLoans = {
+                                backStack.navigateTo(Route.Loans)
+                            },
+                            onNavigateToInvestments = {
+                                backStack.navigateTo(Route.Investments)
+                            },
+                            onNavigateToFixedExpenses = {
+                                backStack.navigateTo(Route.FixedExpenses)
+                            },
+                            onNavigateToHelp = { screenType ->
+                                backStack.navigateTo(Route.Help(screenType))
+                            },
+                            onNavigateToAddRefundable = {
+                                backStack.navigateTo(Route.AddEditRefundable(null))
+                            },
+                            onNavigateToEditRefundable = { id ->
+                                backStack.navigateTo(Route.AddEditRefundable(id))
+                            },
+                            onNavigateToRefundableDetails = { id ->
+                                backStack.navigateTo(Route.RefundableDetails(id))
+                            }
+                        )
+                    }
+                }
+
+                is Route.Settings -> {
+                    NavEntry(key) {
+                        SettingsScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToCategories = { backStack.navigateTo(Route.Budgets) }
+                        )
+                    }
+                }
+
+                is Route.Budgets -> {
+                    NavEntry(key) {
+                        BudgetsScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToHelp = { backStack.navigateTo(Route.Help("BUDGETS")) }
+                        )
+                    }
+                }
+
+                is Route.AddEditTransaction -> {
+                    NavEntry(key) {
+                        AddEditExpenseScreen(
+                            transactionId = key.transactionId,
+                            onNavigateBack = {
+                                keyboardController?.hide()
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                        )
+                    }
+                }
+
+                is Route.WhatIfSimulator -> {
+                    NavEntry(key) {
+                        WhatIfSimulatorScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToHelp = { backStack.navigateTo(Route.Help("SIMULATOR")) }
+                        )
+                    }
+                }
+
+                is Route.Help -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.help.HelpScreen(
+                            screenType = key.screenType,
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                        )
+                    }
+                }
+
+                is Route.Loans -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.loans.LoanManagementScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToHelp = { backStack.navigateTo(Route.Help("LOANS")) }
+                        )
+                    }
+                }
+
+                is Route.Investments -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.investments.InvestmentManagementScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToHelp = { backStack.navigateTo(Route.Help("INVESTMENTS")) }
+                        )
+                    }
+                }
+
+                is Route.FixedExpenses -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.monthly_expense.MonthlyExpenseScreen(
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateToHelp = { backStack.navigateTo(Route.Help("FIXED_COSTS")) }
+                        )
+                    }
+                }
+
+                is Route.AddEditRefundable -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.refundable.AddEditRefundableScreen(
+                            id = (key as Route.AddEditRefundable).id,
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                        )
+                    }
+                }
+
+                is Route.RefundableDetails -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.refundable.RefundableDetailScreen(
+                            id = (key as Route.RefundableDetails).id,
+                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onEditClick = { id ->
+                                backStack.navigateTo(Route.AddEditRefundable(id))
+                            }
+                        )
+                    }
+                }
+
+                is Route.Welcome -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.welcome.WelcomeScreen(
+                            onNavigateToOnboarding = {
+                                backStack.clear()
+                                backStack.add(Route.Onboarding)
+                            }
+                        )
+                    }
+                }
+
+                is Route.Onboarding -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.onboarding.OnboardingScreen(
+                            onComplete = {
+                                backStack.clear()
+                                backStack.add(Route.TransactionList)
+                            }
+                        )
+                    }
+                }
+                else -> NavEntry(key) { }
             }
         }
-    }
-
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        enterTransition = {
-            slideInHorizontally(initialOffsetX = { 1000 }, animationSpec = tween(400)) + fadeIn(
-                animationSpec = tween(400)
-            )
-        },
-        exitTransition = {
-            slideOutHorizontally(targetOffsetX = { -1000 }, animationSpec = tween(400)) + fadeOut(
-                animationSpec = tween(400)
-            )
-        },
-        popEnterTransition = {
-            slideInHorizontally(initialOffsetX = { -1000 }, animationSpec = tween(400)) + fadeIn(
-                animationSpec = tween(400)
-            )
-        },
-        popExitTransition = {
-            slideOutHorizontally(targetOffsetX = { 1000 }, animationSpec = tween(400)) + fadeOut(
-                animationSpec = tween(400)
-            )
-        }
-    ) {
-        composable<Screen.Lock> { backStackEntry ->
-            val args = backStackEntry.toRoute<Screen.Lock>()
-            LockScreen(
-                onAuthenticated = {
-                    val destination = if (args.goToDashboard) Screen.TransactionList else Screen.Welcome
-                    navController.navigate(destination) {
-                        popUpTo(Screen.Lock(args.goToDashboard)) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable<Screen.TransactionList> {
-            MainScreenContainer(
-                onNavigateToAdd = {
-                    keyboardController?.hide()
-                    navController.navigate(Screen.AddEditTransaction(null))
-                },
-                onNavigateToEdit = { transactionId ->
-                    keyboardController?.hide()
-                    navController.navigate(Screen.AddEditTransaction(transactionId))
-                },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings)
-                },
-                onManageBudgetsClick = {
-                    navController.navigate(Screen.Budgets)
-                },
-                onNavigateToLoans = {
-                    navController.navigate(Screen.Loans)
-                },
-                onNavigateToInvestments = {
-                    navController.navigate(Screen.Investments)
-                },
-                onNavigateToFixedExpenses = {
-                    navController.navigate(Screen.FixedExpenses)
-                },
-                onNavigateToHelp = { screenType ->
-                    navController.navigate(Screen.Help(screenType))
-                },
-                onNavigateToAddRefundable = {
-                    navController.navigate(Screen.AddEditRefundable(null))
-                },
-                onNavigateToEditRefundable = { id ->
-                    navController.navigate(Screen.AddEditRefundable(id))
-                },
-                onNavigateToRefundableDetails = { id ->
-                    navController.navigate(Screen.RefundableDetails(id))
-                }
-            )
-        }
-
-        composable<Screen.Settings> {
-            SettingsScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToCategories = { navController.navigate(Screen.Budgets) }
-            )
-        }
-
-        composable<Screen.Budgets> {
-            BudgetsScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToHelp = { navController.navigate(Screen.Help("BUDGETS")) }
-            )
-        }
-
-
-        composable<Screen.AddEditTransaction> {
-            AddEditExpenseScreen(
-                onNavigateBack = {
-                    keyboardController?.hide()
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable<Screen.WhatIfSimulator> {
-            WhatIfSimulatorScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToHelp = { navController.navigate(Screen.Help("SIMULATOR")) }
-            )
-        }
-
-        composable<Screen.Help> { backStackEntry ->
-            val args = backStackEntry.toRoute<Screen.Help>()
-            com.monetra.presentation.screen.help.HelpScreen(
-                screenType = args.screenType,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable<Screen.Loans> {
-            com.monetra.presentation.screen.loans.LoanManagementScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToHelp = { navController.navigate(Screen.Help("LOANS")) }
-            )
-        }
-
-        composable<Screen.Investments> {
-            com.monetra.presentation.screen.investments.InvestmentManagementScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToHelp = { navController.navigate(Screen.Help("INVESTMENTS")) }
-            )
-        }
-
-        composable<Screen.FixedExpenses> {
-            com.monetra.presentation.screen.monthly_expense.MonthlyExpenseScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToHelp = { navController.navigate(Screen.Help("FIXED_COSTS")) }
-            )
-        }
-
-        composable<Screen.AddEditRefundable> {
-            com.monetra.presentation.screen.refundable.AddEditRefundableScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable<Screen.RefundableDetails>(
-            deepLinks = listOf(
-                navDeepLink<Screen.RefundableDetails>(basePath = "monetra://refundable")
-            )
-        ) {
-            com.monetra.presentation.screen.refundable.RefundableDetailScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onEditClick = { id -> 
-                    navController.navigate(Screen.AddEditRefundable(id))
-                }
-            )
-        }
-        
-        composable<Screen.Welcome> {
-            com.monetra.presentation.screen.welcome.WelcomeScreen(
-                onNavigateToOnboarding = {
-                    navController.navigate(Screen.Onboarding) {
-                        popUpTo(Screen.Welcome) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable<Screen.Onboarding> {
-            com.monetra.presentation.screen.onboarding.OnboardingScreen(
-                onComplete = {
-                    navController.navigate(Screen.TransactionList) {
-                        popUpTo(Screen.Onboarding) { inclusive = true }
-                    }
-                }
-            )
-        }
-    }
+    )
 }
 
+/**
+ * Extension to handle "single-top" navigation style. If the route (of the same type)
+ * is already at the top, we don't add it again.
+ */
+fun NavBackStack<NavKey>.navigateTo(route: Route) {
+    if (this.lastOrNull() != route) {
+        this.add(route)
+    }
+}

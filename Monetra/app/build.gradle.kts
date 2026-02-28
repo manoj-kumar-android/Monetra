@@ -73,7 +73,9 @@ dependencies {
 
     // ── Compose ───────────────────────────────────────────────────────────
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.navigation.compose)
+    //implementation(libs.androidx.navigation.compose)
+    implementation(libs.navigation3.runtime)
+    implementation(libs.navigation3.ui)
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

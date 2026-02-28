@@ -3,6 +3,7 @@ package com.monetra
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -11,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.activity.viewModels
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.monetra.presentation.navigation.MonetraNavGraph
+import com.monetra.presentation.navigation.Route
 import com.monetra.ui.theme.MonetraTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -29,20 +32,30 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         splashScreen.setKeepOnScreenCondition {
-            viewModel.startDestination.value == null
+            !viewModel.isReady.value
         }
 
         enableEdgeToEdge()
         setContent {
-            val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
-
+            val isReady by viewModel.isReady.collectAsStateWithLifecycle()
+            val isDashboardUser by viewModel.isDashboardUser.collectAsStateWithLifecycle()
+            
+            // Moving rememberNavBackStack into the `if (isReady)` block
+            // to ensure it takes the correct start destination.
+            // The Lock screen logic is also moved inside the if (isReady) block
             MonetraTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    startDestination?.let { dest ->
-                        MonetraNavGraph(startDestination = dest)
+                    if (isReady) {
+                        // In Navigation 3, the backstack is a SnapshotStateList<Any>.
+                        // We initialize it with the first route when it's empty, and
+                        // push the Lock screen immediately to prevent a launch blink.
+                        val baseRoute = if (isDashboardUser) Route.TransactionList else Route.Welcome
+                        val backStack = rememberNavBackStack(baseRoute as NavKey, Route.Lock as NavKey)
+
+                        MonetraNavGraph(backStack = backStack)
                     }
                 }
             }

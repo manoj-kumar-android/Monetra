@@ -1,16 +1,13 @@
 package com.monetra.presentation.screen.add_edit
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
 import com.monetra.domain.usecase.transaction.AddTransactionUseCase
 import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
 import com.monetra.domain.usecase.transaction.UpdateTransactionUseCase
 import com.monetra.domain.usecase.transaction.ValidateTransactionUseCase
-import com.monetra.presentation.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,14 +45,13 @@ sealed interface AddEditEvent {
 
 @HiltViewModel
 class AddEditExpenseViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     private val addTransaction: AddTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
     private val getTransactionById: GetTransactionByIdUseCase,
     private val validateTransaction: ValidateTransactionUseCase
 ) : ViewModel() {
 
-    private val transactionId: Long? = savedStateHandle.toRoute<Screen.AddEditTransaction>().transactionId
+    private var transactionId: Long? = null
 
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState.asStateFlow()
@@ -63,11 +59,14 @@ class AddEditExpenseViewModel @Inject constructor(
     private val _events = Channel<AddEditEvent>()
     val events = _events.receiveAsFlow()
 
-    init {
-        if (transactionId != null) {
+    fun loadTransaction(id: Long?) {
+        if (this.transactionId == id) return
+        this.transactionId = id
+        
+        if (id != null) {
             _uiState.update { it.copy(isLoading = true, isEditing = true) }
             viewModelScope.launch {
-                val transaction = getTransactionById(transactionId)
+                val transaction = getTransactionById(id)
                 transaction?.let { tx ->
                     _uiState.update {
                         it.copy(
@@ -85,6 +84,9 @@ class AddEditExpenseViewModel @Inject constructor(
                     _events.send(AddEditEvent.ShowError("Transaction not found"))
                 }
             }
+        } else {
+            // Reset to default state for new transaction
+            _uiState.value = AddEditUiState()
         }
     }
 

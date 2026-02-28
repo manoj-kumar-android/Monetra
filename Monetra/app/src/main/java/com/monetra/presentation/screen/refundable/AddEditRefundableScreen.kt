@@ -33,9 +33,13 @@ import java.time.LocalTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditRefundableScreen(
+    id: Long? = null,
     onNavigateBack: () -> Unit,
     viewModel: AddEditRefundableViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(id) {
+        viewModel.loadRefundable(id)
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 

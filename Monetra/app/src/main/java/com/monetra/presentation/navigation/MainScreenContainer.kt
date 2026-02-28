@@ -21,17 +21,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.monetra.presentation.screen.snapshot.SnapshotScreen
 import com.monetra.presentation.screen.transactions.ExpenseListScreen
 import kotlinx.serialization.Serializable
@@ -42,7 +39,7 @@ sealed interface BottomNavScreen {
 
     @Serializable
     data object Transactions : BottomNavScreen
-    
+
     @Serializable
     data object Refundable : BottomNavScreen
 
@@ -70,7 +67,20 @@ fun MainScreenContainer(
     onNavigateToEditRefundable: (Long) -> Unit,
     onNavigateToRefundableDetails: (Long) -> Unit
 ) {
-    val nestedNavController = rememberNavController()
+    var selectedTabStr by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("Dashboard") }
+    var selectedTab = remember(selectedTabStr) {
+        when(selectedTabStr) {
+            "Transactions" -> BottomNavScreen.Transactions
+            "Refundable" -> BottomNavScreen.Refundable
+            "Summary" -> BottomNavScreen.Summary
+            else -> BottomNavScreen.Dashboard
+        }
+    }
+
+    BackHandler(enabled = selectedTab != BottomNavScreen.Dashboard) {
+        selectedTabStr = "Dashboard"
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     val navItems = listOf(
@@ -82,34 +92,20 @@ fun MainScreenContainer(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets.navigationBars, // Only pad for navigation bars at the bottom
+        contentWindowInsets = WindowInsets.navigationBars,
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                val navBackStackEntry by nestedNavController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
                 navItems.forEach { item ->
-                    val isSelected = currentDestination?.hierarchy?.any { 
-                        // Simplified route matching logic relying on class names.
-                        it.route?.contains(item.route::class.simpleName ?: "") == true 
-                    } == true
-                    
+                    val isSelected = selectedTab == item.route
+
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.title) },
                         label = { Text(item.title) },
                         selected = isSelected,
-                        onClick = {
-                            nestedNavController.navigate(item.route) {
-                                popUpTo(nestedNavController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { selectedTabStr = item.route.javaClass.simpleName },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -125,54 +121,46 @@ fun MainScreenContainer(
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = nestedNavController,
-            startDestination = BottomNavScreen.Dashboard,
+        androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding)
         ) {
-            composable<BottomNavScreen.Dashboard> {
-                com.monetra.presentation.screen.dashboard.DashboardScreen(
-                    onNavigateToAdd = onNavigateToAdd,
-                    onNavigateToEdit = onNavigateToEdit,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onManageBudgetsClick = onManageBudgetsClick,
-                    onNavigateToFixedExpenses = onNavigateToFixedExpenses,
-                    onNavigateToHelp = { onNavigateToHelp("DASHBOARD") },
-                    onSeeAllTransactions = {
-                        nestedNavController.navigate(BottomNavScreen.Transactions) {
-                            popUpTo(nestedNavController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
-            }
-            composable<BottomNavScreen.Transactions> {
-                ExpenseListScreen(
-                    snackbarHostState = snackbarHostState,
-                    onNavigateToAdd = onNavigateToAdd,
-                    onNavigateToEdit = onNavigateToEdit,
-                    onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") }
-                )
-            }
-            composable<BottomNavScreen.Refundable> {
-                com.monetra.presentation.screen.refundable.RefundableScreen(
-                    onAddEntryClick = onNavigateToAddRefundable,
-                    onEntryClick = onNavigateToRefundableDetails,
-                    onNavigateToHelp = { onNavigateToHelp("REFUNDABLE") }
-                )
-            }
-            composable<BottomNavScreen.Summary> {
-                com.monetra.presentation.screen.portfolio.PortfolioScreen(
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToLoans = onNavigateToLoans,
-                    onNavigateToInvestments = onNavigateToInvestments
-                )
+            when (selectedTab) {
+                BottomNavScreen.Dashboard -> {
+                    com.monetra.presentation.screen.dashboard.DashboardScreen(
+                        onNavigateToAdd = onNavigateToAdd,
+                        onNavigateToEdit = onNavigateToEdit,
+                        onNavigateToSettings = onNavigateToSettings,
+                        onManageBudgetsClick = onManageBudgetsClick,
+                        onNavigateToFixedExpenses = onNavigateToFixedExpenses,
+                        onNavigateToHelp = { onNavigateToHelp("DASHBOARD") },
+                        onSeeAllTransactions = { selectedTabStr = "Transactions" }
+                    )
+                }
+                BottomNavScreen.Transactions -> {
+                    ExpenseListScreen(
+                        snackbarHostState = snackbarHostState,
+                        onNavigateToAdd = onNavigateToAdd,
+                        onNavigateToEdit = onNavigateToEdit,
+                        onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") }
+                    )
+                }
+                BottomNavScreen.Refundable -> {
+                    com.monetra.presentation.screen.refundable.RefundableScreen(
+                        onAddEntryClick = onNavigateToAddRefundable,
+                        onEntryClick = onNavigateToRefundableDetails,
+                        onNavigateToHelp = { onNavigateToHelp("REFUNDABLE") }
+                    )
+                }
+                BottomNavScreen.Summary -> {
+                    com.monetra.presentation.screen.portfolio.PortfolioScreen(
+                        onNavigateToSettings = onNavigateToSettings,
+                        onNavigateToLoans = onNavigateToLoans,
+                        onNavigateToInvestments = onNavigateToInvestments
+                    )
+                }
             }
         }
     }

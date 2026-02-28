@@ -30,16 +30,18 @@ class AddEditRefundableViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
 
-    // null = new entry, non-null = edit existing
-    private val refundableId: Long? = savedStateHandle.get<Long>("id")
+    private var refundableId: Long? = null
 
     private val _uiState = MutableStateFlow<AddEditRefundableUiState>(AddEditRefundableUiState())
     val uiState: StateFlow<AddEditRefundableUiState> = _uiState.asStateFlow()
 
-    init {
-        refundableId?.let { id ->
+    fun loadRefundable(id: Long?) {
+        if (this.refundableId == id) return
+        this.refundableId = id
+        
+        id?.let { refundableId ->
             viewModelScope.launch {
-                repository.getRefundableById(id)?.let { refundable ->
+                repository.getRefundableById(refundableId)?.let { refundable ->
                     _uiState.value = AddEditRefundableUiState(
                         amount = refundable.amount.toString(),
                         personName = refundable.personName,
@@ -54,6 +56,9 @@ class AddEditRefundableViewModel @Inject constructor(
                     )
                 }
             }
+        } ?: run {
+            // Reset to default state for new entry
+            _uiState.value = AddEditRefundableUiState()
         }
     }
 

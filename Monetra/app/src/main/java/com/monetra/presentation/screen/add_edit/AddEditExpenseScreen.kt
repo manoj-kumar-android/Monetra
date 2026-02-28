@@ -50,9 +50,13 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditExpenseScreen(
+    transactionId: Long? = null,
     onNavigateBack: () -> Unit,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(transactionId) {
+        viewModel.loadTransaction(transactionId)
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
 
