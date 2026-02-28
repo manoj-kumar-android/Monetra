@@ -25,6 +25,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".presentation.screen.lock.LockActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Monetra" />
+
         <receiver
             android:name=".data.worker.NotificationReceiver"
             android:exported="false" />

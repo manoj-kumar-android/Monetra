@@ -115,8 +115,10 @@ class AddEditRefundableViewModel @Inject constructor(
                 savedStateHandle["personName"] = event.name
             }
             is AddEditRefundableEvent.PhoneNumberChanged -> {
-                _uiState.value = _uiState.value.copy(phoneNumber = event.number)
-                savedStateHandle["phoneNumber"] = event.number
+                // Keep only digits and limit to 10
+                val filtered = event.number.filter { it.isDigit() }.take(12)
+                _uiState.value = _uiState.value.copy(phoneNumber = filtered)
+                savedStateHandle["phoneNumber"] = filtered
             }
             is AddEditRefundableEvent.GivenDateChanged -> {
                 _uiState.value = _uiState.value.copy(givenDate = event.date)
@@ -145,7 +147,9 @@ class AddEditRefundableViewModel @Inject constructor(
     private fun saveRefundable() {
         val state = _uiState.value
         val amountValue = state.amount.toDoubleOrNull() ?: return
-        if (state.personName.isBlank() || state.phoneNumber.isBlank()) return
+        
+        // Prevent save if name is empty or phone number is provided but isn't 10 digits.
+        if (state.personName.isBlank() || (state.phoneNumber.isNotEmpty() && state.phoneNumber.length != 10)) return
 
         val now = LocalDateTime.now()
         if (state.remindMe && state.dueDate.isBefore(now)) {

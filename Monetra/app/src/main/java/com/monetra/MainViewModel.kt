@@ -20,11 +20,6 @@ class MainViewModel @Inject constructor(
     private val _isReady = MutableStateFlow(false)
     val isReady = _isReady.asStateFlow()
 
-    private val _isLocked = MutableStateFlow(true)
-    val isLocked = _isLocked.asStateFlow()
-
-    private val _relockEvent = MutableSharedFlow<Unit>()
-    val relockEvent = _relockEvent.asSharedFlow()
 
     private val _isDashboardUser = MutableStateFlow(false)
     val isDashboardUser = _isDashboardUser.asStateFlow()
@@ -41,18 +36,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun requestRelock() {
-        if (!_isLocked.value && _isDashboardUser.value) {
-            viewModelScope.launch {
-                _isLocked.value = true
-                _relockEvent.emit(Unit)
-            }
-        }
-    }
-
-    fun setLocked(locked: Boolean) {
-        _isLocked.value = locked
-    }
 
     fun setPendingRefundableId(id: Long?) {
         _pendingRefundableId.value = id

@@ -13,7 +13,6 @@ import androidx.navigation3.ui.NavDisplay
 import com.monetra.MainViewModel
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
 import com.monetra.presentation.screen.budgets.BudgetsScreen
-import com.monetra.presentation.screen.lock.LockScreen
 import com.monetra.presentation.screen.settings.SettingsScreen
 import com.monetra.presentation.screen.simulator.WhatIfSimulatorScreen
 import kotlinx.serialization.Serializable
@@ -47,8 +46,6 @@ sealed interface Route : NavKey {
     @Serializable
     data class RefundableDetails(val id: Long) : Route
     @Serializable
-    data object Lock : Route
-    @Serializable
     data object SavingsList : Route
     @Serializable
     data class AddEditSavings(val id: Long? = null) : Route
@@ -65,9 +62,8 @@ fun MonetraNavGraph(
     val pendingRefundableId by mainViewModel.pendingRefundableId.collectAsState()
 
     // Handle deep link when unlocked
-    val isLocked by mainViewModel.isLocked.collectAsState()
-    LaunchedEffect(pendingRefundableId, isLocked) {
-        if (pendingRefundableId != null && !isLocked) {
+    LaunchedEffect(pendingRefundableId) {
+        if (pendingRefundableId != null) {
             // Check if detail is already on top
             val currentRoute = backStack.lastOrNull()
             if (currentRoute !is Route.RefundableDetails || currentRoute.id != pendingRefundableId) {
@@ -85,26 +81,11 @@ fun MonetraNavGraph(
         }
     }
 
-    // Listen for relock events from MainActivity
-    LaunchedEffect(Unit) {
-        mainViewModel.relockEvent.collect {
-            backStack.navigateTo(Route.Lock)
-        }
-    }
-
     NavDisplay(
         backStack = backStack,
         onBack = {
-            val lastRoute = backStack.lastOrNull()
-            if (lastRoute is Route.Lock) {
-                // Security: Don't allow backing out of the lock screen.
-                // If there's only one item (Lock), or if we were relocked on top of something,
-                // the safest thing to do is let the activity handle it (which usually finishes/minimizes).
-                // In Navigation3, if we don't handle it, it bubbles up.
-                // However, we want to ensure we don't pop the Lock screen to reveal what's under it.
-                // So we do nothing here, which prevents the backStack.removeAt below.
-            } else if (backStack.size > 1) {
-                backStack.removeAt(backStack.lastIndex)
+            if (backStack.size > 1) {
+                backStack.safePop()
             }
         },
         // Use the decorator that provides ViewModelStore support
@@ -134,41 +115,6 @@ fun MonetraNavGraph(
 */
         entryProvider = { key ->
             when (key) {
-                is Route.Lock -> {
-                    NavEntry(key) {
-                        LockScreen(
-                            onAuthenticated = {
-                                // If we were relocked (pushed Lock on top of a screen), just pop back
-                                if (backStack.size > 1) {
-                                    backStack.removeAt(backStack.lastIndex)
-                                    // If we had a pending deep link during relock, handle it
-                                    mainViewModel.consumePendingRefundableId()?.let { id ->
-                                        // Ensure Refundable Tab is under details
-                                        val rootRoute = Route.TransactionList(initialTab = "Refundable")
-                                        if (backStack.lastOrNull() != rootRoute) {
-                                            backStack.navigateTo(rootRoute)
-                                        }
-                                        backStack.navigateTo(Route.RefundableDetails(id))
-                                    }
-                                } else {
-                                    // Cold start: clear lock and go to destination
-                                    backStack.clear()
-                                    val id = mainViewModel.consumePendingRefundableId()
-                                    if (id != null) {
-                                        // Inject backstack: Dashboard -> Refundable Tab -> Details
-                                        // We add the base Dashboard first to ensure the best back behavior
-                                        backStack.add(Route.TransactionList()) 
-                                        backStack.add(Route.TransactionList(initialTab = "Refundable"))
-                                        backStack.add(Route.RefundableDetails(id))
-                                    } else {
-                                        backStack.add(if (isDashboardUser) Route.TransactionList() else Route.Welcome)
-                                    }
-                                }
-                                mainViewModel.setLocked(false)
-                            }
-                        )
-                    }
-                }
 
                 is Route.TransactionList -> {
                     NavEntry(key) {
@@ -220,7 +166,7 @@ fun MonetraNavGraph(
                 is Route.SavingsList -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.savings.SavingsListScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onAddSavingsClick = { backStack.navigateTo(Route.AddEditSavings(null)) },
                             onSavingsClick = { id -> backStack.navigateTo(Route.AddEditSavings(id)) }
                         )
@@ -231,7 +177,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         com.monetra.presentation.screen.savings.AddEditSavingsScreen(
                             id = (key as Route.AddEditSavings).id,
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                            onNavigateBack = { backStack.safePop() }
                         )
                     }
                 }
@@ -239,7 +185,7 @@ fun MonetraNavGraph(
                 is Route.Settings -> {
                     NavEntry(key) {
                         SettingsScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToCategories = { backStack.navigateTo(Route.Budgets) }
                         )
                     }
@@ -248,7 +194,7 @@ fun MonetraNavGraph(
                 is Route.Budgets -> {
                     NavEntry(key) {
                         BudgetsScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToHelp = { backStack.navigateTo(Route.Help("BUDGETS")) }
                         )
                     }
@@ -260,7 +206,7 @@ fun MonetraNavGraph(
                             transactionId = key.transactionId,
                             onNavigateBack = {
                                 keyboardController?.hide()
-                                backStack.removeAt(backStack.lastIndex)
+                                backStack.safePop()
                             }
                         )
                     }
@@ -269,7 +215,7 @@ fun MonetraNavGraph(
                 is Route.WhatIfSimulator -> {
                     NavEntry(key) {
                         WhatIfSimulatorScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToHelp = { backStack.navigateTo(Route.Help("SIMULATOR")) }
                         )
                     }
@@ -279,7 +225,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         com.monetra.presentation.screen.help.HelpScreen(
                             screenType = key.screenType,
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                            onNavigateBack = { backStack.safePop() }
                         )
                     }
                 }
@@ -287,7 +233,7 @@ fun MonetraNavGraph(
                 is Route.Loans -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.loans.LoanManagementScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToHelp = { backStack.navigateTo(Route.Help("LOANS")) }
                         )
                     }
@@ -296,7 +242,7 @@ fun MonetraNavGraph(
                 is Route.Investments -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.investments.InvestmentManagementScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToHelp = { backStack.navigateTo(Route.Help("INVESTMENTS")) }
                         )
                     }
@@ -305,7 +251,7 @@ fun MonetraNavGraph(
                 is Route.FixedExpenses -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.monthly_expense.MonthlyExpenseScreen(
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onNavigateToHelp = { backStack.navigateTo(Route.Help("FIXED_COSTS")) }
                         )
                     }
@@ -315,7 +261,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         com.monetra.presentation.screen.refundable.AddEditRefundableScreen(
                             id = (key as Route.AddEditRefundable).id,
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                            onNavigateBack = { backStack.safePop() }
                         )
                     }
                 }
@@ -324,7 +270,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         com.monetra.presentation.screen.refundable.RefundableDetailScreen(
                             id = (key as Route.RefundableDetails).id,
-                            onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                            onNavigateBack = { backStack.safePop() },
                             onEditClick = { id ->
                                 backStack.navigateTo(Route.AddEditRefundable(id))
                             }
@@ -366,5 +312,15 @@ fun MonetraNavGraph(
 fun NavBackStack<NavKey>.navigateTo(route: Route) {
     if (this.lastOrNull() != route) {
         this.add(route)
+    }
+}
+
+/**
+ * Safely pops the backstack only if there is more than one item left.
+ * This prevents IndexOutOfBoundsExceptions resulting from rapid back button presses.
+ */
+fun NavBackStack<NavKey>.safePop() {
+    if (this.size > 1) {
+        this.removeAt(this.lastIndex)
     }
 }

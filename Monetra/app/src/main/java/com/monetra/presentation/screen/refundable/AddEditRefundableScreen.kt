@@ -248,8 +248,9 @@ fun AddEditRefundableScreen(
                     label = { Text(stringResource(R.string.phone_number)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    prefix = { Text("+", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    prefix = { Text("+", color = MaterialTheme.colorScheme.onSurface) },
                     supportingText = {
                         Text(
                             text = stringResource(R.string.phone_instruction),

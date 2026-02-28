@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -25,8 +26,6 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
-    // Tracks whether the app was backgrounded since last successful auth  
-    private var wasInBackground = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -56,8 +55,23 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (isReady) {
-                        val baseRoute = if (isDashboardUser) Route.TransactionList() else Route.Welcome
-                        val backStack = rememberNavBackStack(baseRoute as NavKey, Route.Lock as NavKey)
+                        val initialRoutes = remember(isDashboardUser) {
+                            val routes = mutableListOf<NavKey>()
+                            if (isDashboardUser) {
+                                val id = viewModel.consumePendingRefundableId()
+                                if (id != null) {
+                                    routes.add(Route.TransactionList())
+                                    routes.add(Route.TransactionList(initialTab = "Refundable"))
+                                    routes.add(Route.RefundableDetails(id))
+                                } else {
+                                    routes.add(Route.TransactionList())
+                                }
+                            } else {
+                                routes.add(Route.Welcome)
+                            }
+                            routes.toTypedArray()
+                        }
+                        val backStack = rememberNavBackStack(*initialRoutes)
 
                         MonetraNavGraph(backStack = backStack)
                     }
@@ -79,19 +93,5 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        // App is going to background — mark for re-lock on next resume
-        wasInBackground = true
-    }
 
-    override fun onResume() {
-        super.onResume()
-        // If we returned from background, re-lock by resetting the start destination.
-        // The ViewModel will re-emit the Lock screen as the destination.
-        if (wasInBackground) {
-            wasInBackground = false
-            viewModel.requestRelock()
-        }
-    }
 }
