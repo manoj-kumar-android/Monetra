@@ -14,10 +14,11 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,7 +26,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.Saving
+import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,8 +40,15 @@ fun SavingsListScreen(
 ) {
     val savingsList by viewModel.savingsList.collectAsStateWithLifecycle()
     val totalSavings by viewModel.totalSavings.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Savings", fontWeight = FontWeight.Bold) },
@@ -88,10 +98,28 @@ fun SavingsListScreen(
                 }
             } else {
                 items(savingsList, key = { it.id }) { saving ->
-                    SavingsItemRow(
-                        saving = saving,
-                        onClick = { onSavingsClick(saving.id) }
-                    )
+                    SwipeToDeleteContainer(
+                        onDelete = {
+                            viewModel.deleteSavings(saving)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "${saving.bankName} deleted",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreSaving(saving)
+                                }
+                            }
+                        },
+                        title = "Delete Saving?",
+                        message = "Are you sure you want to remove this saving account?"
+                    ) {
+                        SavingsItemRow(
+                            saving = saving,
+                            onClick = { onSavingsClick(saving.id) }
+                        )
+                    }
                 }
             }
         }

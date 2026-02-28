@@ -35,10 +35,17 @@ class AddEditSavingsViewModel @Inject constructor(
                     amount = saving.amount.toString(),
                     interestRate = saving.interestRate?.toString() ?: "",
                     note = saving.note,
-                    isEdit = true
+                    isEdit = true,
+                    isSaved = false
                 )
+            } ?: run {
+                _uiState.value = AddEditSavingsUiState(isSaved = false)
             }
         }
+    }
+
+    fun onSaveConsumed() {
+        _uiState.value = _uiState.value.copy(isSaved = false)
     }
 
     fun onBankNameChange(name: String) {

@@ -29,13 +29,14 @@ fun AddEditSavingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(id) {
+    LaunchedEffect(Unit) {
         viewModel.loadSavings(id)
     }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onNavigateBack()
+            viewModel.onSaveConsumed()
         }
     }
 

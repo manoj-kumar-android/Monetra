@@ -118,26 +118,6 @@ fun ExpenseListScreen(
         }
     }
 
-    if (uiState is ExpenseUiState.Success) {
-        val state = uiState as ExpenseUiState.Success
-        if (state.transactionToDelete != null) {
-            AlertDialog(
-                onDismissRequest = viewModel::dismissDeleteDialog,
-                title = { Text(stringResource(R.string.delete_transaction_title)) },
-                text = { Text(stringResource(R.string.delete_transaction_msg)) },
-                confirmButton = {
-                    TextButton(onClick = viewModel::confirmDelete) {
-                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = viewModel::dismissDeleteDialog) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                }
-            )
-        }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -220,7 +200,7 @@ fun ExpenseListScreen(
                 val pageMonth = remember(page) {
                     initialMonth.plusMonths((page - (Int.MAX_VALUE / 2)).toLong())
                 }
-                
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (val state = uiState) {
                         is ExpenseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -262,7 +242,7 @@ private fun TransactionListContent(
     onDeleteClick: (Long) -> Unit
 ) {
     val listState = rememberLazyListState()
-    
+
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.sm, bottom = 80.dp),
@@ -286,15 +266,21 @@ private fun TransactionListContent(
                 stickyHeader {
                     DateHeader(header = dateHeader)
                 }
-                
+
                 items(transactions, key = { it.id }) { transaction ->
-                    SwipeableTransactionItem(
-                        item = transaction,
-                        onClick = { onTransactionClick(transaction.id) },
-                        onDelete = { onDeleteClick(transaction.id) }
-                    )
+                    com.monetra.presentation.component.SwipeToDeleteContainer(
+                        onDelete = { onDeleteClick(transaction.id) },
+                        title = stringResource(R.string.delete_transaction_title),
+                        message = stringResource(R.string.delete_transaction_msg)
+                    ) {
+                        TransactionRow(
+                            item = transaction,
+                            onClick = { onTransactionClick(transaction.id) },
+                            onDelete = { onDeleteClick(transaction.id) }
+                        )
+                    }
                 }
-                
+
                 item {
                     Spacer(modifier = Modifier.height(Spacing.md))
                 }
@@ -377,7 +363,7 @@ private fun MonthSelector(
                 IconButton(onClick = { onMonthSelected(selectedMonth.minusMonths(1)) }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.previous_month_cd))
                 }
-                
+
                 // Show "Today" button only if not in current month
                 androidx.compose.animation.AnimatedVisibility(
                     visible = !isCurrentMonth,
@@ -432,31 +418,3 @@ private fun FilterRow(activeFilter: TransactionFilter, onFilterSelected: (Transa
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SwipeableTransactionItem(
-    item: TransactionUiItem,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        SwipeToDismissBoxValue.Settled,
-        SwipeToDismissBoxDefaults.positionalThreshold
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                Modifier.fillMaxSize().padding(vertical = Spacing.xs).clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = Spacing.xl),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onErrorContainer)
-            }
-        },
-        content = {
-            TransactionRow(item = item, onClick = onClick, onDelete = onDelete)
-        }
-    )
-}

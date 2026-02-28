@@ -57,8 +57,7 @@ sealed interface ExpenseUiState {
         val selectedMonth: YearMonth,
         val isCurrentMonth: Boolean = true,
         val activeFilter: TransactionFilter,
-        val isRefreshing: Boolean = false,
-        val transactionToDelete: Long? = null
+        val isRefreshing: Boolean = false
     ) : ExpenseUiState
 
     /** [message] is already user-facing — formatted once in the ViewModel. */

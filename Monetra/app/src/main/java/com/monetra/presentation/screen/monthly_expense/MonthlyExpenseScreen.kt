@@ -37,6 +37,7 @@ import com.monetra.R
 import com.monetra.domain.model.BillStatus
 import com.monetra.domain.model.MonthlyExpense
 import com.monetra.presentation.components.HelpIconButton
+import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
@@ -137,7 +138,9 @@ fun MonthlyExpenseScreen(
                         scope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
                         }
-                    }
+                    },
+                    title = "Delete Bill?",
+                    message = "Are you sure you want to stop tracking this recurring bill?"
                 ) {
                     BillItem(model, onClick = { viewModel.onEditExpense(model.rule) })
                 }
@@ -264,84 +267,6 @@ fun MonthlyExpenseScreen(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeToDeleteContainer(
-    onDelete: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                showDialog = true
-                false
-            } else {
-                false
-            }
-        },
-        positionalThreshold = { it * 0.35f }
-    )
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Delete Bill?", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to stop tracking this recurring bill?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                        onDelete()
-                    }
-                ) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDialog = false }
-                ) { Text("Cancel") }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
-    }
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            val color by animateColorAsState(
-                targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                },
-                label = "swipe_bg"
-            )
-            val iconScale by animateFloatAsState(
-                targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1.2f else 0.8f,
-                label = "icon_scale"
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(color),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
-                        .padding(end = Spacing.xl)
-                        .scale(iconScale)
-                )
-            }
-        },
-        content = { content() }
-    )
 }
 
 @Composable

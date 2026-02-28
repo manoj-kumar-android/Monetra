@@ -246,27 +246,10 @@ class TransactionListViewModel @Inject constructor(
     }
 
     fun onDeleteClick(id: Long) {
-        val currentState = _uiState.value as? ExpenseUiState.Success ?: return
-        _uiState.value = currentState.copy(transactionToDelete = id)
-    }
-
-    fun dismissDeleteDialog() {
-        val currentState = _uiState.value as? ExpenseUiState.Success ?: return
-        _uiState.value = currentState.copy(transactionToDelete = null)
-    }
-
-    fun confirmDelete() {
-        val currentState = _uiState.value as? ExpenseUiState.Success ?: return
-        val id = currentState.transactionToDelete ?: return
-
         viewModelScope.launch {
             try {
-                // Keep a reference to the deleted item for undo functionality
                 recentlyDeletedTransaction = getTransactionById(id)
                 deleteTransaction(id)
-                
-                // Clear the dialog state
-                _uiState.value = currentState.copy(transactionToDelete = null)
                 _events.send(ExpenseEvent.ShowUndoSnackbar("Transaction deleted"))
             } catch (e: Exception) {
                 _events.send(ExpenseEvent.ShowError("Could not delete transaction"))

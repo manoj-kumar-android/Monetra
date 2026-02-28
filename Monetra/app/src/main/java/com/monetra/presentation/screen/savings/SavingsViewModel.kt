@@ -27,4 +27,10 @@ class SavingsViewModel @Inject constructor(
             repository.deleteSaving(saving)
         }
     }
+
+    fun restoreSaving(saving: Saving) {
+        viewModelScope.launch {
+            repository.insertSaving(saving)
+        }
+    }
 }

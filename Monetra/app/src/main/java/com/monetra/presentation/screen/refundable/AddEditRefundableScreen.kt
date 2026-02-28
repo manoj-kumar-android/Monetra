@@ -1,6 +1,9 @@
 package com.monetra.presentation.screen.refundable
 
+import android.content.Intent
+import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -37,7 +40,7 @@ fun AddEditRefundableScreen(
     onNavigateBack: () -> Unit,
     viewModel: AddEditRefundableViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(id) {
+    LaunchedEffect(Unit) {
         viewModel.loadRefundable(id)
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -46,6 +49,7 @@ fun AddEditRefundableScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onNavigateBack()
+            viewModel.onSaveConsumed()
         }
     }
 
@@ -81,6 +85,49 @@ fun AddEditRefundableScreen(
         }
     }
 
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onEvent(AddEditRefundableEvent.Save)
+        } else {
+            // Check if we should show settings dialog (permanently denied)
+            val activity = context as? androidx.activity.ComponentActivity
+            if (activity != null && !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            )) {
+                showSettingsDialog = true
+            }
+        }
+    }
+
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            title = { Text("Notification Permission Required") },
+            text = { Text("To receive reminders for this item, please enable notifications in your app settings.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSettingsDialog = false
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                }) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSettingsDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -91,7 +138,21 @@ fun AddEditRefundableScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { viewModel.onEvent(AddEditRefundableEvent.Save) }) {
+                    TextButton(onClick = {
+                        if (uiState.remindMe && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                            val permissionCheck = androidx.core.content.ContextCompat.checkSelfPermission(
+                                context,
+                                android.Manifest.permission.POST_NOTIFICATIONS
+                            )
+                            if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                viewModel.onEvent(AddEditRefundableEvent.Save)
+                            }
+                        } else {
+                            viewModel.onEvent(AddEditRefundableEvent.Save)
+                        }
+                    }) {
                         Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                 }

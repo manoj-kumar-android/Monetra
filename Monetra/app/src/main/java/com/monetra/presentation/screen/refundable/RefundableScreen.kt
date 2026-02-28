@@ -67,7 +67,7 @@ import com.monetra.R
 import com.monetra.domain.model.Refundable
 import com.monetra.domain.model.RefundableStatus
 import com.monetra.presentation.components.HelpIconButton
-import com.monetra.presentation.screen.monthly_expense.SwipeToDeleteContainer
+import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
@@ -210,7 +210,9 @@ fun RefundableScreen(
                                             viewModel.restoreRefundable(item)
                                         }
                                     }
-                                }
+                                },
+                                title = "Delete Entry?",
+                                message = "Are you sure you want to remove this refundable entry?"
                             ) {
                                 RefundableItemRow(
                                     item = item,

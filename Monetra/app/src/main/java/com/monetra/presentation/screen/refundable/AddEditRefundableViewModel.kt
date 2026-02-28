@@ -36,30 +36,37 @@ class AddEditRefundableViewModel @Inject constructor(
     val uiState: StateFlow<AddEditRefundableUiState> = _uiState.asStateFlow()
 
     fun loadRefundable(id: Long?) {
-        if (this.refundableId == id) return
-        this.refundableId = id
-        
-        id?.let { refundableId ->
-            viewModelScope.launch {
-                repository.getRefundableById(refundableId)?.let { refundable ->
-                    _uiState.value = AddEditRefundableUiState(
-                        amount = refundable.amount.toString(),
-                        personName = refundable.personName,
-                        phoneNumber = refundable.phoneNumber,
-                        givenDate = refundable.givenDate,
-                        dueDate = refundable.dueDate,
-                        note = refundable.note ?: "",
-                        remindMe = refundable.remindMe,
-                        entryType = refundable.entryType,
-                        isEdit = true,
-                        isPaid = refundable.isPaid
-                    )
-                }
-            }
-        } ?: run {
-            // Reset to default state for new entry
+        // Reset state immediately on entry
+        if (id == null) {
+            this.refundableId = null
             _uiState.value = AddEditRefundableUiState()
+            return
         }
+        
+        this.refundableId = id
+        viewModelScope.launch {
+            repository.getRefundableById(id)?.let { refundable ->
+                _uiState.value = AddEditRefundableUiState(
+                    amount = refundable.amount.toString(),
+                    personName = refundable.personName,
+                    phoneNumber = refundable.phoneNumber,
+                    givenDate = refundable.givenDate,
+                    dueDate = refundable.dueDate,
+                    note = refundable.note ?: "",
+                    remindMe = refundable.remindMe,
+                    entryType = refundable.entryType,
+                    isEdit = true,
+                    isPaid = refundable.isPaid,
+                    isSaved = false
+                )
+            } ?: run {
+                _uiState.value = AddEditRefundableUiState(isSaved = false)
+            }
+        }
+    }
+
+    fun onSaveConsumed() {
+        _uiState.value = _uiState.value.copy(isSaved = false)
     }
 
     fun onEvent(event: AddEditRefundableEvent) {
@@ -162,7 +169,7 @@ data class AddEditRefundableUiState(
     val givenDate: LocalDate = LocalDate.now(),
     val dueDate: LocalDateTime = LocalDateTime.now().plusWeeks(1).withHour(10).withMinute(0),
     val note: String = "",
-    val remindMe: Boolean = false,
+    val remindMe: Boolean = true,
     val entryType: RefundableType = RefundableType.LENT,
     val isEdit: Boolean = false,
     val isPaid: Boolean = false,
