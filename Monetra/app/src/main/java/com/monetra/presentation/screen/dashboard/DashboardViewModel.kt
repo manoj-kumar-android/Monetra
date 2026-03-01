@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,6 +90,8 @@ class DashboardViewModel @Inject constructor(
                 val totalBudgetAllocations = activeBudgets.sumOf { it.limit }
 
                 DashboardUiState.Success(
+                    rawDailyLimit = sts.dailyLimit,
+                    rawFixedCosts = currentReserved,
                     dailySafeToSpend = "₹%,.0f".format(sts.remainingToday),
                     dailyLimit = "₹%,.0f".format(sts.dailyLimit),
                     stsPercent = sts.remainingPercent.coerceIn(0f, 1f),
@@ -112,7 +115,9 @@ class DashboardViewModel @Inject constructor(
                     recurringItems = rec.map { it.toUiModel() },
                     recentTransactions = txs.take(3).map { it.toUiItem() }
                 )
-            }.catch { throwable ->
+            }
+            .flowOn(Dispatchers.Default)
+            .catch { throwable ->
                 _uiState.value = DashboardUiState.Error(throwable.localizedMessage ?: "Error")
             }.collect { state ->
                 _uiState.value = state
@@ -120,7 +125,9 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
+    private companion object {
+        val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
+    }
 
     private fun Transaction.toUiItem() = TransactionUiItem(
         id = id,
@@ -181,7 +188,7 @@ class DashboardViewModel @Inject constructor(
     private fun com.monetra.domain.model.RecurringExpense.toUiModel() = RecurringExpenseUiModel(
         title = title,
         amount = "₹%,.2f".format(amount),
-        nextDate = nextExpectedDate.format(DateTimeFormatter.ofPattern("dd MMM")),
+        nextDate = nextExpectedDate.format(dateFormatter),
         isStabilityHigh = isStabilityHigh
     )
 }
@@ -193,6 +200,8 @@ sealed interface DashboardUiState {
     data object Loading : DashboardUiState
     data object NoSalarySet : DashboardUiState
     data class Success(
+        val rawDailyLimit: Double,
+        val rawFixedCosts: Double,
         val dailySafeToSpend: String,
         val dailyLimit: String,
         val stsPercent: Float,

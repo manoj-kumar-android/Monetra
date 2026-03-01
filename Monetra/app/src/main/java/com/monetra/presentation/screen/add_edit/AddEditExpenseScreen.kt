@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -48,6 +49,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -117,7 +119,12 @@ fun AddEditExpenseScreen(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+            }
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -196,6 +203,7 @@ private fun AddEditExpenseContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
+                    .navigationBarsPadding()
                     .padding(horizontal = Spacing.lg, vertical = Spacing.md)
             ) {
                 Button(
@@ -257,7 +265,7 @@ private fun AddEditExpenseContent(
             androidx.compose.foundation.lazy.LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                items(suggestions) { suggestion ->
+                items(suggestions, key = { it }, contentType = { "suggestion" }) { suggestion ->
                     SuggestionChip(
                         onClick = { onTitleChange(suggestion) },
                         label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
@@ -303,7 +311,8 @@ private fun AddEditExpenseContent(
                         onValueChange = onNoteChange,
                         placeholder = stringResource(R.string.notes_placeholder),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        textStyle = MaterialTheme.typography.bodyLarge
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        singleLine = false
                     )
                 }
             }
@@ -356,7 +365,8 @@ private fun GroupedTextField(
     placeholder: String,
     keyboardOptions: KeyboardOptions,
     textStyle: androidx.compose.ui.text.TextStyle,
-    isError: Boolean = false
+    isError: Boolean = false,
+    singleLine: Boolean = true
 ) {
     TextField(
         value = value,
@@ -372,7 +382,7 @@ private fun GroupedTextField(
         ),
         keyboardOptions = keyboardOptions,
         isError = isError,
-        singleLine = true
+        singleLine = singleLine
     )
 }
 
@@ -406,7 +416,7 @@ private fun EmojiCategoryGrid(isIncome: Boolean, selected: String, onSelect: (St
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        items(categories) { (id, data) ->
+        items(categories, key = { it.first }, contentType = { "category" }) { (id, data) ->
             val (resId, emoji) = data
             val isSelected = id == selected
             Card(

@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +36,9 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+
+private val shortDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+private val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,9 +216,10 @@ fun AddEditRefundableScreen(
                 onValueChange = { viewModel.onEvent(AddEditRefundableEvent.AmountChanged(it)) },
                 label = { Text(stringResource(R.string.amount)) },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 leadingIcon = { Icon(Icons.Default.CurrencyRupee, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
             // Person Name
@@ -230,6 +236,7 @@ fun AddEditRefundableScreen(
                 onValueChange = { viewModel.onEvent(AddEditRefundableEvent.PersonNameChanged(it)) },
                 label = { Text(stringResource(R.string.person_name)) },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
                 trailingIcon = {
                     IconButton(onClick = { 
                         permissionLauncher.launch(android.Manifest.permission.READ_CONTACTS)
@@ -237,7 +244,8 @@ fun AddEditRefundableScreen(
                         Icon(Icons.Default.Contacts, contentDescription = null)
                     }
                 },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
 
             // Phone Number
@@ -247,7 +255,7 @@ fun AddEditRefundableScreen(
                     onValueChange = { viewModel.onEvent(AddEditRefundableEvent.PhoneNumberChanged(it)) },
                     label = { Text(stringResource(R.string.phone_number)) },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     prefix = { Text("+", color = MaterialTheme.colorScheme.onSurface) },
@@ -325,7 +333,7 @@ private fun DatePickerButton(
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
             Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = date.format(DateTimeFormatter.ofPattern("dd MMM yyyy")), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(text = date.format(shortDateFormatter), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
         }
     }
 
@@ -377,7 +385,7 @@ private fun TimePickerButton(
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
             Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = time.format(DateTimeFormatter.ofPattern("hh:mm a")), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(text = time.format(timeFormatter), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
         }
     }
 

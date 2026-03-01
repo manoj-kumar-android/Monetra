@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.NativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -50,10 +52,13 @@ fun DashboardScreen(
     onManageBudgetsClick: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
     onNavigateToHelp: () -> Unit,
+    onNavigateToSimulator: () -> Unit,
     onSeeAllTransactions: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onNavigateToAdd)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -73,6 +78,9 @@ fun DashboardScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
+                    IconButton(onClick = onNavigateToSimulator) {
+                        Text("🔮", fontSize = 20.sp)
+                    }
                     HelpIconButton(onClick = onNavigateToHelp)
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
@@ -82,7 +90,7 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToAdd,
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
@@ -184,6 +192,7 @@ private fun DashboardContent(
             SafeToSpendCard(
                 amount = state.dailySafeToSpend, 
                 limit = state.dailyLimit,
+                rawLimit = state.rawDailyLimit,
                 percent = state.stsPercent
             )
         }
@@ -202,7 +211,7 @@ private fun DashboardContent(
                 income = state.income,
                 savings = state.savingsGoal,
                 emis = state.totalEmi,
-                fixed = state.fixedCosts.replace("₹", "").replace(",", "").toDoubleOrNull() ?: 0.0
+                fixed = state.rawFixedCosts
             )
         }
 
@@ -237,7 +246,7 @@ private fun DashboardContent(
             }
     
             // TRANSACTIONS
-            items(state.recentTransactions) { transaction ->
+            items(state.recentTransactions, key = { it.id }, contentType = { "transaction" }) { transaction ->
                 TransactionRow(
                     item = transaction,
                     onClick = { onTransactionClick(transaction.id) },
@@ -253,7 +262,7 @@ private fun DashboardContent(
 }
 
 @Composable
-private fun SafeToSpendCard(amount: String, limit: String, percent: Float) {
+private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, percent: Float) {
     val isOverspent = amount.startsWith("−") || amount.startsWith("-")
     val progress = (1f - percent).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "STSProgress")
@@ -302,7 +311,7 @@ private fun SafeToSpendCard(amount: String, limit: String, percent: Float) {
                         )
                     }
                     Text(
-                        stringResource(R.string.limit_format, limit.replace(",", "").replace("₹", "").toDoubleOrNull() ?: 0.0),
+                        stringResource(R.string.limit_format, rawLimit),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -334,7 +343,7 @@ private fun SafeToSpendCard(amount: String, limit: String, percent: Float) {
                         Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(Spacing.sm))
                         Text(
-                            if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.pacing_tip_format, limit.replace(",", "").replace("₹", "").toDoubleOrNull() ?: 0.0),
+                            if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.pacing_tip_format, rawLimit),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

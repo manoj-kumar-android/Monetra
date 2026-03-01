@@ -65,6 +65,7 @@ fun MainScreenContainer(
     onNavigateToInvestments: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
     onNavigateToHelp: (String) -> Unit,
+    onNavigateToSimulator: () -> Unit,
     onNavigateToAddRefundable: () -> Unit,
     onNavigateToEditRefundable: (Long) -> Unit,
     onNavigateToRefundableDetails: (Long) -> Unit,
@@ -140,6 +141,7 @@ fun MainScreenContainer(
                         onNavigateToSettings = onNavigateToSettings,
                         onManageBudgetsClick = onManageBudgetsClick,
                         onNavigateToFixedExpenses = onNavigateToFixedExpenses,
+                        onNavigateToSimulator = onNavigateToSimulator,
                         onNavigateToHelp = { onNavigateToHelp("DASHBOARD") },
                         onSeeAllTransactions = { selectedTabStr = "Transactions" }
                     )

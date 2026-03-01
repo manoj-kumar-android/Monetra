@@ -67,6 +67,10 @@ fun MonthlyExpenseScreen(
         }
     }
 
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick { 
+        viewModel.toggleAddSheet(true) 
+    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
@@ -86,7 +90,7 @@ fun MonthlyExpenseScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.toggleAddSheet(true) },
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
@@ -132,7 +136,7 @@ fun MonthlyExpenseScreen(
                     }
                 }
             }
-            items(billModels, key = { it.rule.id }) { model ->
+            items(billModels, key = { it.rule.id }, contentType = { "bill_model" }) { model ->
                 SwipeToDeleteContainer(
                     onDelete = {
                         viewModel.requestDelete(model.rule)
@@ -240,7 +244,7 @@ fun MonthlyExpenseScreen(
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                     userScrollEnabled = false
                 ) {
-                    items(categories) { (id, data) ->
+                    items(categories, key = { it.first }, contentType = { "category" }) { (id, data) ->
                         val (resId, emoji) = data
                         val isSelected = id == uiState.category
                         Card(

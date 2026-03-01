@@ -28,6 +28,9 @@ import com.monetra.ui.theme.Spacing
 import androidx.compose.ui.res.stringResource
 import com.monetra.R
 
+private val shortDateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")
+private val fullDateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvestmentManagementScreen(
@@ -38,6 +41,10 @@ fun InvestmentManagementScreen(
     val investments by viewModel.investments.collectAsStateWithLifecycle()
     val intelligence by viewModel.wealthIntelligence.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick { 
+        viewModel.toggleAddSheet(true) 
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -59,7 +66,7 @@ fun InvestmentManagementScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.toggleAddSheet(true) },
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
@@ -106,7 +113,7 @@ fun InvestmentManagementScreen(
                     item {
                         Text(stringResource(R.string.monthly_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
-                    items(monthlyInvestments) { inv ->
+                    items(monthlyInvestments, key = { it.id }, contentType = { "investment" }) { inv ->
                         InvestmentCard(
                             inv = inv, 
                             onDelete = { viewModel.onDeleteInvestment(inv) },
@@ -120,7 +127,7 @@ fun InvestmentManagementScreen(
                     item {
                         Text(stringResource(R.string.onetime_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
-                    items(oneTimeInvestments) { inv ->
+                    items(oneTimeInvestments, key = { it.id }, contentType = { "investment" }) { inv ->
                         InvestmentCard(
                             inv = inv, 
                             onDelete = { viewModel.onDeleteInvestment(inv) },
@@ -545,7 +552,7 @@ fun InvestmentCard(inv: Investment, onDelete: () -> Unit, onEdit: () -> Unit) {
             Spacer(modifier = Modifier.height(Spacing.md))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                DetailItem(stringResource(R.string.started), inv.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")), modifier = Modifier.weight(1f))
+                DetailItem(stringResource(R.string.started), inv.startDate.format(shortDateFormatter), modifier = Modifier.weight(1f))
                 if (inv.interestRate > 0) {
                     DetailItem(stringResource(R.string.yield_label), "${inv.interestRate}%", modifier = Modifier.weight(1f))
                 }
@@ -670,7 +677,7 @@ fun AddInvestmentSheet(
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = stepDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                        value = stepDate.format(fullDateFormatter),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Effective Date") },
@@ -810,7 +817,7 @@ fun AddInvestmentSheet(
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 OutlinedTextField(
-                    value = uiState.startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                    value = uiState.startDate.format(fullDateFormatter),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Start Date") },
@@ -824,7 +831,7 @@ fun AddInvestmentSheet(
                 )
 
                 OutlinedTextField(
-                    value = uiState.endDate?.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")) ?: "Ongoing",
+                    value = uiState.endDate?.format(fullDateFormatter) ?: "Ongoing",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("End Date (Optional)") },
@@ -848,7 +855,7 @@ fun AddInvestmentSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("₹%,.0f from ${step.effectiveDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yy"))}".format(step.amount), style = MaterialTheme.typography.bodyMedium)
+                        Text("₹%,.0f from ${step.effectiveDate.format(shortDateFormatter)}".format(step.amount), style = MaterialTheme.typography.bodyMedium)
                         IconButton(onClick = { onRemoveStepChange(step) }) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
                         }

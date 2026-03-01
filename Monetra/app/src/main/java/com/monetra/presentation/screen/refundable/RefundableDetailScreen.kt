@@ -48,6 +48,9 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 import androidx.core.net.toUri
 
+private val shortDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+private val fullDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RefundableDetailScreen(
@@ -133,7 +136,7 @@ fun RefundableDetailScreen(
                 // Header Card: Amount & Status with Gradient
                 androidx.compose.animation.AnimatedVisibility(
                     visible = isVisible,
-                    enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically()
+                    enter = androidx.compose.animation.fadeIn()
                 ) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -238,8 +241,8 @@ fun RefundableDetailScreen(
                             color = MaterialTheme.colorScheme.outlineVariant
                         )
                         
-                        DetailItem(icon = Icons.Default.CalendarToday, label = stringResource(R.string.given_date), value = item.givenDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy")))
-                        DetailItem(icon = Icons.Default.Event, label = stringResource(R.string.due_date), value = item.dueDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")))
+                        DetailItem(icon = Icons.Default.CalendarToday, label = stringResource(R.string.given_date), value = item.givenDate.format(shortDateFormatter))
+                        DetailItem(icon = Icons.Default.Event, label = stringResource(R.string.due_date), value = item.dueDate.format(fullDateFormatter))
                         
                         if (!item.note.isNullOrBlank()) {
                             DetailItem(icon = Icons.Default.StickyNote2, label = stringResource(R.string.note), value = item.note)
@@ -289,7 +292,7 @@ private fun SwipeToPaidButton(
     AnimatedContent(
         targetState = isPaid to statusColor,
         transitionSpec = {
-            (fadeIn(animationSpec = tween(500)) + slideInVertically()).togetherWith(fadeOut(animationSpec = tween(300)))
+            fadeIn(animationSpec = tween(500)).togetherWith(fadeOut(animationSpec = tween(300)))
         }, label = "buttonState"
     ) { (paid, animColor) ->
         if (paid) {

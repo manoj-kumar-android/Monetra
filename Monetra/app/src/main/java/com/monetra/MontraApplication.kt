@@ -37,9 +37,13 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
 
     override fun onCreate() {
         super.onCreate()
-        scheduleFinancialInsights()
-        scheduleEmiReminders()
-        scheduleRefundableReminders()
+        
+        // Offload blocking WorkManager initialization to IO thread
+        applicationScope.launch(Dispatchers.IO) {
+            scheduleFinancialInsights()
+            scheduleEmiReminders()
+            scheduleRefundableReminders()
+        }
         
         // Register for application globally lifecycle events
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)

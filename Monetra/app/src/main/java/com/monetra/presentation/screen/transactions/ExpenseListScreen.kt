@@ -79,6 +79,8 @@ import com.monetra.presentation.components.HelpIconButton
 import androidx.compose.ui.res.stringResource
 import com.monetra.R
 
+private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseListScreen(
@@ -119,6 +121,7 @@ fun ExpenseListScreen(
         }
     }
 
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onNavigateToAdd)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -138,7 +141,7 @@ fun ExpenseListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToAdd,
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
@@ -268,7 +271,7 @@ private fun TransactionListContent(
                     DateHeader(header = dateHeader)
                 }
 
-                items(transactions, key = { it.id }) { transaction ->
+                items(transactions, key = { it.id }, contentType = { "transaction" }) { transaction ->
                     com.monetra.presentation.component.SwipeToDeleteContainer(
                         onDelete = { onDeleteClick(transaction.id) },
                         title = stringResource(R.string.delete_transaction_title),
@@ -346,7 +349,6 @@ private fun MonthSelector(
     onMonthSelected: (YearMonth) -> Unit,
     onResetMonth: () -> Unit
 ) {
-    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
@@ -384,7 +386,7 @@ private fun MonthSelector(
             }
 
             Text(
-                text = selectedMonth.format(formatter),
+                text = selectedMonth.format(monthFormatter),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface

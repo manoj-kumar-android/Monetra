@@ -67,7 +67,7 @@ fun BudgetsScreen(
                     )
                 }
 
-                items(uiState.budgets) { budget ->
+                items(uiState.budgets, key = { it.categoryName }, contentType = { "budget" }) { budget ->
                     BudgetEditRow(
                         budget = budget,
                         onEditClick = { showEditDialog = budget }

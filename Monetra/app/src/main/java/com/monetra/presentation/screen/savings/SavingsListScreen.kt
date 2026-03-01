@@ -42,6 +42,7 @@ fun SavingsListScreen(
     val totalSavings by viewModel.totalSavings.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onAddSavingsClick)
 
     Scaffold(
         snackbarHost = {
@@ -61,7 +62,7 @@ fun SavingsListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddSavingsClick,
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape

@@ -57,6 +57,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,6 +89,8 @@ import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
+
+private val fullDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,6 +125,7 @@ fun RefundableScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onAddEntryClick)
 
     Scaffold(
         snackbarHost = {
@@ -148,7 +153,7 @@ fun RefundableScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = onAddEntryClick,
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
@@ -194,7 +199,7 @@ fun RefundableScreen(
                         contentPadding = PaddingValues(Spacing.lg),
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
-                        items(pageRefundables.size, key = { index -> pageRefundables[index].id }) { index ->
+                        items(pageRefundables.size, key = { index -> pageRefundables[index].id }, contentType = { "refundable" }) { index ->
                             val item = pageRefundables[index]
                         
                         // Staggered entry animation
@@ -205,10 +210,7 @@ fun RefundableScreen(
 
                         androidx.compose.animation.AnimatedVisibility(
                             visible = isVisible.value,
-                            enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
-                                initialOffsetY = { it / 2 },
-                                animationSpec = tween(600)
-                            )
+                            enter = fadeIn(animationSpec = tween(600))
                         ) {
                             SwipeToDeleteContainer(
                                 onDelete = { 
@@ -340,7 +342,7 @@ private fun RefundableItemRow(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = item.dueDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")),
+                        text = item.dueDate.format(fullDateFormatter),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

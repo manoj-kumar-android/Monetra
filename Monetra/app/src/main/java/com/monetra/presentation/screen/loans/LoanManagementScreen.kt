@@ -95,6 +95,8 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanManagementScreen(
@@ -121,6 +123,10 @@ fun LoanManagementScreen(
         }
     }
 
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick { 
+        viewModel.toggleAddSheet(true) 
+    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
@@ -140,7 +146,7 @@ fun LoanManagementScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.toggleAddSheet(true) },
+                onClick = hapticAddClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
@@ -175,7 +181,7 @@ fun LoanManagementScreen(
                     }
                 }
             }
-            items(loans, key = { it.id }) { loan ->
+            items(loans, key = { it.id }, contentType = { "loan" }) { loan ->
                 SwipeToDeleteContainer(
                     onDelete = {
                         viewModel.requestDeleteLoan(loan)
@@ -205,7 +211,6 @@ fun LoanManagementScreen(
 @Composable
 private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
     var showDatePicker by remember { mutableStateOf(false) }
-    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
     Column(
         modifier = Modifier
@@ -404,7 +409,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
                         Spacer(Modifier.height(4.dp))
                         AnimatedContent(
                             targetState = uiState.calculatedEmi,
-                            transitionSpec = { slideInVertically { it } togetherWith slideOutVertically { -it } },
+                            transitionSpec = { androidx.compose.animation.fadeIn() togetherWith androidx.compose.animation.fadeOut() },
                             label = "emi_anim"
                         ) { emi ->
                             Text(

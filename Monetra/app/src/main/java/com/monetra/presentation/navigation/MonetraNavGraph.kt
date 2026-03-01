@@ -1,5 +1,14 @@
 package com.monetra.presentation.navigation
 
+
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -88,31 +97,23 @@ fun MonetraNavGraph(
                 backStack.safePop()
             }
         },
-        // Use the decorator that provides ViewModelStore support
-/*
-        transitionSpec = { direction ->
-            val (enter, exit) = if (direction == NavDisplay.Direction.Forward) {
-                slideInHorizontally(
-                    initialOffsetX = { fullWidth -> fullWidth },
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                ) + fadeIn(animationSpec = tween(200)) to
-                        slideOutHorizontally(
-                            targetOffsetX = { fullWidth -> -fullWidth / 4 },
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        )
-            } else {
-                slideInHorizontally(
-                    initialOffsetX = { fullWidth -> -fullWidth / 4 },
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                ) to
-                        slideOutHorizontally(
-                            targetOffsetX = { fullWidth -> fullWidth },
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        ) + fadeOut(animationSpec = tween(200))
-            }
-            NavTransition(enter, exit)
-        } as AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform,
-*/
+        transitionSpec = {
+            val enterAnim = fadeIn(
+                animationSpec = tween(
+                    durationMillis = 700,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            )
+
+            val exitAnim = fadeOut(
+                animationSpec = tween(
+                    durationMillis = 700,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            )
+            
+            enterAnim togetherWith exitAnim
+        },
         entryProvider = { key ->
             when (key) {
 
@@ -146,6 +147,9 @@ fun MonetraNavGraph(
                             },
                             onNavigateToHelp = { screenType ->
                                 backStack.navigateTo(Route.Help(screenType))
+                            },
+                            onNavigateToSimulator = {
+                                backStack.navigateTo(Route.WhatIfSimulator)
                             },
                             onNavigateToAddRefundable = {
                                 backStack.navigateTo(Route.AddEditRefundable(null))
