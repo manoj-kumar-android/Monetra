@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-internal abstract class DriveBackupModule {
+abstract class DriveBackupModule {
 
     @Binds
     @Singleton

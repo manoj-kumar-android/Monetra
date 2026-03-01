@@ -6,9 +6,12 @@ import com.monetra.domain.model.Saving
 import com.monetra.domain.repository.SavingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.monetra.domain.repository.CloudBackupRepository
+import javax.inject.Inject
 
-class SavingRepositoryImpl(
-    private val savingDao: SavingDao
+class SavingRepositoryImpl @Inject constructor(
+    private val savingDao: SavingDao,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : SavingRepository {
 
     override fun getAllSaving(): Flow<List<Saving>> {
@@ -27,9 +30,11 @@ class SavingRepositoryImpl(
 
     override suspend fun insertSaving(saving: Saving) {
         savingDao.insertSaving(saving.toSavingEntity())
+        cloudBackupRepository.scheduleBackup()
     }
 
     override suspend fun deleteSaving(saving: Saving) {
         savingDao.deleteSaving(saving.toSavingEntity())
+        cloudBackupRepository.scheduleBackup()
     }
 }

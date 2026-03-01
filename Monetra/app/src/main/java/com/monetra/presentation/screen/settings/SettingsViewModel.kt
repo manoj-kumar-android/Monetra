@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.monetra.drivebackup.api.DriveBackupManager
+import com.monetra.domain.repository.CloudBackupRepository
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -30,6 +31,7 @@ data class SettingsUiState(
     val isRestoring: Boolean = false,
     val isSyncing: Boolean = false,
     val isAuthenticating: Boolean = false,
+    val isBackupAvailable: Boolean = false,
     val accountName: String? = null,
     val lastBackupTime: Long? = null,
     val recoveryIntent: android.content.Intent? = null
@@ -53,6 +55,7 @@ class SettingsViewModel @Inject constructor(
     private val repository: UserPreferenceRepository,
     private val updatePreferences: UpdateUserPreferencesUseCase,
     private val driveBackupManager: DriveBackupManager,
+    private val cloudBackupRepository: CloudBackupRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -65,6 +68,7 @@ class SettingsViewModel @Inject constructor(
     init {
         loadPreferences()
         observeBackupStatus()
+        checkBackupAvailability()
     }
 
     private fun observeBackupStatus() {
@@ -76,7 +80,17 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             driveBackupManager.accountName.collectLatest { name ->
                 _uiState.update { it.copy(accountName = name) }
+                if (name != null) {
+                    checkBackupAvailability()
+                }
             }
+        }
+    }
+
+    private fun checkBackupAvailability() {
+        viewModelScope.launch {
+            val available = cloudBackupRepository.isBackupAvailable()
+            _uiState.update { it.copy(isBackupAvailable = available) }
         }
     }
 
@@ -93,11 +107,25 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onRestoreClick() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoring = true) }
+            val result = cloudBackupRepository.runRestore()
+            _uiState.update { it.copy(isRestoring = false) }
+            
+            result.onSuccess {
+                loadPreferences() // Reload UI with restored data
+                _events.send(SettingsEvent.RestoreSuccess)
+            }.onFailure { error ->
+                _events.send(SettingsEvent.RestoreError(error.message ?: "Restore failed"))
+            }
+        }
+    }
+
     fun onManualBackupClick() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, recoveryIntent = null) }
-            val dbFile = context.getDatabasePath("monetra_db")
-            val result = driveBackupManager.performManualBackup(dbFile)
+            val result = cloudBackupRepository.runBackup()
             _uiState.update { it.copy(isSyncing = false) }
             
             result.onSuccess {

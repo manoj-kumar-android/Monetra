@@ -5,6 +5,7 @@ import com.monetra.data.local.entity.toDomain
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.BillInstance
 import com.monetra.domain.model.MonthlyExpense
+import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.MonthlyExpenseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -12,7 +13,8 @@ import java.time.YearMonth
 import javax.inject.Inject
 
 class MonthlyExpenseRepositoryImpl @Inject constructor(
-    private val dao: MonthlyExpenseDao
+    private val dao: MonthlyExpenseDao,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : MonthlyExpenseRepository {
     
     // --- Rules ---
@@ -23,11 +25,14 @@ class MonthlyExpenseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertMonthlyExpense(expense: MonthlyExpense): Long {
-        return dao.insertMonthlyExpense(expense.toEntity())
+        val id = dao.insertMonthlyExpense(expense.toEntity())
+        cloudBackupRepository.scheduleBackup()
+        return id
     }
 
     override suspend fun deleteMonthlyExpense(expense: MonthlyExpense) {
         dao.deleteMonthlyExpense(expense.toEntity())
+        cloudBackupRepository.scheduleBackup()
     }
 
     override suspend fun getMonthlyExpensesByCategory(category: String): List<MonthlyExpense> {
@@ -56,6 +61,7 @@ class MonthlyExpenseRepositoryImpl @Inject constructor(
 
     override suspend fun insertBillInstance(instance: BillInstance) {
         dao.insertBillInstance(instance.toEntity())
+        cloudBackupRepository.scheduleBackup()
     }
 
     override suspend fun getInstanceById(id: Long): BillInstance? {

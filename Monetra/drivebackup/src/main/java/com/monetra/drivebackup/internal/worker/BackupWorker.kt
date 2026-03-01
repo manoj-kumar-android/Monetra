@@ -17,7 +17,7 @@ private val android.content.Context.dataStore by preferencesDataStore(name = "dr
 private val lastBackupTimeKey = longPreferencesKey("last_backup_time")
 
 @HiltWorker
-internal class BackupWorker @AssistedInject constructor(
+class BackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val driveService: DriveService,

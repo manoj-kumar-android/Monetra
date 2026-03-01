@@ -12,11 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.monetra.domain.repository.CloudBackupRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
-    private val driveBackupManager: DriveBackupManager
+    private val driveBackupManager: DriveBackupManager,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WelcomeUiState())
@@ -40,18 +42,19 @@ class WelcomeViewModel @Inject constructor(
 
     private suspend fun checkAndRestore() {
         _uiState.update { it.copy(isRestoring = true) }
-        val result = driveBackupManager.restore()
+        
+        // First check if backup exists
+        if (!cloudBackupRepository.isBackupAvailable()) {
+            _uiState.update { it.copy(isRestoring = false, isAuthenticating = false) }
+            _events.send(WelcomeEvent.NoBackupFound)
+            return
+        }
+
+        val result = cloudBackupRepository.runRestore()
         _uiState.update { it.copy(isRestoring = false, isAuthenticating = false) }
         
-        result.onSuccess { file ->
-            if (file != null) {
-                // Here the main app should handle the restored database file
-                // For now, we signal success. 
-                // Actual DB injection/replacement is a separate step in the main app.
-                _events.send(WelcomeEvent.RestoreSuccess(file))
-            } else {
-                _events.send(WelcomeEvent.NoBackupFound)
-            }
+        result.onSuccess {
+            _events.send(WelcomeEvent.RestoreSuccess)
         }.onFailure { error ->
             _events.send(WelcomeEvent.RestoreError(error.message ?: "Restore failed"))
         }
@@ -64,7 +67,7 @@ data class WelcomeUiState(
 )
 
 sealed interface WelcomeEvent {
-    data class RestoreSuccess(val file: java.io.File) : WelcomeEvent
+    data object RestoreSuccess : WelcomeEvent
     data class RestoreError(val message: String) : WelcomeEvent
     data class AuthError(val message: String) : WelcomeEvent
     data object NoBackupFound : WelcomeEvent

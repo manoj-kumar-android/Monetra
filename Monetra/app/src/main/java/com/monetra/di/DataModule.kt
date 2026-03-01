@@ -21,6 +21,54 @@ abstract class DataModule {
     @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindCloudBackupRepository(impl: CloudBackupRepositoryImpl): CloudBackupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserPreferenceRepository(impl: UserPreferenceRepositoryImpl): UserPreferenceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindInvestmentRepository(impl: InvestmentRepositoryImpl): InvestmentRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReportRepository(impl: ReportRepositoryImpl): ReportRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSubscriptionRepository(impl: SubscriptionRepositoryImpl): SubscriptionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLoanRepository(impl: LoanRepositoryImpl): LoanRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMonthlyExpenseRepository(impl: MonthlyExpenseRepositoryImpl): MonthlyExpenseRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRefundableRepository(impl: RefundableRepositoryImpl): RefundableRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSavingRepository(impl: SavingRepositoryImpl): SavingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSavingsRepository(impl: SavingsRepositoryImpl): SavingsRepository
+
     companion object {
         @Provides
         @Singleton
@@ -74,48 +122,6 @@ abstract class DataModule {
         @Provides
         @Singleton
         fun provideSavingDao(db: MonetraDatabase): SavingDao = db.savingDao
-
-        @Provides
-        @Singleton
-        fun provideUserPreferenceRepository(dao: UserPreferencesDao): UserPreferenceRepository = UserPreferenceRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideBudgetRepository(
-            budgetDao: CategoryBudgetDao,
-            transactionDao: TransactionDao
-        ): BudgetRepository = BudgetRepositoryImpl(budgetDao, transactionDao)
-
-        @Provides
-        @Singleton
-        fun provideGoalRepository(dao: GoalDao): GoalRepository = GoalRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideInvestmentRepository(dao: InvestmentDao): InvestmentRepository = InvestmentRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideReportRepository(dao: MonthlyReportDao): ReportRepository = ReportRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideSubscriptionRepository(userPrefsRepo: UserPreferenceRepository): SubscriptionRepository = SubscriptionRepositoryImpl(userPrefsRepo)
-
-        @Provides
-        @Singleton
-        fun provideLoanRepository(dao: LoanDao): LoanRepository = LoanRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideMonthlyExpenseRepository(dao: MonthlyExpenseDao): MonthlyExpenseRepository = MonthlyExpenseRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideRefundableRepository(dao: RefundableDao): RefundableRepository = RefundableRepositoryImpl(dao)
-
-        @Provides
-        @Singleton
-        fun provideSavingRepository(dao: SavingDao): SavingRepository = SavingRepositoryImpl(dao)
     }
+
 }

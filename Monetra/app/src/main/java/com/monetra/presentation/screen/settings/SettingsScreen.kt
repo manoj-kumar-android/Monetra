@@ -54,6 +54,12 @@ fun SettingsScreen(
                 is SettingsEvent.BackupSuccess -> {
                     snackbarHostState.showSnackbar("Backup completed successfully!")
                 }
+                is SettingsEvent.RestoreSuccess -> {
+                    snackbarHostState.showSnackbar("Data restored successfully!")
+                }
+                is SettingsEvent.RestoreError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
                 is SettingsEvent.BackupError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
@@ -236,11 +242,40 @@ fun SettingsScreen(
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             if (uiState.accountName != null) {
-                                OutlinedButton(
-                                    onClick = viewModel::onManualBackupClick,
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text("Backup Now")
+                                if (uiState.isBackupAvailable) {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        OutlinedButton(
+                                            onClick = viewModel::onManualBackupClick,
+                                            shape = RoundedCornerShape(12.dp),
+                                            enabled = !uiState.isSyncing && !uiState.isRestoring
+                                        ) {
+                                            Text("Backup Now")
+                                        }
+                                        Spacer(modifier = Modifier.height(Spacing.xs))
+                                        Button(
+                                            onClick = viewModel::onRestoreClick,
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            enabled = !uiState.isSyncing && !uiState.isRestoring
+                                        ) {
+                                            if (uiState.isRestoring) {
+                                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                            } else {
+                                                Text("Restore Data")
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = viewModel::onManualBackupClick,
+                                        shape = RoundedCornerShape(12.dp),
+                                        enabled = !uiState.isSyncing
+                                    ) {
+                                        Text("Backup Now")
+                                    }
                                 }
                             } else {
                                 Button(

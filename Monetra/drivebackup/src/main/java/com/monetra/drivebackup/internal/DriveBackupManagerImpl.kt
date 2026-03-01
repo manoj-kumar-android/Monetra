@@ -33,7 +33,7 @@ import javax.inject.Singleton
 private val Context.dataStore by preferencesDataStore(name = "drive_backup_prefs")
 
 @Singleton
-internal class DriveBackupManagerImpl @Inject constructor(
+class DriveBackupManagerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val driveService: DriveService,
     private val encryptionManager: EncryptionManager
@@ -46,6 +46,7 @@ internal class DriveBackupManagerImpl @Inject constructor(
 
     override val lastBackupTime: Flow<Long?> = context.dataStore.data.map { it[lastBackupTimeKey] }
     override val accountName: Flow<String?> = context.dataStore.data.map { it[accountNameKey] }
+    override val googleUserId: Flow<String?> = context.dataStore.data.map { it[googleUserIdKey] }
 
     override suspend fun authenticate(activity: Activity): Boolean {
         val googleIdOption = GetGoogleIdOption.Builder()
@@ -179,6 +180,41 @@ internal class DriveBackupManagerImpl @Inject constructor(
         }
     }
 
+    override suspend fun uploadRawFile(file: File): Result<Unit> {
+        val prefs = context.dataStore.data.first()
+        val accountName = prefs[accountNameKey]
+
+        if (accountName.isNullOrBlank()) {
+            return Result.failure(Exception("Not authenticated"))
+        }
+
+        return try {
+            driveService.initialize(accountName)
+            driveService.uploadBackup(file)
+            context.dataStore.edit { it[lastBackupTimeKey] = System.currentTimeMillis() }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun downloadRawFile(outputFile: File): Result<Boolean> {
+        val prefs = context.dataStore.data.first()
+        val accountName = prefs[accountNameKey]
+
+        if (accountName.isNullOrBlank()) {
+            return Result.failure(Exception("Not authenticated"))
+        }
+
+        return try {
+            driveService.initialize(accountName)
+            val success = driveService.downloadBackup(outputFile)
+            Result.success(success)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun restore(): Result<File?> {
         val prefs = context.dataStore.data.first()
         val googleUserId = prefs[googleUserIdKey]
@@ -229,7 +265,17 @@ internal class DriveBackupManagerImpl @Inject constructor(
         
         return try {
             driveService.initialize(accountName)
-            driveService.getBackupFileId() != null
+            val metadata = driveService.getBackupFileMetadata()
+            if (metadata != null) {
+                val (_, modifiedTime) = metadata
+                val currentLocalTime = context.dataStore.data.map { it[lastBackupTimeKey] }.first()
+                if (currentLocalTime == null || currentLocalTime == 0L) {
+                    context.dataStore.edit { it[lastBackupTimeKey] = modifiedTime }
+                }
+                true
+            } else {
+                false
+            }
         } catch (_: Exception) {
             false
         }

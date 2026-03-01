@@ -5,6 +5,7 @@ import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.CategoryBudgetEntity
 import com.monetra.domain.model.CategoryBudget
 import com.monetra.domain.repository.BudgetRepository
+import com.monetra.domain.repository.CloudBackupRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 class BudgetRepositoryImpl @Inject constructor(
     private val budgetDao: CategoryBudgetDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : BudgetRepository {
 
     override fun getCategoryBudgets(month: YearMonth): Flow<List<CategoryBudget>> {
@@ -42,9 +44,11 @@ class BudgetRepositoryImpl @Inject constructor(
                 limit = budget.limit
             )
         )
+        cloudBackupRepository.scheduleBackup()
     }
 
     override suspend fun deleteCategoryBudget(categoryName: String) {
         budgetDao.deleteBudget(categoryName)
+        cloudBackupRepository.scheduleBackup()
     }
 }

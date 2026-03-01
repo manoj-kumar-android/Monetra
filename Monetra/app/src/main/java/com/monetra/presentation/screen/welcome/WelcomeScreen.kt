@@ -95,7 +95,6 @@ fun WelcomeScreen(
             when (event) {
                 is WelcomeEvent.RestoreSuccess -> {
                     snackbarHostState.showSnackbar("Data restored! Welcome back.")
-                    // In a real app, you'd trigger a DB switch here using the file
                     onNavigateToDashboard()
                 }
                 is WelcomeEvent.RestoreError -> {
@@ -106,7 +105,7 @@ fun WelcomeScreen(
                 }
                 is WelcomeEvent.NoBackupFound -> {
                     snackbarHostState.showSnackbar("No backup found on Google Drive.")
-                    onNavigateToDashboard()
+                    onNavigateToOnboarding()
                 }
             }
         }

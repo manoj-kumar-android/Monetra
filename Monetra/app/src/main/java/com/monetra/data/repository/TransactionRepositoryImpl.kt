@@ -4,8 +4,8 @@ import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
+import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.TransactionRepository
-import com.monetra.drivebackup.api.DriveBackupManager
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -18,14 +18,11 @@ import javax.inject.Inject
 class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
     @ApplicationContext private val context: Context,
-    private val driveBackupManager: DriveBackupManager
+    private val cloudBackupRepository: CloudBackupRepository
 ) : TransactionRepository {
 
     private fun triggerBackup() {
-        val dbFile = context.getDatabasePath("monetra_db")
-        if (dbFile.exists()) {
-            driveBackupManager.scheduleBackup(dbFile)
-        }
+        cloudBackupRepository.scheduleBackup()
     }
 
     override fun getTransactions(month: YearMonth): Flow<List<Transaction>> {

@@ -17,6 +17,13 @@ interface DriveBackupManager {
     val accountName: Flow<String?>
 
     /**
+     * A flow of the authenticated Google User ID (email).
+     * Returns null if the user is not authenticated.
+     */
+    val googleUserId: Flow<String?>
+
+
+    /**
      * A flow of the last successful backup timestamp (epoch milliseconds).
      * Returns null if no backup has been performed yet.
      */
@@ -41,6 +48,18 @@ interface DriveBackupManager {
      * @param databaseFile The database file to back up.
      */
     suspend fun performManualBackup(databaseFile: File): Result<Unit>
+
+    /**
+     * Uploads any file directly to the Google Drive backup slot.
+     * Use this if you want to handle your own encryption/serialization.
+     */
+    suspend fun uploadRawFile(file: File): Result<Unit>
+
+    /**
+     * Downloads the backup file from Google Drive directly to the specified file.
+     * Use this if you want to handle your own decryption/deserialization.
+     */
+    suspend fun downloadRawFile(outputFile: File): Result<Boolean>
 
     /**
      * Attempts to restore the database from Google Drive.

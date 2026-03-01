@@ -3,13 +3,15 @@ package com.monetra.data.repository
 import com.monetra.data.local.dao.UserPreferencesDao
 import com.monetra.data.local.entity.UserPreferencesEntity
 import com.monetra.domain.model.UserPreferences
+import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.UserPreferenceRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserPreferenceRepositoryImpl @Inject constructor(
-    private val dao: UserPreferencesDao
+    private val dao: UserPreferencesDao,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : UserPreferenceRepository {
 
     override fun getUserPreferences(): Flow<UserPreferences> {
@@ -38,5 +40,6 @@ class UserPreferenceRepositoryImpl @Inject constructor(
                 projectionYears = preferences.projectionYears
             )
         )
+        cloudBackupRepository.scheduleBackup()
     }
 }

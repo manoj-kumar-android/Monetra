@@ -15,7 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-internal class EncryptionManager @Inject constructor() {
+class EncryptionManager @Inject constructor() {
 
     private val algorithm = "AES/GCM/NoPadding"
     private val tagLength = 128
@@ -73,6 +73,37 @@ internal class EncryptionManager @Inject constructor() {
                 }
             }
         }
+    }
+
+    /**
+     * Encrypts a ByteArray using AES-256 GCM.
+     */
+    fun encrypt(googleUserId: String, data: ByteArray): ByteArray {
+        val salt = ByteArray(saltLength).apply { SecureRandom().nextBytes(this) }
+        val iv = ByteArray(ivLength).apply { SecureRandom().nextBytes(this) }
+        val key = deriveKey(googleUserId, salt)
+
+        val cipher = Cipher.getInstance(algorithm)
+        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(tagLength, iv))
+
+        val encryptedData = cipher.doFinal(data)
+        
+        return salt + iv + encryptedData
+    }
+
+    /**
+     * Decrypts a ByteArray using AES-256 GCM.
+     */
+    fun decrypt(googleUserId: String, encryptedDataWithHeader: ByteArray): ByteArray {
+        val salt = encryptedDataWithHeader.sliceArray(0 until saltLength)
+        val iv = encryptedDataWithHeader.sliceArray(saltLength until saltLength + ivLength)
+        val encryptedData = encryptedDataWithHeader.sliceArray(saltLength + ivLength until encryptedDataWithHeader.size)
+        
+        val key = deriveKey(googleUserId, salt)
+        val cipher = Cipher.getInstance(algorithm)
+        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(tagLength, iv))
+
+        return cipher.doFinal(encryptedData)
     }
 
     /**

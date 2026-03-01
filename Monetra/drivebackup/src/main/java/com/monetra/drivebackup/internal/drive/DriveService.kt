@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-internal class DriveService @Inject constructor(
+class DriveService @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val jsonFactory = GsonFactory.getDefaultInstance()
@@ -88,14 +88,22 @@ internal class DriveService @Inject constructor(
     /**
      * Checks if a backup file exists in the AppData folder.
      */
-    suspend fun getBackupFileId(): String? = withContext(Dispatchers.IO) {
+    /**
+     * Gets the backup file metadata (ID and modified time).
+     */
+    suspend fun getBackupFileMetadata(): Pair<String, Long>? = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext null
         val result = service.files().list().setSpaces("appDataFolder")
             .setQ("name='$backupFileName' and 'appDataFolder' in parents and trashed=false")
-            .setFields("files(id, name)").execute()
+            .setFields("files(id, name, modifiedTime)").execute()
 
-        result.files?.firstOrNull()?.id
+        val file = result.files?.firstOrNull() ?: return@withContext null
+        val id = file.id ?: return@withContext null
+        val modifiedTime = file.modifiedTime?.value ?: 0L
+        id to modifiedTime
     }
+
+    suspend fun getBackupFileId(): String? = getBackupFileMetadata()?.first
 
     /**
      * Uploads or updates the backup file.

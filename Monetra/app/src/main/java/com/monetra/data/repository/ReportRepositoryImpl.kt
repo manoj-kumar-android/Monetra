@@ -4,6 +4,7 @@ import com.monetra.data.local.dao.MonthlyReportDao
 import com.monetra.data.local.entity.MonthlyReportEntity
 import com.monetra.domain.model.FinancialBalanceStatus
 import com.monetra.domain.model.MonthlyFinancialReport
+import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.ReportRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -11,7 +12,8 @@ import java.time.YearMonth
 import javax.inject.Inject
 
 class ReportRepositoryImpl @Inject constructor(
-    private val dao: MonthlyReportDao
+    private val dao: MonthlyReportDao,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : ReportRepository {
 
     override suspend fun saveReport(report: MonthlyFinancialReport) {
@@ -27,6 +29,7 @@ class ReportRepositoryImpl @Inject constructor(
                 status = report.status.name
             )
         )
+        cloudBackupRepository.scheduleBackup()
     }
 
     override suspend fun getReportForMonth(month: YearMonth): MonthlyFinancialReport? {
