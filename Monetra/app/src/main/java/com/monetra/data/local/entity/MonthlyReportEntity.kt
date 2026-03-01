@@ -3,6 +3,9 @@ package com.monetra.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 @Entity(tableName = "monthly_reports")
 data class MonthlyReportEntity(
     @PrimaryKey val month: String, // Format: YYYY-MM

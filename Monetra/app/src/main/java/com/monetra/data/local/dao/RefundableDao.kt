@@ -23,4 +23,13 @@ interface RefundableDao {
 
     @Query("UPDATE refundable SET isPaid = :isPaid WHERE id = :id")
     suspend fun updatePaidStatus(id: Long, isPaid: Boolean)
+
+    @Query("SELECT * FROM refundable")
+    suspend fun getAllRefundablesList(): List<RefundableEntity>
+
+    @Query("DELETE FROM refundable")
+    suspend fun deleteAllRefundables()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllRefundables(refundables: List<RefundableEntity>)
 }

@@ -7,6 +7,10 @@ import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
 import java.time.LocalDate
 
+import kotlinx.serialization.Serializable
+import com.monetra.data.local.util.LocalDateSerializer
+
+@Serializable
 @Entity(
     tableName = "transactions",
     indices = [
@@ -20,6 +24,7 @@ data class TransactionEntity(
     val amount: Double,
     val type: TransactionType,
     val category: String,
+    @Serializable(with = LocalDateSerializer::class)
     val date: LocalDate,
     val note: String,
     val linkedBillId: Long? = null

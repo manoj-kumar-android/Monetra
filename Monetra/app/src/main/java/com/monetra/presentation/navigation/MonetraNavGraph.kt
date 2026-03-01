@@ -1,13 +1,9 @@
 package com.monetra.presentation.navigation
 
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,16 +66,12 @@ fun MonetraNavGraph(
     val isDashboardUser by mainViewModel.isDashboardUser.collectAsState()
     val pendingRefundableId by mainViewModel.pendingRefundableId.collectAsState()
 
-    // Handle deep link when unlocked
     LaunchedEffect(pendingRefundableId) {
         if (pendingRefundableId != null) {
-            // Check if detail is already on top
             val currentRoute = backStack.lastOrNull()
             if (currentRoute !is Route.RefundableDetails || currentRoute.id != pendingRefundableId) {
                 val id = mainViewModel.consumePendingRefundableId()
                 if (id != null) {
-                    // Ensure the backstack has the Refundable tab under the detail
-                    // We only add it if the current top isn't already the TransactionList with Refundable tab
                     val rootRoute = Route.TransactionList(initialTab = "Refundable")
                     if (backStack.lastOrNull() != rootRoute) {
                         backStack.navigateTo(rootRoute)
@@ -100,14 +92,14 @@ fun MonetraNavGraph(
         transitionSpec = {
             val enterAnim = fadeIn(
                 animationSpec = tween(
-                    durationMillis = 700,
+                    durationMillis = 100,
                     easing = androidx.compose.animation.core.FastOutSlowInEasing
                 )
             )
 
             val exitAnim = fadeOut(
                 animationSpec = tween(
-                    durationMillis = 700,
+                    durationMillis = 100,
                     easing = androidx.compose.animation.core.FastOutSlowInEasing
                 )
             )
@@ -264,7 +256,7 @@ fun MonetraNavGraph(
                 is Route.AddEditRefundable -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.refundable.AddEditRefundableScreen(
-                            id = (key as Route.AddEditRefundable).id,
+                            id = key.id,
                             onNavigateBack = { backStack.safePop() }
                         )
                     }
@@ -273,7 +265,7 @@ fun MonetraNavGraph(
                 is Route.RefundableDetails -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.refundable.RefundableDetailScreen(
-                            id = (key as Route.RefundableDetails).id,
+                            id = key.id,
                             onNavigateBack = { backStack.safePop() },
                             onEditClick = { id ->
                                 backStack.navigateTo(Route.AddEditRefundable(id))
@@ -288,6 +280,10 @@ fun MonetraNavGraph(
                             onNavigateToOnboarding = {
                                 backStack.clear()
                                 backStack.add(Route.Onboarding)
+                            },
+                            onNavigateToDashboard = {
+                                backStack.clear()
+                                backStack.add(Route.TransactionList())
                             }
                         )
                     }

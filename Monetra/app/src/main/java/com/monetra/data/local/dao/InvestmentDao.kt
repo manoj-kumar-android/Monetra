@@ -17,4 +17,12 @@ interface InvestmentDao {
 
     @Query("SELECT * FROM investments WHERE id = :id")
     suspend fun getInvestmentById(id: Long): InvestmentEntity?
+    @Query("SELECT * FROM investments")
+    suspend fun getAllInvestments(): List<InvestmentEntity>
+
+    @Query("DELETE FROM investments")
+    suspend fun deleteAllInvestments()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllInvestments(investments: List<InvestmentEntity>)
 }

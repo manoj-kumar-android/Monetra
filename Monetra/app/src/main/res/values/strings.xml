@@ -374,6 +374,16 @@
     <string name="feature3_subtitle">Smart nudges and what-if simulations guide every financial decision.</string>
     <string name="privacy_badge_text">100%% offline &amp; private — your data never leaves your device</string>
     <string name="get_started">Get Started</string>
+    <string name="im_new">I\'m New</string>
+    <string name="restore_data">Restore Data</string>
+    <string name="restore_success">Data restored successfully! Welcome back.</string>
+    <string name="restore_failed">No backup found or restore failed. Please try again.</string>
+    <string name="restoring">Restoring...</string>
+    <string name="sync_restore_data">Sync &amp; Restore Data</string>
+    <string name="sync_restore_description">Restore your data from the latest local backup.</string>
+    <string name="last_backup_format">Last backup: %s</string>
+    <string name="never">Never</string>
+    <string name="data_backup">DATA &amp; BACKUP</string>
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Welcome to Monetra 🚀</string>

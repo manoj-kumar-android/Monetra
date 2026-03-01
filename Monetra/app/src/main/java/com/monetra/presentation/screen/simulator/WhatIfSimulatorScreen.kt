@@ -1,6 +1,7 @@
 package com.monetra.presentation.screen.simulator
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -158,12 +159,25 @@ private fun SimulatorContent(
             .fillMaxSize()
             .nestedScroll(nestedScrollConnection)
             .verticalScroll(rememberScrollState())
-            .padding(Spacing.lg),
+            .padding(Spacing.lg)
+            .animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(Spacing.lg)
     ) {
         AnimatedStatusBanner(result, hasAnyChange)
 
         BeforeAfterSnapshot(result)
+
+        SimulatorControls(
+            result = result,
+            params = params,
+            safeMaxEmi = safeMaxEmi,
+            safeMaxSip = safeMaxSip,
+            onSalaryChange = onSalaryChange,
+            onEmiChange = onEmiChange,
+            onSipChange = onSipChange,
+            onTargetChange = onTargetChange,
+            onDragStateChange = { isAnySliderActive = it }
+        )
 
         if (isOverLoaded) {
             WarningCard(
@@ -188,23 +202,7 @@ private fun SimulatorContent(
             )
         }
 
-        SimulatorControls(
-            result = result,
-            params = params,
-            safeMaxEmi = safeMaxEmi,
-            safeMaxSip = safeMaxSip,
-            onSalaryChange = onSalaryChange,
-            onEmiChange = onEmiChange,
-            onSipChange = onSipChange,
-            onTargetChange = onTargetChange,
-            onDragStateChange = { isAnySliderActive = it }
-        )
-
         ImpactAnalysisSection(result)
-
-        FutureProjectionGraph(result)
-
-
 
         Spacer(modifier = Modifier.height(Spacing.xxl))
     }
@@ -673,120 +671,6 @@ private fun PremiumLockedOverlay() {
             Spacer(modifier = Modifier.height(Spacing.xl))
             Button(onClick = { /* Paywall */ }, shape = CircleShape) {
                 Text(stringResource(R.string.upgrade_premium))
-            }
-        }
-    }
-}
-
-@Composable
-private fun FutureProjectionGraph(result: SimulationResult) {
-    val months = 12
-    val currentNetSavings = result.currentIncome - result.currentExpenses - result.currentEmis - result.currentInvestments
-    val baseSavings = currentNetSavings.coerceAtLeast(0.0)
-
-    val projectedPathData = List(months) { i -> (i + 1) * result.projectedSavings }
-    val baselinePathData = List(months) { i -> (i + 1) * baseSavings }
-
-    val hasNegative = result.projectedSavings < 0
-    val maxVal = maxOf(
-        projectedPathData.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0,
-        baselinePathData.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
-    ) * 1.2
-    val minVal = projectedPathData.minOrNull()?.coerceAtMost(0.0) ?: 0.0
-
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-    val negativeColor = Color(0xFFF44336)
-    val surfaceColor = MaterialTheme.colorScheme.surface
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = surfaceColor)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text(stringResource(R.string.savings_projection_12m), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            }
-            Spacer(modifier = Modifier.height(Spacing.sm))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(10.dp).background(primaryColor, CircleShape))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.simulated), style = MaterialTheme.typography.labelSmall)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(10.dp).background(outlineColor, CircleShape))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.current_pace), style = MaterialTheme.typography.labelSmall)
-                }
-                if (hasNegative) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(10.dp).background(negativeColor, CircleShape))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.deficit_zone), style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.md))
-
-            if (hasNegative) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().background(negativeColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Warning, tint = negativeColor, modifier = Modifier.size(14.dp), contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        stringResource(R.string.negative_savings_warning),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = negativeColor
-                    )
-                }
-                Spacer(modifier = Modifier.height(Spacing.sm))
-            }
-
-            Canvas(modifier = Modifier.fillMaxWidth().height(180.dp)) {
-                val width = size.width
-                val height = size.height
-                val xStep = width / (months - 1)
-                val range = (maxVal - minVal).coerceAtLeast(1.0)
-                val zeroY = height - ((-minVal / range) * height).toFloat()
-
-                // Zero line
-                drawLine(
-                    color = outlineColor.copy(alpha = 0.3f),
-                    start = Offset(0f, zeroY),
-                    end = Offset(width, zeroY),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                )
-
-                // Current Path
-                val currentPath = Path().apply {
-                    moveTo(0f, zeroY)
-                    baselinePathData.forEachIndexed { i, savings ->
-                        val x = i * xStep
-                        val y = height - (((savings - minVal) / range) * height).toFloat()
-                        lineTo(x, y)
-                    }
-                }
-                drawPath(currentPath, outlineColor, style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f)))
-
-                // Simulated Path
-                val simulatedPath = Path().apply {
-                    moveTo(0f, zeroY)
-                    projectedPathData.forEachIndexed { i, savings ->
-                        val x = i * xStep
-                        val y = height - (((savings - minVal) / range) * height).toFloat()
-                        lineTo(x, y)
-                    }
-                }
-                drawPath(simulatedPath, if (hasNegative) negativeColor else primaryColor, style = Stroke(width = 3.dp.toPx()))
             }
         }
     }

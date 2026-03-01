@@ -4,6 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.monetra.domain.model.Saving
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 @Entity(tableName = "savings")
 data class SavingEntity(
     @PrimaryKey(autoGenerate = true)

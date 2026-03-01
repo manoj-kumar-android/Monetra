@@ -20,4 +20,12 @@ interface LoanDao {
 
     @Query("SELECT SUM(monthlyEmi) FROM loans")
     fun getTotalMonthlyEmi(): Flow<Double?>
+    @Query("SELECT * FROM loans")
+    suspend fun getAllLoansForBackUp(): List<LoanEntity>
+
+    @Query("DELETE FROM loans")
+    suspend fun deleteAllLoans()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllLoans(loans: List<LoanEntity>)
 }

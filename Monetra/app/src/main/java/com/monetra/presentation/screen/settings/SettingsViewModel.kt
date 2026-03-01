@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.monetra.domain.backup.BackupManager
+import com.monetra.domain.backup.RestoreManager
+
 data class SettingsUiState(
     val ownerName: String = "",
     val monthlyIncome: String = "",
@@ -22,17 +25,25 @@ data class SettingsUiState(
     val isSuccess: Boolean = false,
     val nameError: String? = null,
     val incomeError: String? = null,
-    val savingsError: String? = null
+    val savingsError: String? = null,
+    val isRestoring: Boolean = false,
+    val isSyncing: Boolean = false
 )
 
 sealed interface SettingsEvent {
     data object SaveSuccess : SettingsEvent
+    data object RestoreSuccess : SettingsEvent
+    data class RestoreError(val message: String) : SettingsEvent
+    data object SyncSuccess : SettingsEvent
+    data class SyncError(val message: String) : SettingsEvent
 }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: UserPreferenceRepository,
-    private val updatePreferences: UpdateUserPreferencesUseCase
+    private val updatePreferences: UpdateUserPreferencesUseCase,
+    private val backupManager: BackupManager,
+    private val restoreManager: RestoreManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -43,6 +54,33 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadPreferences()
+    }
+
+    fun onExportEncryptedBackup(uri: android.net.Uri, password: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSyncing = true) }
+            val result = backupManager.exportEncryptedBackup(uri, password)
+            _uiState.update { it.copy(isSyncing = false) }
+            if (result.isSuccess) {
+                _events.send(SettingsEvent.SyncSuccess)
+            } else {
+                _events.send(SettingsEvent.SyncError(result.exceptionOrNull()?.message ?: "Export failed"))
+            }
+        }
+    }
+
+    fun onRestoreFromEncryptedUri(uri: android.net.Uri, password: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoring = true) }
+            val result = restoreManager.restoreFromEncryptedUri(uri, password)
+            _uiState.update { it.copy(isRestoring = false) }
+            if (result.isSuccess) {
+                _events.send(SettingsEvent.RestoreSuccess)
+                loadPreferences()
+            } else {
+                _events.send(SettingsEvent.RestoreError(result.exceptionOrNull()?.message ?: "Restore failed"))
+            }
+        }
     }
 
     private fun loadPreferences() {
@@ -65,7 +103,6 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onIncomeChange(income: String) {
-        // Sanitize income: allow only numbers and one decimal point
         val sanitized = income.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
         
@@ -73,7 +110,6 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onSavingsGoalChange(goal: String) {
-        // Sanitize goal
         val sanitized = goal.filter { it.isDigit() || it == '.' }
         if (sanitized.count { it == '.' } > 1) return
 
@@ -83,7 +119,6 @@ class SettingsViewModel @Inject constructor(
     fun onSaveClick() {
         val currentState = _uiState.value
         
-        // Validation
         var hasError = false
         if (currentState.ownerName.isBlank()) {
             _uiState.update { it.copy(nameError = "Name cannot be empty") }

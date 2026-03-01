@@ -1,6 +1,7 @@
 package com.monetra.domain.model
 
 import java.time.LocalDate
+import kotlinx.serialization.Serializable
 
 data class FinancialGoal(
     val id: Long = 0L,
@@ -11,6 +12,7 @@ data class FinancialGoal(
     val category: GoalCategory
 )
 
+@Serializable
 enum class GoalCategory {
     SAVINGS,
     INVESTMENT,

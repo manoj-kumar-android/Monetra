@@ -11,4 +11,13 @@ interface UserPreferencesDao {
 
     @Upsert
     suspend fun upsertUserPreferences(preferences: UserPreferencesEntity)
+
+    @Query("SELECT * FROM user_preferences")
+    suspend fun getAllUserPreferences(): List<UserPreferencesEntity>
+
+    @Query("DELETE FROM user_preferences")
+    suspend fun deleteAllUserPreferences()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllUserPreferences(prefs: List<UserPreferencesEntity>)
 }

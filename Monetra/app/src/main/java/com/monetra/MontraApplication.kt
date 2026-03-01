@@ -31,7 +31,10 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
     lateinit var workerFactory: HiltWorkerFactory
     
     @Inject
-    lateinit var userPreferenceRepo: UserPreferenceRepository
+    lateinit var backupManager: com.monetra.domain.backup.BackupManager
+    
+    @Inject
+    lateinit var userPreferenceRepo: com.monetra.domain.repository.UserPreferenceRepository
 
     private val applicationScope = CoroutineScope(Dispatchers.Default)
 
@@ -50,19 +53,20 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        if (event == Lifecycle.Event.ON_START) {
-            // App coming to foreground
-            applicationScope.launch {
-                val preferences = userPreferenceRepo.getUserPreferences().first()
-                if (preferences.isOnboardingCompleted) {
-                    // Assuming onboarding complete means we can lock. 
-                    // To be strictly correct based on previous logic, we lock if it's a "Dashboard User"
-                    val intent = Intent(this@MontraApplication, LockActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        when (event) {
+            Lifecycle.Event.ON_START -> {
+                // App coming to foreground
+                applicationScope.launch {
+                    val preferences = userPreferenceRepo.getUserPreferences().first()
+                    if (preferences.isOnboardingCompleted) {
+                        val intent = Intent(this@MontraApplication, LockActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }
+                        startActivity(intent)
                     }
-                    startActivity(intent)
                 }
             }
+            else -> {}
         }
     }
 

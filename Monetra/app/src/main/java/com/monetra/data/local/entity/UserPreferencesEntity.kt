@@ -3,6 +3,9 @@ package com.monetra.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 @Entity(tableName = "user_preferences")
 data class UserPreferencesEntity(
     @PrimaryKey val id: Int = 0, // Singleton record

@@ -6,12 +6,17 @@ import com.monetra.domain.model.FinancialGoal
 import com.monetra.domain.model.GoalCategory
 import java.time.LocalDate
 
+import kotlinx.serialization.Serializable
+import com.monetra.data.local.util.LocalDateSerializer
+
+@Serializable
 @Entity(tableName = "goals")
 data class GoalEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val title: String,
     val targetAmount: Double,
     val currentAmount: Double,
+    @Serializable(with = LocalDateSerializer::class)
     val deadline: LocalDate?,
     val category: GoalCategory
 )

@@ -14,4 +14,13 @@ interface MonthlyReportDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReport(report: MonthlyReportEntity)
+
+    @Query("SELECT * FROM monthly_reports")
+    suspend fun getAllMonthlyReportsList(): List<MonthlyReportEntity>
+
+    @Query("DELETE FROM monthly_reports")
+    suspend fun deleteAllMonthlyReports()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllMonthlyReports(reports: List<MonthlyReportEntity>)
 }

@@ -5,12 +5,18 @@ import androidx.room.PrimaryKey
 import com.monetra.domain.model.Investment
 import com.monetra.domain.model.InvestmentType
 
+import kotlinx.serialization.Serializable
+import com.monetra.data.local.util.LocalDateSerializer
+
+@Serializable
 @Entity(tableName = "investments")
 data class InvestmentEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val name: String,
     val type: InvestmentType,
+    @Serializable(with = LocalDateSerializer::class)
     val startDate: java.time.LocalDate,
+    @Serializable(with = LocalDateSerializer::class)
     val endDate: java.time.LocalDate? = null,
     val amount: Double,
     val monthlyAmount: Double,

@@ -1,14 +1,18 @@
 package com.monetra.data.local.entity
 
 import androidx.room.*
+import com.monetra.data.local.util.YearMonthSerializer
 import com.monetra.domain.model.BillInstance
 import com.monetra.domain.model.BillStatus
 import com.monetra.domain.model.MonthlyExpense
 import java.time.YearMonth
 
+import kotlinx.serialization.Serializable
+
 /**
  * Entity for the recurring bill rule.
  */
+@Serializable
 @Entity(tableName = "monthly_expenses")
 data class MonthlyExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
@@ -37,6 +41,7 @@ fun MonthlyExpense.toEntity() = MonthlyExpenseEntity(
 /**
  * Entity for the specific monthly instance of a recurring bill.
  */
+@Serializable
 @Entity(
     tableName = "bill_instances",
     indices = [
@@ -54,6 +59,7 @@ fun MonthlyExpense.toEntity() = MonthlyExpenseEntity(
 data class BillInstanceEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val billId: Long,
+    @Serializable(with = YearMonthSerializer::class)
     val month: YearMonth,
     val amount: Double,
     val paidAmount: Double,

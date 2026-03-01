@@ -5,6 +5,10 @@ import androidx.room.PrimaryKey
 import com.monetra.domain.model.Loan
 import java.time.LocalDate
 
+import kotlinx.serialization.Serializable
+import com.monetra.data.local.util.LocalDateSerializer
+
+@Serializable
 @Entity(tableName = "loans")
 data class LoanEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
@@ -12,6 +16,7 @@ data class LoanEntity(
     val totalPrincipal: Double,
     val annualInterestRate: Double = 0.0,
     val monthlyEmi: Double,
+    @Serializable(with = LocalDateSerializer::class)
     val startDate: LocalDate,
     val tenureMonths: Int,
     val remainingTenure: Int,

@@ -190,8 +190,8 @@ fun AddEditRefundableScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     listOf(
-                        RefundableType.LENT to "💰  I Lent Money",
-                        RefundableType.BORROWED to "💳  I Borrowed"
+                        RefundableType.LENT to "💰 I Gave Money",
+                        RefundableType.BORROWED to "💳 I Took Money"
                     ).forEach { (type, label) ->
                         val selected = uiState.entryType == type
                         Button(

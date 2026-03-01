@@ -1,5 +1,6 @@
 package com.monetra.domain.model
 
+import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.pow
@@ -127,12 +128,14 @@ data class Investment(
     }
 }
 
+@Serializable
 enum class LiquidityClass {
     LIQUID,         // 100% value
     SEMI_LIQUID,    // Haircut applied (e.g., 70% value)
     LOCKED          // 0% value for emergency runway
 }
 
+@Serializable
 enum class InvestmentType(
     val displayName: String,
     val emoji: String,

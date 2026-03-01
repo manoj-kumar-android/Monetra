@@ -45,4 +45,22 @@ interface MonthlyExpenseDao {
     
     @Query("SELECT EXISTS(SELECT 1 FROM bill_instances WHERE billId = :billId AND month = :month)")
     suspend fun hasInstanceForMonth(billId: Long, month: YearMonth): Boolean
+
+    @Query("SELECT * FROM monthly_expenses")
+    suspend fun getAllMonthlyExpensesList(): List<MonthlyExpenseEntity>
+
+    @Query("DELETE FROM monthly_expenses")
+    suspend fun deleteAllMonthlyExpenses()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllMonthlyExpenses(expenses: List<MonthlyExpenseEntity>)
+
+    @Query("SELECT * FROM bill_instances")
+    suspend fun getAllBillInstances(): List<BillInstanceEntity>
+
+    @Query("DELETE FROM bill_instances")
+    suspend fun deleteAllBillInstances()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllBillInstances(instances: List<BillInstanceEntity>)
 }

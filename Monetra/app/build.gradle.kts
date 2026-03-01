@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.datastore.preferences)
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
     implementation(libs.androidx.lifecycle.runtime.ktx)
