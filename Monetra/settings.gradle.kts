@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Monetra"
 include(":app")
+include(":drivebackup")
  

@@ -1,5 +1,6 @@
 package com.monetra.presentation.screen.settings
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.repository.UserPreferenceRepository
@@ -12,10 +13,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.monetra.drivebackup.api.DriveBackupManager
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
-
-import com.monetra.domain.backup.BackupManager
-import com.monetra.domain.backup.RestoreManager
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 
 data class SettingsUiState(
     val ownerName: String = "",
@@ -27,7 +28,11 @@ data class SettingsUiState(
     val incomeError: String? = null,
     val savingsError: String? = null,
     val isRestoring: Boolean = false,
-    val isSyncing: Boolean = false
+    val isSyncing: Boolean = false,
+    val isAuthenticating: Boolean = false,
+    val accountName: String? = null,
+    val lastBackupTime: Long? = null,
+    val recoveryIntent: android.content.Intent? = null
 )
 
 sealed interface SettingsEvent {
@@ -36,14 +41,19 @@ sealed interface SettingsEvent {
     data class RestoreError(val message: String) : SettingsEvent
     data object SyncSuccess : SettingsEvent
     data class SyncError(val message: String) : SettingsEvent
+    data object BackupSuccess : SettingsEvent
+    data class BackupError(val message: String) : SettingsEvent
+    data object AuthSuccess : SettingsEvent
+    data class AuthError(val message: String) : SettingsEvent
+    data class NeedsAuthorization(val intent: android.content.Intent) : SettingsEvent
 }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: UserPreferenceRepository,
     private val updatePreferences: UpdateUserPreferencesUseCase,
-    private val backupManager: BackupManager,
-    private val restoreManager: RestoreManager
+    private val driveBackupManager: DriveBackupManager,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -54,31 +64,51 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadPreferences()
+        observeBackupStatus()
     }
 
-    fun onExportEncryptedBackup(uri: android.net.Uri, password: String) {
+    private fun observeBackupStatus() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isSyncing = true) }
-            val result = backupManager.exportEncryptedBackup(uri, password)
-            _uiState.update { it.copy(isSyncing = false) }
-            if (result.isSuccess) {
-                _events.send(SettingsEvent.SyncSuccess)
-            } else {
-                _events.send(SettingsEvent.SyncError(result.exceptionOrNull()?.message ?: "Export failed"))
+            driveBackupManager.lastBackupTime.collectLatest { time ->
+                _uiState.update { it.copy(lastBackupTime = time) }
+            }
+        }
+        viewModelScope.launch {
+            driveBackupManager.accountName.collectLatest { name ->
+                _uiState.update { it.copy(accountName = name) }
             }
         }
     }
 
-    fun onRestoreFromEncryptedUri(uri: android.net.Uri, password: String) {
+    fun onAuthenticateClick(activity: Activity) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRestoring = true) }
-            val result = restoreManager.restoreFromEncryptedUri(uri, password)
-            _uiState.update { it.copy(isRestoring = false) }
-            if (result.isSuccess) {
-                _events.send(SettingsEvent.RestoreSuccess)
-                loadPreferences()
+            _uiState.update { it.copy(isAuthenticating = true) }
+            val success = driveBackupManager.authenticate(activity)
+            _uiState.update { it.copy(isAuthenticating = false) }
+            if (success) {
+                _events.send(SettingsEvent.AuthSuccess)
             } else {
-                _events.send(SettingsEvent.RestoreError(result.exceptionOrNull()?.message ?: "Restore failed"))
+                _events.send(SettingsEvent.AuthError("Authentication failed"))
+            }
+        }
+    }
+
+    fun onManualBackupClick() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSyncing = true, recoveryIntent = null) }
+            val dbFile = context.getDatabasePath("monetra_db")
+            val result = driveBackupManager.performManualBackup(dbFile)
+            _uiState.update { it.copy(isSyncing = false) }
+            
+            result.onSuccess {
+                _events.send(SettingsEvent.BackupSuccess)
+            }.onFailure { error ->
+                if (error is UserRecoverableAuthIOException) {
+                    _uiState.update { it.copy(recoveryIntent = error.intent) }
+                    _events.send(SettingsEvent.NeedsAuthorization(error.intent))
+                } else {
+                    _events.send(SettingsEvent.BackupError(error.message ?: "Backup failed"))
+                }
             }
         }
     }

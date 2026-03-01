@@ -41,6 +41,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1,INDEX.LIST,DEPENDENCIES}"
+        }
+    }
 }
 androidComponents.onVariants { variant ->
     variant.outputs.forEach { output ->
@@ -60,6 +66,7 @@ ksp {
 }
 
 dependencies {
+    implementation(project(":drivebackup"))
     // ── Core ──────────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

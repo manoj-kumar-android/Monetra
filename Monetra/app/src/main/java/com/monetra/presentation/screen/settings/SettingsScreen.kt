@@ -1,5 +1,6 @@
 package com.monetra.presentation.screen.settings
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import com.monetra.R
 import com.monetra.ui.theme.Spacing
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,32 +44,6 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    var showPasswordDialog by remember { mutableStateOf(false) }
-    var passwordMode by remember { mutableStateOf(PasswordDialogMode.EXPORT) } // EXPORT or IMPORT
-    var pendingUri by remember { mutableStateOf<android.net.Uri?>(null) }
-
-    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream"),
-        onResult = { uri ->
-            uri?.let { 
-                pendingUri = it
-                passwordMode = PasswordDialogMode.EXPORT
-                showPasswordDialog = true
-            }
-        }
-    )
-
-    val restoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
-        onResult = { uri ->
-            uri?.let { 
-                pendingUri = it
-                passwordMode = PasswordDialogMode.IMPORT
-                showPasswordDialog = true
-            }
-        }
-    )
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -74,38 +51,41 @@ fun SettingsScreen(
                 is SettingsEvent.SaveSuccess -> {
                     onNavigateBack()
                 }
-                is SettingsEvent.RestoreSuccess -> {
-                    snackbarHostState.showSnackbar("Data restored successfully!")
+                is SettingsEvent.BackupSuccess -> {
+                    snackbarHostState.showSnackbar("Backup completed successfully!")
                 }
-                is SettingsEvent.RestoreError -> {
+                is SettingsEvent.BackupError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
-                is SettingsEvent.SyncSuccess -> {
-                    snackbarHostState.showSnackbar("Encrypted backup created successfully!")
+                is SettingsEvent.AuthSuccess -> {
+                    snackbarHostState.showSnackbar("Signed in successfully!")
                 }
-                is SettingsEvent.SyncError -> {
+                is SettingsEvent.AuthError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+                is SettingsEvent.NeedsAuthorization -> {
+                    // Handled via LaunchedEffect below
+                }
+                else -> {}
             }
         }
     }
 
-    if (showPasswordDialog) {
-        PasswordDialog(
-            mode = passwordMode,
-            onDismiss = { showPasswordDialog = false },
-            onConfirm = { password ->
-                showPasswordDialog = false
-                pendingUri?.let { uri ->
-                    if (passwordMode == PasswordDialogMode.EXPORT) {
-                        viewModel.onExportEncryptedBackup(uri, password)
-                    } else {
-                        viewModel.onRestoreFromEncryptedUri(uri, password)
-                    }
-                }
-            }
-        )
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) {
+        viewModel.onManualBackupClick()
     }
+
+    LaunchedEffect(uiState.recoveryIntent) {
+        uiState.recoveryIntent?.let {
+            launcher.launch(it)
+        }
+    }
+
+
+    val activity = LocalActivity.current
+
 
     Scaffold(
         topBar = {
@@ -210,16 +190,80 @@ fun SettingsScreen(
             }
             
             Text(
-                text = "Use these settings to tailor Monetra's financial insights to your lifestyle.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-
-            Text(
                 text = stringResource(R.string.preferences),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // ── Cloud Backup Section ──────────────────────────────────────────
+            Text(
+                text = "Cloud Backup",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.lg)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Google Drive Sync",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (uiState.lastBackupTime != null) {
+                                    val date = Date(uiState.lastBackupTime!!)
+                                    val format = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+                                    "Last backup: ${format.format(date)}"
+                                } else {
+                                    "No backup yet"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        if (uiState.isSyncing || uiState.isAuthenticating) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else {
+                            if (uiState.accountName != null) {
+                                OutlinedButton(
+                                    onClick = viewModel::onManualBackupClick,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Backup Now")
+                                }
+                            } else {
+                                Button(
+                                    onClick = {
+                                        activity?.let { viewModel.onAuthenticateClick(it) }
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Sign in with Google")
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    
+                    Text(
+                        text = "Your data is automatically backed up when you add or edit transactions. Use \"Backup Now\" for manual synchronization.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
 
             Card(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToCategories),
@@ -244,169 +288,6 @@ fun SettingsScreen(
                 }
             }
 
-            Text(
-                text = "Privacy & Security",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Export Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Row(
-                    modifier = Modifier.padding(Spacing.lg).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (uiState.isSyncing) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(Spacing.md))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Export Encrypted Backup",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "Secure your data for migration or safety.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Button(
-                        onClick = { exportLauncher.launch("monetra_backup_${System.currentTimeMillis()}.monetra") },
-                        enabled = !uiState.isSyncing,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Export")
-                    }
-                }
-            }
-
-            // Import Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Row(
-                    modifier = Modifier.padding(Spacing.lg).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (uiState.isRestoring) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(Spacing.md))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Import Encrypted Backup",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "Restore from a .monetra backup file.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = { restoreLauncher.launch(arrayOf("*/*")) },
-                        enabled = !uiState.isRestoring,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Import")
-                    }
-                }
-            }
         }
     }
-}
-
-enum class PasswordDialogMode {
-    EXPORT, IMPORT
-}
-
-@Composable
-fun PasswordDialog(
-    mode: PasswordDialogMode,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { 
-            Text(
-                if (mode == PasswordDialogMode.EXPORT) "Set Backup Password" else "Enter Backup Password",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            ) 
-        },
-        text = {
-            Column {
-                Text(
-                    if (mode == PasswordDialogMode.EXPORT) 
-                        "Choose a password to encrypt your backup. You will need this to restore the data on ANY device."
-                    else 
-                        "Enter the password you used when creating this backup.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(imageVector = image, contentDescription = null)
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { if (password.isNotEmpty()) onConfirm(password) },
-                enabled = password.isNotEmpty(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(if (mode == PasswordDialogMode.EXPORT) "Export" else "Restore")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-        shape = RoundedCornerShape(24.dp)
-    )
 }

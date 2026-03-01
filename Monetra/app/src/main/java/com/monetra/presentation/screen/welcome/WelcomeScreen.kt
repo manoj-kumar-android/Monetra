@@ -1,5 +1,6 @@
 package com.monetra.presentation.screen.welcome
 
+import android.app.Activity
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,8 +33,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
-import com.monetra.presentation.screen.settings.PasswordDialog
-import com.monetra.presentation.screen.settings.PasswordDialogMode
 
 private val Brand    = Color(0xFF6C63FF)   // Indigo
 private val BrandAlt = Color(0xFF00C6FF)   // Sky blue
@@ -88,31 +87,29 @@ fun WelcomeScreen(
         ctaVisible = true
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = context as Activity
+
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
             when (event) {
                 is WelcomeEvent.RestoreSuccess -> {
                     snackbarHostState.showSnackbar("Data restored! Welcome back.")
+                    // In a real app, you'd trigger a DB switch here using the file
                     onNavigateToDashboard()
                 }
                 is WelcomeEvent.RestoreError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
-            }
-        }
-    }
-
-    if (showPasswordDialog) {
-        PasswordDialog(
-            mode = PasswordDialogMode.IMPORT,
-            onDismiss = { showPasswordDialog = false },
-            onConfirm = { password ->
-                showPasswordDialog = false
-                pendingUri?.let { uri ->
-                    viewModel.onRestoreFromEncryptedUri(uri, password)
+                is WelcomeEvent.AuthError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is WelcomeEvent.NoBackupFound -> {
+                    snackbarHostState.showSnackbar("No backup found on Google Drive.")
+                    onNavigateToDashboard()
                 }
             }
-        )
+        }
     }
 
     Scaffold(
@@ -245,41 +242,38 @@ fun WelcomeScreen(
 
                 Column(
                     modifier = Modifier.fillMaxWidth().scale(ctaScale),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
                     Button(
-                        onClick   = onNavigateToOnboarding,
-                        modifier  = Modifier.fillMaxWidth().height(56.dp),
+                        onClick   = { viewModel.onContinueWithGoogle(activity) },
+                        modifier  = Modifier.fillMaxWidth().height(60.dp),
                         shape     = RoundedCornerShape(16.dp),
-                        colors    = ButtonDefaults.buttonColors(containerColor = Brand),
+                        enabled   = !uiState.isRestoring && !uiState.isAuthenticating,
+                        colors    = ButtonDefaults.buttonColors(
+                            containerColor = Brand,
+                            contentColor = Color.White
+                        ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                     ) {
-                        Text(
-                            text  = stringResource(R.string.im_new),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick   = { restoreLauncher.launch(arrayOf("*/*")) },
-                        modifier  = Modifier.fillMaxWidth().height(56.dp),
-                        shape     = RoundedCornerShape(16.dp),
-                        enabled   = !uiState.isRestoring,
-                        border    = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(Brand.copy(alpha = 0.4f)))
-                    ) {
-                        if (uiState.isRestoring) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Brand)
+                        if (uiState.isRestoring || uiState.isAuthenticating) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
                         } else {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = Brand, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Icon(Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(Spacing.md))
                             Text(
-                                text  = "Select Encrypted Backup",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = Brand
+                                text  = "Continue with Google",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
                     }
+                    
+                    Text(
+                        text = "Secure automatic backup to Google Drive",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.lg))

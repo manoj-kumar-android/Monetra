@@ -5,6 +5,9 @@ import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.repository.TransactionRepository
+import com.monetra.drivebackup.api.DriveBackupManager
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -13,8 +16,17 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class TransactionRepositoryImpl @Inject constructor(
-    private val dao: TransactionDao
+    private val dao: TransactionDao,
+    @ApplicationContext private val context: Context,
+    private val driveBackupManager: DriveBackupManager
 ) : TransactionRepository {
+
+    private fun triggerBackup() {
+        val dbFile = context.getDatabasePath("monetra_db")
+        if (dbFile.exists()) {
+            driveBackupManager.scheduleBackup(dbFile)
+        }
+    }
 
     override fun getTransactions(month: YearMonth): Flow<List<Transaction>> {
         val yearMonthStr = String.format("%04d-%02d", month.year, month.monthValue)
@@ -77,13 +89,16 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction) {
         dao.insertTransaction(transaction.toEntity())
+        triggerBackup()
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
         dao.updateTransaction(transaction.toEntity())
+        triggerBackup()
     }
 
     override suspend fun deleteTransaction(id: Long) {
         dao.deleteTransactionById(id)
+        triggerBackup()
     }
 }

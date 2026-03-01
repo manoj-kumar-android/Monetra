@@ -31,9 +31,6 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
     lateinit var workerFactory: HiltWorkerFactory
     
     @Inject
-    lateinit var backupManager: com.monetra.domain.backup.BackupManager
-    
-    @Inject
     lateinit var userPreferenceRepo: com.monetra.domain.repository.UserPreferenceRepository
 
     private val applicationScope = CoroutineScope(Dispatchers.Default)
