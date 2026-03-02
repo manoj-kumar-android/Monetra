@@ -30,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -114,7 +115,11 @@ fun AddEditExpenseScreen(
         onCategoryChange = viewModel::onCategoryChange,
         titleError = uiState.titleError,
         amountError = uiState.amountError,
-        onSaveClick = viewModel::onSaveClick
+        isLoading = uiState.isLoading,
+        isEditing = uiState.isEditing,
+        onSaveClick = {
+            viewModel.onSaveClick()
+        }
     )
 
     if (showDatePicker) {
@@ -168,8 +173,11 @@ private fun AddEditExpenseContent(
     onCategoryChange: (String) -> Unit,
     titleError: String?,
     amountError: String?,
+    isLoading: Boolean,
+    isEditing: Boolean,
     onSaveClick: () -> Unit
 ) {
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -177,7 +185,7 @@ private fun AddEditExpenseContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(if (title.isBlank()) R.string.add_transaction_title else R.string.edit_transaction_title),
+                        text = stringResource(if (isEditing) R.string.edit_transaction_title else R.string.add_transaction_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold
                         )
@@ -207,22 +215,34 @@ private fun AddEditExpenseContent(
                     .padding(horizontal = Spacing.lg, vertical = Spacing.md)
             ) {
                 Button(
-                    onClick = onSaveClick,
+                    onClick = {
+                        keyboardController?.hide()
+                        onSaveClick()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(14.dp),
+                    enabled = !isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(
-                        text = stringResource(R.string.save),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
                         )
-                    )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.save),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 }
             }
         }

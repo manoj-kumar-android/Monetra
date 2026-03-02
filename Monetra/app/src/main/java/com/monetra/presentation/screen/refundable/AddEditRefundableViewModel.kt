@@ -115,10 +115,20 @@ class AddEditRefundableViewModel @Inject constructor(
                 savedStateHandle["personName"] = event.name
             }
             is AddEditRefundableEvent.PhoneNumberChanged -> {
-                // Keep only digits and limit to 10
-                val filtered = event.number.filter { it.isDigit() }.take(12)
-                _uiState.value = _uiState.value.copy(phoneNumber = filtered)
-                savedStateHandle["phoneNumber"] = filtered
+                val sanitized = com.monetra.presentation.util.PhoneUtils.sanitizeToTenDigits(event.number)
+                val firstChar = sanitized.firstOrNull()
+                val invalidFirstDigit = firstChar != null && firstChar !in '6'..'9'
+                val incomplete = sanitized.isNotEmpty() && sanitized.length < 10
+
+                _uiState.value = _uiState.value.copy(
+                    phoneNumber = sanitized,
+                    phoneNumberError = when {
+                        invalidFirstDigit -> "Invalid start digit (use 6-9)"
+                        incomplete -> "10 digits required"
+                        else -> null
+                    }
+                )
+                savedStateHandle["phoneNumber"] = sanitized
             }
             is AddEditRefundableEvent.GivenDateChanged -> {
                 _uiState.value = _uiState.value.copy(givenDate = event.date)
@@ -146,10 +156,24 @@ class AddEditRefundableViewModel @Inject constructor(
 
     private fun saveRefundable() {
         val state = _uiState.value
-        val amountValue = state.amount.toDoubleOrNull() ?: return
+        if (state.isLoading) return
         
-        // Prevent save if name is empty or phone number is provided but isn't 10 digits.
-        if (state.personName.isBlank() || (state.phoneNumber.isNotEmpty() && state.phoneNumber.length != 10)) return
+        val amountValue = state.amount.toDoubleOrNull()
+        
+        if (amountValue == null || state.amount.isBlank()) {
+            android.widget.Toast.makeText(application, "Please enter a valid amount", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (state.personName.isBlank()) {
+            android.widget.Toast.makeText(application, "Please enter person name", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (state.phoneNumber.isNotEmpty() && !com.monetra.presentation.util.PhoneUtils.isValidIndianMobile(state.phoneNumber)) {
+            android.widget.Toast.makeText(application, "Please enter a valid 10-digit Indian mobile number", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
 
         val now = LocalDateTime.now()
         if (state.remindMe && state.dueDate.isBefore(now)) {
@@ -162,7 +186,9 @@ class AddEditRefundableViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val refundable = Refundable(
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val refundable = Refundable(
                 id = refundableId ?: 0,
                 amount = amountValue,
                 personName = state.personName,
@@ -223,6 +249,11 @@ class AddEditRefundableViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isSaved = true)
             // Clear SavedStateHandle background data but keep in-memory UI state for transition
             clearSessionData()
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(application, "Failed to save: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 }
@@ -238,7 +269,9 @@ data class AddEditRefundableUiState(
     val entryType: RefundableType = RefundableType.LENT,
     val isEdit: Boolean = false,
     val isPaid: Boolean = false,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val isLoading: Boolean = false,
+    val phoneNumberError: String? = null
 )
 
 sealed class AddEditRefundableEvent {

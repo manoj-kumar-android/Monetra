@@ -50,5 +50,26 @@ class SyncWorker @AssistedInject constructor(
                 syncRequest
             )
         }
+
+        fun schedulePeriodicSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(3, java.util.concurrent.TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
+                )
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "periodic_sync_work",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicRequest
+            )
+        }
     }
 }

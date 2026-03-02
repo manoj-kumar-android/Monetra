@@ -18,14 +18,8 @@ import javax.inject.Inject
 class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
     @ApplicationContext private val context: Context,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : TransactionRepository {
-
-    private suspend fun triggerSync() {
-        syncRepository.setDirty(true)
-        syncManager.runSync() 
-    }
 
     override fun getTransactions(month: YearMonth): Flow<List<Transaction>> {
         val yearMonthStr = String.format("%04d-%02d", month.year, month.monthValue)
@@ -94,7 +88,7 @@ class TransactionRepositoryImpl @Inject constructor(
             isSynced = false
         )
         dao.insertTransaction(syncTransaction.toEntity())
-        triggerSync()
+        syncRepository.setDirty(true)
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
@@ -105,11 +99,11 @@ class TransactionRepositoryImpl @Inject constructor(
             isSynced = false
         )
         dao.updateTransaction(syncTransaction.toEntity())
-        triggerSync()
+        syncRepository.setDirty(true)
     }
 
     override suspend fun deleteTransaction(id: Long) {
         dao.deleteTransactionById(id)
-        triggerSync()
+        syncRepository.setDirty(true)
     }
 }

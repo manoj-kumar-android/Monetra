@@ -66,19 +66,27 @@ class AddEditSavingsViewModel @Inject constructor(
 
     fun saveSavings() {
         val state = _uiState.value
-        val amount = state.amount.toDoubleOrNull() ?: return
+        if (state.isLoading) return
+        
+        val amount = state.amount.toDoubleOrNull()
+        if (amount == null || state.amount.isBlank()) return
         if (state.bankName.isBlank()) return
 
         viewModelScope.launch {
-            val saving = Saving(
-                id = currentSavingId ?: 0L,
-                bankName = state.bankName,
-                amount = amount,
-                interestRate = state.interestRate.toDoubleOrNull(),
-                note = state.note
-            )
-            repository.insertSaving(saving)
-            _uiState.value = _uiState.value.copy(isSaved = true)
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val saving = Saving(
+                    id = currentSavingId ?: 0L,
+                    bankName = state.bankName,
+                    amount = amount,
+                    interestRate = state.interestRate.toDoubleOrNull(),
+                    note = state.note
+                )
+                repository.insertSaving(saving)
+                _uiState.value = _uiState.value.copy(isSaved = true)
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 }
@@ -89,5 +97,6 @@ data class AddEditSavingsUiState(
     val interestRate: String = "",
     val note: String = "",
     val isEdit: Boolean = false,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val isLoading: Boolean = false
 )

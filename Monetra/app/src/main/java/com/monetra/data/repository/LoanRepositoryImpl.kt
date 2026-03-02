@@ -12,7 +12,6 @@ import javax.inject.Inject
 
 class LoanRepositoryImpl @Inject constructor(
     private val dao: LoanDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : LoanRepository {
     override fun getAllLoans(): Flow<List<Loan>> {
@@ -30,7 +29,6 @@ class LoanRepositoryImpl @Inject constructor(
         )
         dao.insertLoan(syncLoan.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun updateLoan(loan: Loan) {
@@ -42,13 +40,11 @@ class LoanRepositoryImpl @Inject constructor(
         )
         dao.updateLoan(syncLoan.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun deleteLoan(id: Long) {
         dao.deleteLoan(id)
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override fun getTotalMonthlyEmi(): Flow<Double> {

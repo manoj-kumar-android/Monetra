@@ -15,14 +15,8 @@ import javax.inject.Inject
 class BudgetRepositoryImpl @Inject constructor(
     private val budgetDao: CategoryBudgetDao,
     private val transactionDao: TransactionDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : BudgetRepository {
-
-    private suspend fun triggerSync() {
-        syncRepository.setDirty(true)
-        syncManager.runSync()
-    }
 
     override fun getCategoryBudgets(month: YearMonth): Flow<List<CategoryBudget>> {
         val yearMonthStr = String.format("%04d-%02d", month.year, month.monthValue)
@@ -59,11 +53,11 @@ class BudgetRepositoryImpl @Inject constructor(
                 isSynced = false
             )
         )
-        triggerSync()
+        syncRepository.setDirty(true)
     }
 
     override suspend fun deleteCategoryBudget(categoryName: String) {
         budgetDao.deleteBudget(categoryName)
-        triggerSync()
+        syncRepository.setDirty(true)
     }
 }

@@ -14,7 +14,6 @@ import javax.inject.Inject
 
 class MonthlyExpenseRepositoryImpl @Inject constructor(
     private val dao: MonthlyExpenseDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : MonthlyExpenseRepository {
     
@@ -34,14 +33,12 @@ class MonthlyExpenseRepositoryImpl @Inject constructor(
         )
         val id = dao.insertMonthlyExpense(syncExpense.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
         return id
     }
 
     override suspend fun deleteMonthlyExpense(expense: MonthlyExpense) {
         dao.deleteMonthlyExpense(expense.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun getMonthlyExpensesByCategory(category: String): List<MonthlyExpense> {
@@ -77,7 +74,6 @@ class MonthlyExpenseRepositoryImpl @Inject constructor(
         )
         dao.insertBillInstance(syncInstance.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun getInstanceById(id: Long): BillInstance? {

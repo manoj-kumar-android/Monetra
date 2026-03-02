@@ -60,33 +60,35 @@ class AddEditExpenseViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     fun loadTransaction(id: Long?) {
+        if (id == null) {
+            this.transactionId = null
+            _uiState.value = AddEditUiState()
+            return
+        }
+        
         if (this.transactionId == id) return
         this.transactionId = id
         
-        if (id != null) {
-            _uiState.update { it.copy(isLoading = true, isEditing = true) }
-            viewModelScope.launch {
-                val transaction = getTransactionById(id)
-                transaction?.let { tx ->
-                    _uiState.update {
-                        it.copy(
-                            title = tx.title,
-                            amount = tx.amount.toString(),
-                            note = tx.note,
-                            isIncome = tx.type == TransactionType.INCOME,
-                            category = tx.category,
-                            date = tx.date,
-                            isLoading = false
-                        )
-                    }
-                } ?: run {
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.send(AddEditEvent.ShowError("Transaction not found"))
+        _uiState.update { it.copy(isLoading = true, isEditing = true) }
+        viewModelScope.launch {
+            val transaction = getTransactionById(id)
+            transaction?.let { tx ->
+                _uiState.update {
+                    it.copy(
+                        title = tx.title,
+                        amount = tx.amount.toString(),
+                        note = tx.note,
+                        isIncome = tx.type == TransactionType.INCOME,
+                        category = tx.category,
+                        date = tx.date,
+                        isLoading = false,
+                        isEditing = true
+                    )
                 }
+            } ?: run {
+                _uiState.update { it.copy(isLoading = false, isEditing = false) }
+                _events.send(AddEditEvent.ShowError("Transaction not found"))
             }
-        } else {
-            // Reset to default state for new transaction
-            _uiState.value = AddEditUiState()
         }
     }
 
@@ -136,6 +138,8 @@ class AddEditExpenseViewModel @Inject constructor(
 
     fun onSaveClick() {
         val currentState = _uiState.value
+        if (currentState.isLoading) return
+        
         val validationResult = validateTransaction(
             title = currentState.title,
             amount = currentState.amount,

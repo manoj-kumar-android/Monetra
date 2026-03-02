@@ -11,7 +11,6 @@ import javax.inject.Inject
 
 class SavingRepositoryImpl @Inject constructor(
     private val savingDao: SavingDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : SavingRepository {
 
@@ -38,12 +37,10 @@ class SavingRepositoryImpl @Inject constructor(
         )
         savingDao.insertSaving(syncSaving.toSavingEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun deleteSaving(saving: Saving) {
         savingDao.deleteSaving(saving.toSavingEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 }

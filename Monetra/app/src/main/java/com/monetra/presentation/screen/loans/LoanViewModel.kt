@@ -82,6 +82,8 @@ class LoanViewModel @Inject constructor(
 
     fun onSaveLoan() {
         val state = _uiState.value
+        if (state.isLoading) return
+        
         var hasError = false
 
         // --- Validations ---
@@ -133,21 +135,26 @@ class LoanViewModel @Inject constructor(
         val emi = Loan.calculateEmi(principal!!, rate!!, tenure)
 
         viewModelScope.launch {
-            addLoan(
-                Loan(
-                    id = state.editingId ?: 0L,
-                    name = state.name.trim(),
-                    totalPrincipal = principal!!,
-                    annualInterestRate = rate!!,
-                    monthlyEmi = emi,
-                    startDate = state.startDate,
-                    tenureMonths = tenure!!,
-                    remainingTenure = remainingTenure,
-                    category = state.category
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                addLoan(
+                    Loan(
+                        id = state.editingId ?: 0L,
+                        name = state.name.trim(),
+                        totalPrincipal = principal,
+                        annualInterestRate = rate,
+                        monthlyEmi = emi,
+                        startDate = state.startDate,
+                        tenureMonths = tenure,
+                        remainingTenure = remainingTenure,
+                        category = state.category
+                    )
                 )
-            )
-            _uiState.update { LoanUiState() }
-            _uiState.update { it.copy(isAddSheetOpen = false) }
+                _uiState.update { LoanUiState() }
+                _uiState.update { it.copy(isAddSheetOpen = false) }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -227,5 +234,6 @@ data class LoanUiState(
     val interestRateError: String? = null,
     val tenureError: String? = null,
     // Undo delete
-    val pendingDeleteLoan: Loan? = null
+    val pendingDeleteLoan: Loan? = null,
+    val isLoading: Boolean = false
 )

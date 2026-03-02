@@ -43,6 +43,7 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
             scheduleFinancialInsights()
             scheduleEmiReminders()
             scheduleRefundableReminders()
+            scheduleSync()
         }
         
         // Register for application globally lifecycle events
@@ -95,6 +96,10 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
+    }
+
+    private fun scheduleSync() {
+        com.monetra.data.sync.SyncWorker.schedulePeriodicSync(this)
     }
 
     override val workManagerConfiguration: Configuration

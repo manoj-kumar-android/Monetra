@@ -30,6 +30,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.domain.model.RefundableType
+import com.monetra.presentation.util.IndianPhoneVisualTransformation
+import com.monetra.presentation.util.PhoneUtils
 import com.monetra.ui.theme.Spacing
 
 import java.time.format.DateTimeFormatter
@@ -150,22 +152,31 @@ fun AddEditRefundableScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
-                        if (uiState.remindMe && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                            val permissionCheck = androidx.core.content.ContextCompat.checkSelfPermission(
-                                context,
-                                android.Manifest.permission.POST_NOTIFICATIONS
-                            )
-                            if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+                    TextButton(
+                        enabled = !uiState.isLoading,
+                        onClick = {
+                            keyboardController?.hide()
+                            if (uiState.remindMe && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                val permissionCheck = androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.POST_NOTIFICATIONS
+                                )
+                                if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    viewModel.onEvent(AddEditRefundableEvent.Save)
+                                }
                             } else {
                                 viewModel.onEvent(AddEditRefundableEvent.Save)
                             }
-                        } else {
-                            viewModel.onEvent(AddEditRefundableEvent.Save)
                         }
-                    }) {
-                        Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             )
@@ -252,21 +263,25 @@ fun AddEditRefundableScreen(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 OutlinedTextField(
                     value = uiState.phoneNumber,
-                    onValueChange = { viewModel.onEvent(AddEditRefundableEvent.PhoneNumberChanged(it)) },
+                    onValueChange = { 
+                        val normalized = PhoneUtils.normalize(it)
+                        viewModel.onEvent(AddEditRefundableEvent.PhoneNumberChanged(normalized))
+                    },
                     label = { Text(stringResource(R.string.phone_number)) },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    visualTransformation = IndianPhoneVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    prefix = { Text("+", color = MaterialTheme.colorScheme.onSurface) },
+                    prefix = { Text("+91 ", color = MaterialTheme.colorScheme.onSurface) },
                     supportingText = {
                         Text(
-                            text = stringResource(R.string.phone_instruction),
+                            text = uiState.phoneNumberError ?: stringResource(R.string.phone_instruction),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = if (uiState.phoneNumberError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                         )
                     },
-                    isError = uiState.phoneNumber.isNotEmpty() && uiState.phoneNumber.length < 10
+                    isError = uiState.phoneNumberError != null
                 )
             }
 

@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -42,6 +43,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -244,13 +246,13 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
             placeholder = { Text("e.g. Home Loan, Car Loan…") },
             isError = uiState.nameError != null,
             supportingText = if (uiState.nameError != null) {
-                { Text(uiState.nameError!!, color = MaterialTheme.colorScheme.error) }
+                { Text(uiState.nameError, color = MaterialTheme.colorScheme.error) }
             } else null,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Next
             ),
-            leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
+            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             singleLine = true
@@ -265,7 +267,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
             prefix = { Text("₹ ") },
             isError = uiState.principalError != null,
             supportingText = if (uiState.principalError != null) {
-                { Text(uiState.principalError!!, color = MaterialTheme.colorScheme.error) }
+                { Text(uiState.principalError, color = MaterialTheme.colorScheme.error) }
             } else null,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal,
@@ -286,7 +288,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
             suffix = { Text("% p.a.") },
             isError = uiState.interestRateError != null,
             supportingText = if (uiState.interestRateError != null) {
-                { Text(uiState.interestRateError!!, color = MaterialTheme.colorScheme.error) }
+                { Text(uiState.interestRateError, color = MaterialTheme.colorScheme.error) }
             } else {
                 { Text("Enter 0 for an interest-free loan", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             },
@@ -309,7 +311,7 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
             suffix = { Text("months") },
             isError = uiState.tenureError != null,
             supportingText = if (uiState.tenureError != null) {
-                { Text(uiState.tenureError!!, color = MaterialTheme.colorScheme.error) }
+                { Text(uiState.tenureError, color = MaterialTheme.colorScheme.error) }
             } else {
                 val years = uiState.tenure.toIntOrNull()?.let { it / 12.0 }
                 if (years != null && years > 0)
@@ -469,18 +471,26 @@ private fun AddLoanSheet(uiState: LoanUiState, viewModel: LoanViewModel) {
         }
 
         // ── Save Button ──────────────────────────────────────────────────
+        val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
         Button(
-            onClick = viewModel::onSaveLoan,
+            onClick = {
+                keyboardController?.hide()
+                viewModel.onSaveLoan()
+            },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            enabled = uiState.calculatedEmi > 0 || (uiState.principal.isNotBlank() && uiState.tenure.isNotBlank())
+            enabled = !uiState.isLoading && (uiState.calculatedEmi > 0 || (uiState.principal.isNotBlank() && uiState.tenure.isNotBlank()))
         ) {
-            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(Spacing.sm))
-            Text(
-                if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_debt_plan),
-                style = MaterialTheme.typography.titleMedium
-            )
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(Spacing.sm))
+                Text(
+                    if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_debt_plan),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
         }
 
         Spacer(Modifier.height(Spacing.sm))

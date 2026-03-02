@@ -11,7 +11,6 @@ import javax.inject.Inject
 
 class UserPreferenceRepositoryImpl @Inject constructor(
     private val dao: UserPreferencesDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : UserPreferenceRepository {
 
@@ -51,6 +50,5 @@ class UserPreferenceRepositoryImpl @Inject constructor(
             )
         )
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 }

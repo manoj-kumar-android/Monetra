@@ -12,7 +12,6 @@ import javax.inject.Inject
 
 class InvestmentRepositoryImpl @Inject constructor(
     private val investmentDao: InvestmentDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : InvestmentRepository {
     override fun getInvestments(): Flow<List<Investment>> =
@@ -30,13 +29,11 @@ class InvestmentRepositoryImpl @Inject constructor(
         )
         investmentDao.upsertInvestment(syncInvestment.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun deleteInvestment(id: Long) {
         investmentDao.deleteInvestment(id)
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun getInvestmentById(id: Long): Investment? =

@@ -96,17 +96,25 @@ fun AddEditSavingsScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
             Button(
-                onClick = viewModel::saveSavings,
+                onClick = {
+                    keyboardController?.hide()
+                    viewModel.saveSavings()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = uiState.bankName.isNotBlank() && uiState.amount.toDoubleOrNull() != null
+                enabled = !uiState.isLoading && uiState.bankName.isNotBlank() && uiState.amount.toDoubleOrNull() != null
             ) {
-                Icon(Icons.Default.Save, contentDescription = null)
-                Spacer(modifier = Modifier.width(Spacing.md))
-                Text("Save Savings", fontWeight = FontWeight.Bold)
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(Spacing.md))
+                    Text("Save Savings", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

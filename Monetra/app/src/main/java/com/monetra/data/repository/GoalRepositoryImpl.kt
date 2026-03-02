@@ -12,7 +12,6 @@ import javax.inject.Inject
 
 class GoalRepositoryImpl @Inject constructor(
     private val goalDao: GoalDao,
-    private val syncManager: com.monetra.data.sync.SyncManager,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : GoalRepository {
     override fun getGoals(): Flow<List<FinancialGoal>> =
@@ -27,13 +26,11 @@ class GoalRepositoryImpl @Inject constructor(
         )
         goalDao.upsertGoal(syncGoal.toEntity())
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun deleteGoal(id: Long) {
         goalDao.deleteGoal(id)
         syncRepository.setDirty(true)
-        syncManager.runSync()
     }
 
     override suspend fun getGoalById(id: Long): FinancialGoal? =
