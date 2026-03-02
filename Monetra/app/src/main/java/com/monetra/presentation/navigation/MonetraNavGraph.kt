@@ -27,8 +27,6 @@ sealed interface Route : NavKey {
     @Serializable
     data object Welcome : Route
     @Serializable
-    data object Onboarding : Route
-    @Serializable
     data class TransactionList(val initialTab: String? = null) : Route
     @Serializable
     data class AddEditTransaction(val transactionId: Long? = null) : Route
@@ -154,6 +152,10 @@ fun MonetraNavGraph(
                             },
                             onNavigateToSavings = {
                                 backStack.navigateTo(Route.SavingsList)
+                            },
+                            onNavigateToWelcome = {
+                                backStack.clear()
+                                backStack.add(Route.Welcome)
                             }
                         )
                     }
@@ -277,22 +279,7 @@ fun MonetraNavGraph(
                 is Route.Welcome -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.welcome.WelcomeScreen(
-                            onNavigateToOnboarding = {
-                                backStack.clear()
-                                backStack.add(Route.Onboarding)
-                            },
                             onNavigateToDashboard = {
-                                backStack.clear()
-                                backStack.add(Route.TransactionList())
-                            }
-                        )
-                    }
-                }
-
-                is Route.Onboarding -> {
-                    NavEntry(key) {
-                        com.monetra.presentation.screen.onboarding.OnboardingScreen(
-                            onComplete = {
                                 backStack.clear()
                                 backStack.add(Route.TransactionList())
                             }

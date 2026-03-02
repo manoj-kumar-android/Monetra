@@ -9,5 +9,9 @@ import kotlinx.serialization.Serializable
 @Entity(tableName = "category_budgets")
 data class CategoryBudgetEntity(
     @PrimaryKey val categoryName: String,
-    val limit: Double
-)
+    override val remoteId: String = "cat_$categoryName",
+    val limit: Double,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity

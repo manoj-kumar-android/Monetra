@@ -20,7 +20,7 @@ import com.monetra.data.local.entity.*
         RefundableEntity::class,
         SavingEntity::class
     ], 
-    version = 2, 
+    version = 3, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)

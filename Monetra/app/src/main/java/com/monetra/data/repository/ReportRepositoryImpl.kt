@@ -13,10 +13,12 @@ import javax.inject.Inject
 
 class ReportRepositoryImpl @Inject constructor(
     private val dao: MonthlyReportDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : ReportRepository {
 
     override suspend fun saveReport(report: MonthlyFinancialReport) {
+        val deviceId = syncRepository.getDeviceId()
         dao.insertReport(
             MonthlyReportEntity(
                 month = report.month.toString(),
@@ -26,10 +28,14 @@ class ReportRepositoryImpl @Inject constructor(
                 investments = report.totalInvestments,
                 actualSavings = report.actualSavings,
                 targetSavings = report.targetSavings,
-                status = report.status.name
+                status = report.status.name,
+                updatedAt = System.currentTimeMillis(),
+                deviceId = deviceId,
+                isSynced = false
             )
         )
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun getReportForMonth(month: YearMonth): MonthlyFinancialReport? {

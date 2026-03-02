@@ -16,6 +16,7 @@ data class StepChange(
 
 data class Investment(
     val id: Long = 0L,
+    override  val remoteId: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val type: InvestmentType,
     val startDate: LocalDate,
@@ -25,8 +26,11 @@ data class Investment(
     val interestRate: Double = 0.0,
     val currentValue: Double = 0.0,
     val frequency: ContributionFrequency,
-    val stepChanges: List<StepChange> = emptyList()
-) {
+    val stepChanges: List<StepChange> = emptyList(),
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : Syncable {
     /**
      * Total months elapsed since the investment started.
      */

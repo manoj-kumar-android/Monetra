@@ -9,11 +9,15 @@ import kotlinx.serialization.Serializable
 @Entity(tableName = "monthly_reports")
 data class MonthlyReportEntity(
     @PrimaryKey val month: String, // Format: YYYY-MM
+    override val remoteId: String = "report_$month",
     val income: Double,
     val expenses: Double,
     val emis: Double,
     val investments: Double,
     val actualSavings: Double,
     val targetSavings: Double,
-    val status: String
-)
+    val status: String,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity

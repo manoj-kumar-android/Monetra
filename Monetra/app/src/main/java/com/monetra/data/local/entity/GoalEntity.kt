@@ -13,28 +13,40 @@ import com.monetra.data.local.util.LocalDateSerializer
 @Entity(tableName = "goals")
 data class GoalEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val title: String,
     val targetAmount: Double,
     val currentAmount: Double,
     @Serializable(with = LocalDateSerializer::class)
     val deadline: LocalDate?,
-    val category: GoalCategory
-)
+    val category: GoalCategory,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity
 
 fun GoalEntity.toDomain(): FinancialGoal = FinancialGoal(
     id = id,
+    remoteId = remoteId,
     title = title,
     targetAmount = targetAmount,
     currentAmount = currentAmount,
     deadline = deadline,
-    category = category
+    category = category,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )
 
 fun FinancialGoal.toEntity(): GoalEntity = GoalEntity(
     id = id,
+    remoteId = remoteId,
     title = title,
     targetAmount = targetAmount,
     currentAmount = currentAmount,
     deadline = deadline,
-    category = category
+    category = category,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )

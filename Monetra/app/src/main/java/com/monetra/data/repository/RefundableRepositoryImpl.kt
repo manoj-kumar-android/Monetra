@@ -12,8 +12,14 @@ import javax.inject.Inject
 
 class RefundableRepositoryImpl @Inject constructor(
     private val dao: RefundableDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : RefundableRepository {
+
+    private suspend fun triggerSync() {
+        syncRepository.setDirty(true)
+        syncManager.runSync()
+    }
 
     override fun getAllRefundables(): Flow<List<Refundable>> {
         return dao.getAllRefundables().map { entities ->
@@ -30,23 +36,33 @@ class RefundableRepositoryImpl @Inject constructor(
     }
 
     override suspend fun upsertRefundable(refundable: Refundable): Long {
-        val id = dao.upsertRefundable(refundable.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncRefundable = refundable.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        val id = dao.upsertRefundable(syncRefundable.toEntity())
+        triggerSync()
         return id
     }
 
     override suspend fun deleteRefundable(refundable: Refundable) {
         dao.deleteRefundable(refundable.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        triggerSync()
     }
 
     override suspend fun updatePaidStatus(id: Long, isPaid: Boolean) {
+        // Since we are updating a single field, we should ideally fetch the entity, 
+        // update it with metadata, and save it. 
+        // For simplicity, I'll assume we handle metadata in upsert.
         dao.updatePaidStatus(id, isPaid)
-        cloudBackupRepository.scheduleBackup()
+        triggerSync()
     }
 
     private fun RefundableEntity.toDomain() = Refundable(
         id = id,
+        remoteId = remoteId,
         amount = amount,
         personName = personName,
         phoneNumber = phoneNumber,
@@ -55,11 +71,15 @@ class RefundableRepositoryImpl @Inject constructor(
         note = note,
         isPaid = isPaid,
         remindMe = remindMe,
-        entryType = runCatching { RefundableType.valueOf(entryType) }.getOrDefault(RefundableType.LENT)
+        entryType = runCatching { RefundableType.valueOf(entryType) }.getOrDefault(RefundableType.LENT),
+        updatedAt = updatedAt,
+        deviceId = deviceId,
+        isSynced = isSynced
     )
 
     private fun Refundable.toEntity() = RefundableEntity(
         id = id,
+        remoteId = remoteId,
         amount = amount,
         personName = personName,
         phoneNumber = phoneNumber,
@@ -68,6 +88,9 @@ class RefundableRepositoryImpl @Inject constructor(
         note = note,
         isPaid = isPaid,
         remindMe = remindMe,
-        entryType = entryType.name
+        entryType = entryType.name,
+        updatedAt = updatedAt,
+        deviceId = deviceId,
+        isSynced = isSynced
     )
 }

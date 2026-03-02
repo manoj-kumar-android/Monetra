@@ -71,4 +71,9 @@ interface DriveBackupManager {
      * Checks if a backup exists in the user's Google Drive AppData folder.
      */
     suspend fun isBackupAvailable(): Boolean
+
+    /**
+     * Clears the current authentication session and local credentials.
+     */
+    suspend fun signOut()
 }

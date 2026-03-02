@@ -280,4 +280,13 @@ class DriveBackupManagerImpl @Inject constructor(
             false
         }
     }
+
+    override suspend fun signOut() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(googleUserIdKey)
+            prefs.remove(accountNameKey)
+            prefs.remove(lastBackupTimeKey)
+        }
+        driveService.clear()
+    }
 }

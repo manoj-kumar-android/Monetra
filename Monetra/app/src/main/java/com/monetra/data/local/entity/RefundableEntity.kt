@@ -14,6 +14,7 @@ import com.monetra.data.local.util.LocalDateTimeSerializer
 data class RefundableEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val amount: Double,
     val personName: String,
     val phoneNumber: String,
@@ -24,5 +25,8 @@ data class RefundableEntity(
     val note: String?,
     val isPaid: Boolean = false,
     val remindMe: Boolean = false,
-    val entryType: String = "LENT"
-)
+    val entryType: String = "LENT",
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity

@@ -49,6 +49,15 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransactionById(id: Long)
 
+    @Query("SELECT * FROM transactions WHERE isSynced = 0")
+    suspend fun getUnsyncedTransactions(): List<TransactionEntity>
+
+    @Query("SELECT * FROM transactions WHERE remoteId = :remoteId")
+    suspend fun getTransactionByRemoteId(remoteId: String): TransactionEntity?
+
+    @Query("UPDATE transactions SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSynced(remoteIds: List<String>)
+
     @Query("SELECT * FROM transactions")
     suspend fun getAllTransactionsList(): List<TransactionEntity>
 
@@ -57,6 +66,15 @@ interface TransactionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllTransactions(transactions: List<TransactionEntity>)
+
+    suspend fun upsertSync(entity: TransactionEntity) {
+        val existing = getTransactionByRemoteId(entity.remoteId)
+        if (existing == null) {
+            insertTransaction(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            updateTransaction(entity.copy(id = existing.id, isSynced = true))
+        }
+    }
 }
 
 data class CategorySum(

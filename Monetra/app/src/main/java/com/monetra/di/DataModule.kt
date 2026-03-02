@@ -69,6 +69,10 @@ abstract class DataModule {
     @Singleton
     abstract fun bindSavingsRepository(impl: SavingsRepositoryImpl): SavingsRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindSyncRepository(impl: SyncRepositoryImpl): SyncRepository
+
     companion object {
         @Provides
         @Singleton

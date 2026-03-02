@@ -12,19 +12,28 @@ import javax.inject.Inject
 
 class GoalRepositoryImpl @Inject constructor(
     private val goalDao: GoalDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : GoalRepository {
     override fun getGoals(): Flow<List<FinancialGoal>> =
         goalDao.getGoals().map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun upsertGoal(goal: FinancialGoal) {
-        goalDao.upsertGoal(goal.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncGoal = goal.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        goalDao.upsertGoal(syncGoal.toEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun deleteGoal(id: Long) {
         goalDao.deleteGoal(id)
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun getGoalById(id: Long): FinancialGoal? =

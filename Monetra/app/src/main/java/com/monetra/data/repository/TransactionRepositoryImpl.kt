@@ -18,11 +18,13 @@ import javax.inject.Inject
 class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
     @ApplicationContext private val context: Context,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : TransactionRepository {
 
-    private fun triggerBackup() {
-        cloudBackupRepository.scheduleBackup()
+    private suspend fun triggerSync() {
+        syncRepository.setDirty(true)
+        syncManager.runSync() 
     }
 
     override fun getTransactions(month: YearMonth): Flow<List<Transaction>> {
@@ -85,17 +87,29 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertTransaction(transaction: Transaction) {
-        dao.insertTransaction(transaction.toEntity())
-        triggerBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncTransaction = transaction.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        dao.insertTransaction(syncTransaction.toEntity())
+        triggerSync()
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
-        dao.updateTransaction(transaction.toEntity())
-        triggerBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncTransaction = transaction.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        dao.updateTransaction(syncTransaction.toEntity())
+        triggerSync()
     }
 
     override suspend fun deleteTransaction(id: Long) {
         dao.deleteTransactionById(id)
-        triggerBackup()
+        triggerSync()
     }
 }

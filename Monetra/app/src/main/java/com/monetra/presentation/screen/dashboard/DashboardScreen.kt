@@ -85,10 +85,21 @@ fun DashboardScreen(
     onNavigateToHelp: () -> Unit,
     onNavigateToSimulator: () -> Unit,
     onSeeAllTransactions: () -> Unit,
+    onNavigateToWelcome: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRestoring by viewModel.isRestoring.collectAsStateWithLifecycle()
+    val events by viewModel.events.collectAsStateWithLifecycle(initialValue = null)
     var showExitSheet by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            if (event is DashboardEvent.NavigateToWelcome) {
+                onNavigateToWelcome()
+            }
+        }
+    }
 
     val activity = LocalActivity.current
 
@@ -139,13 +150,14 @@ fun DashboardScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            when (val state = uiState) {
-                is DashboardUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                is DashboardUiState.Error -> {
-                    Text(state.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
-                }
+            if (isRestoring || uiState is DashboardUiState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                when (val state = uiState) {
+                    is DashboardUiState.Loading -> {} // Already handled above
+                    is DashboardUiState.Error -> {
+                        Text(state.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
+                    }
                 is DashboardUiState.NoSalarySet -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center).padding(Spacing.lg),
@@ -184,15 +196,16 @@ fun DashboardScreen(
                 }
             }
         }
-        
-        if (showExitSheet) {
-            ExitConfirmationSheet(
-                onDismiss = { showExitSheet = false },
-                onConfirmExit = {
-                    activity?.finishAffinity()
-                }
-            )
-        }
+    }
+
+    if (showExitSheet) {
+        ExitConfirmationSheet(
+            onDismiss = { showExitSheet = false },
+            onConfirmExit = {
+                activity?.finishAffinity()
+            }
+        )
+    }
     }
 }
 

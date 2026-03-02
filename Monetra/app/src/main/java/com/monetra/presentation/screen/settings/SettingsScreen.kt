@@ -92,7 +92,6 @@ fun SettingsScreen(
 
     val activity = LocalActivity.current
 
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -106,7 +105,12 @@ fun SettingsScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
+        if (uiState.isRestoring) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -325,4 +329,5 @@ fun SettingsScreen(
 
         }
     }
+}
 }

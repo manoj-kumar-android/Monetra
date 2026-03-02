@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 class LoanRepositoryImpl @Inject constructor(
     private val dao: LoanDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : LoanRepository {
     override fun getAllLoans(): Flow<List<Loan>> {
         return dao.getAllLoans().map { entities ->
@@ -21,18 +22,33 @@ class LoanRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertLoan(loan: Loan) {
-        dao.insertLoan(loan.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncLoan = loan.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        dao.insertLoan(syncLoan.toEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun updateLoan(loan: Loan) {
-        dao.updateLoan(loan.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncLoan = loan.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        dao.updateLoan(syncLoan.toEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun deleteLoan(id: Long) {
         dao.deleteLoan(id)
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override fun getTotalMonthlyEmi(): Flow<Double> {

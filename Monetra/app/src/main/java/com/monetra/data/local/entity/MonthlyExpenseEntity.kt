@@ -16,26 +16,38 @@ import kotlinx.serialization.Serializable
 @Entity(tableName = "monthly_expenses")
 data class MonthlyExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val amount: Double,
     val category: String,
-    val dueDay: Int
-)
+    val dueDay: Int,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity
 
 fun MonthlyExpenseEntity.toDomain() = MonthlyExpense(
     id = id,
+    remoteId = remoteId,
     name = name,
     amount = amount,
     category = category,
-    dueDay = dueDay
+    dueDay = dueDay,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )
 
 fun MonthlyExpense.toEntity() = MonthlyExpenseEntity(
     id = id,
+    remoteId = remoteId,
     name = name,
     amount = amount,
     category = category,
-    dueDay = dueDay
+    dueDay = dueDay,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )
 
 /**
@@ -58,28 +70,40 @@ fun MonthlyExpense.toEntity() = MonthlyExpenseEntity(
 )
 data class BillInstanceEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val billId: Long,
     @Serializable(with = YearMonthSerializer::class)
     val month: YearMonth,
     val amount: Double,
     val paidAmount: Double,
-    val status: BillStatus
-)
+    val status: BillStatus,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity
 
 fun BillInstanceEntity.toDomain() = BillInstance(
     id = id,
+    remoteId = remoteId,
     billId = billId,
     month = month,
     amount = amount,
     paidAmount = paidAmount,
-    status = status
+    status = status,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )
 
 fun BillInstance.toEntity() = BillInstanceEntity(
     id = id,
+    remoteId = remoteId,
     billId = billId,
     month = month,
     amount = amount,
     paidAmount = paidAmount,
-    status = status
+    status = status,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )

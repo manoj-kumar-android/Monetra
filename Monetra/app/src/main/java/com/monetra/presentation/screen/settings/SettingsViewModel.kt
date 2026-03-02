@@ -56,6 +56,7 @@ class SettingsViewModel @Inject constructor(
     private val updatePreferences: UpdateUserPreferencesUseCase,
     private val driveBackupManager: DriveBackupManager,
     private val cloudBackupRepository: CloudBackupRepository,
+    private val syncUseCase: com.monetra.domain.usecase.SyncUseCase,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -69,6 +70,15 @@ class SettingsViewModel @Inject constructor(
         loadPreferences()
         observeBackupStatus()
         checkBackupAvailability()
+        observeRestorationStatus()
+    }
+
+    private fun observeRestorationStatus() {
+        viewModelScope.launch {
+            cloudBackupRepository.isRestoring.collectLatest { restoring ->
+                _uiState.update { it.copy(isRestoring = restoring) }
+            }
+        }
     }
 
     private fun observeBackupStatus() {
@@ -109,9 +119,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onRestoreClick() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRestoring = true) }
             val result = cloudBackupRepository.runRestore()
-            _uiState.update { it.copy(isRestoring = false) }
             
             result.onSuccess {
                 loadPreferences() // Reload UI with restored data
@@ -123,19 +131,21 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onManualBackupClick() {
+        _uiState.update { it.copy(isSyncing = true) }
+        syncUseCase()
+        // We'll observe sync status via the StateFlow in the UI or let the foreground service handle it
         viewModelScope.launch {
-            _uiState.update { it.copy(isSyncing = true, recoveryIntent = null) }
-            val result = cloudBackupRepository.runBackup()
-            _uiState.update { it.copy(isSyncing = false) }
-            
-            result.onSuccess {
-                _events.send(SettingsEvent.BackupSuccess)
-            }.onFailure { error ->
-                if (error is UserRecoverableAuthIOException) {
-                    _uiState.update { it.copy(recoveryIntent = error.intent) }
-                    _events.send(SettingsEvent.NeedsAuthorization(error.intent))
-                } else {
-                    _events.send(SettingsEvent.BackupError(error.message ?: "Backup failed"))
+            syncUseCase.syncState.collectLatest { state ->
+                when (state) {
+                    is com.monetra.domain.model.SyncState.Success -> {
+                        _uiState.update { it.copy(isSyncing = false) }
+                        _events.send(SettingsEvent.SyncSuccess)
+                    }
+                    is com.monetra.domain.model.SyncState.Error -> {
+                        _uiState.update { it.copy(isSyncing = false) }
+                        _events.send(SettingsEvent.SyncError(state.message))
+                    }
+                    else -> {}
                 }
             }
         }

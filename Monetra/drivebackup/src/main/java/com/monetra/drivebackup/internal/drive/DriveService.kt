@@ -145,4 +145,10 @@ class DriveService @Inject constructor(
         }
         true
     }
+
+    @Synchronized
+    fun clear() {
+        driveService = null
+        currentAccount = null
+    }
 }

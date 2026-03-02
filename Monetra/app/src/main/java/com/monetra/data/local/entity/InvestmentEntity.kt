@@ -12,6 +12,7 @@ import com.monetra.data.local.util.LocalDateSerializer
 @Entity(tableName = "investments")
 data class InvestmentEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val type: InvestmentType,
     @Serializable(with = LocalDateSerializer::class)
@@ -23,8 +24,11 @@ data class InvestmentEntity(
     val interestRate: Double,
     val currentValue: Double,
     val frequency: com.monetra.domain.model.ContributionFrequency,
-    val stepChanges: String = ""
-)
+    val stepChanges: String = "",
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity
 
 fun InvestmentEntity.toDomain(): Investment {
     val decodedSteps = stepChanges.split("|")
@@ -35,6 +39,7 @@ fun InvestmentEntity.toDomain(): Investment {
         }
     return Investment(
         id = id,
+        remoteId = remoteId,
         name = name,
         type = type,
         startDate = startDate,
@@ -44,7 +49,10 @@ fun InvestmentEntity.toDomain(): Investment {
         interestRate = interestRate,
         currentValue = currentValue,
         frequency = frequency,
-        stepChanges = decodedSteps
+        stepChanges = decodedSteps,
+        updatedAt = updatedAt,
+        deviceId = deviceId,
+        isSynced = isSynced
     )
 }
 
@@ -52,6 +60,7 @@ fun Investment.toEntity(): InvestmentEntity {
     val encodedSteps = stepChanges.joinToString("|") { "${it.amount};${it.effectiveDate}" }
     return InvestmentEntity(
         id = id,
+        remoteId = remoteId,
         name = name,
         type = type,
         startDate = startDate,
@@ -61,6 +70,9 @@ fun Investment.toEntity(): InvestmentEntity {
         interestRate = interestRate,
         currentValue = currentValue,
         frequency = frequency,
-        stepChanges = encodedSteps
+        stepChanges = encodedSteps,
+        updatedAt = updatedAt,
+        deviceId = deviceId,
+        isSynced = isSynced
     )
 }

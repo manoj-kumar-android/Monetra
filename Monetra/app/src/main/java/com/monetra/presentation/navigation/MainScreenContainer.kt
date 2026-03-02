@@ -69,7 +69,8 @@ fun MainScreenContainer(
     onNavigateToAddRefundable: () -> Unit,
     onNavigateToEditRefundable: (Long) -> Unit,
     onNavigateToRefundableDetails: (Long) -> Unit,
-    onNavigateToSavings: () -> Unit
+    onNavigateToSavings: () -> Unit,
+    onNavigateToWelcome: () -> Unit
 ) {
     var selectedTabStr by androidx.compose.runtime.saveable.rememberSaveable { 
         mutableStateOf(initialTab ?: "Dashboard") 
@@ -143,7 +144,8 @@ fun MainScreenContainer(
                         onNavigateToFixedExpenses = onNavigateToFixedExpenses,
                         onNavigateToSimulator = onNavigateToSimulator,
                         onNavigateToHelp = { onNavigateToHelp("DASHBOARD") },
-                        onSeeAllTransactions = { selectedTabStr = "Transactions" }
+                        onSeeAllTransactions = { selectedTabStr = "Transactions" },
+                        onNavigateToWelcome = onNavigateToWelcome
                     )
                 }
                 BottomNavScreen.Transactions -> {

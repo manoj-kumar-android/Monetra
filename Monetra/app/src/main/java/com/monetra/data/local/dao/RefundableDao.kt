@@ -24,6 +24,24 @@ interface RefundableDao {
     @Query("UPDATE refundable SET isPaid = :isPaid WHERE id = :id")
     suspend fun updatePaidStatus(id: Long, isPaid: Boolean)
 
+    @Query("SELECT * FROM refundable WHERE isSynced = 0")
+    suspend fun getUnsyncedRefundables(): List<RefundableEntity>
+
+    @Query("SELECT * FROM refundable WHERE remoteId = :remoteId")
+    suspend fun getRefundableByRemoteId(remoteId: String): RefundableEntity?
+
+    @Query("UPDATE refundable SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSynced(remoteIds: List<String>)
+
+    suspend fun upsertSync(entity: RefundableEntity) {
+        val existing = getRefundableByRemoteId(entity.remoteId)
+        if (existing == null) {
+            upsertRefundable(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            upsertRefundable(entity.copy(id = existing.id, isSynced = true))
+        }
+    }
+
     @Query("SELECT * FROM refundable")
     suspend fun getAllRefundablesList(): List<RefundableEntity>
 

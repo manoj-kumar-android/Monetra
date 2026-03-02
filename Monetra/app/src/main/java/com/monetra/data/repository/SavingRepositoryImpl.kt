@@ -11,7 +11,8 @@ import javax.inject.Inject
 
 class SavingRepositoryImpl @Inject constructor(
     private val savingDao: SavingDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : SavingRepository {
 
     override fun getAllSaving(): Flow<List<Saving>> {
@@ -29,12 +30,20 @@ class SavingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertSaving(saving: Saving) {
-        savingDao.insertSaving(saving.toSavingEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncSaving = saving.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        savingDao.insertSaving(syncSaving.toSavingEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun deleteSaving(saving: Saving) {
         savingDao.deleteSaving(saving.toSavingEntity())
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 }

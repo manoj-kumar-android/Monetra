@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 class InvestmentRepositoryImpl @Inject constructor(
     private val investmentDao: InvestmentDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : InvestmentRepository {
     override fun getInvestments(): Flow<List<Investment>> =
         investmentDao.getInvestments().map { entities -> entities.map { it.toDomain() } }
@@ -21,13 +22,21 @@ class InvestmentRepositoryImpl @Inject constructor(
         getInvestments().map { list -> list.sumOf { it.calculateCurrentValue() } }
 
     override suspend fun upsertInvestment(investment: Investment) {
-        investmentDao.upsertInvestment(investment.toEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncInvestment = investment.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        investmentDao.upsertInvestment(syncInvestment.toEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun deleteInvestment(id: Long) {
         investmentDao.deleteInvestment(id)
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun getInvestmentById(id: Long): Investment? =

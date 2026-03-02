@@ -18,6 +18,6 @@ class UpdateCategoryBudgetUseCase @Inject constructor(
     private val repository: BudgetRepository
 ) {
     suspend operator fun invoke(categoryName: String, limit: Double) {
-        repository.saveCategoryBudget(CategoryBudget(categoryName, limit))
+        repository.saveCategoryBudget(CategoryBudget(categoryName = categoryName, limit = limit))
     }
 }

@@ -18,6 +18,24 @@ interface GoalDao {
     @Query("SELECT * FROM goals WHERE id = :id")
     suspend fun getGoalById(id: Long): GoalEntity?
 
+    @Query("SELECT * FROM goals WHERE isSynced = 0")
+    suspend fun getUnsyncedGoals(): List<GoalEntity>
+
+    @Query("SELECT * FROM goals WHERE remoteId = :remoteId")
+    suspend fun getGoalByRemoteId(remoteId: String): GoalEntity?
+
+    @Query("UPDATE goals SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSynced(remoteIds: List<String>)
+
+    suspend fun upsertSync(entity: GoalEntity) {
+        val existing = getGoalByRemoteId(entity.remoteId)
+        if (existing == null) {
+            upsertGoal(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            upsertGoal(entity.copy(id = existing.id, isSynced = true))
+        }
+    }
+
     @Query("SELECT * FROM goals")
     suspend fun getAllGoals(): List<GoalEntity>
 

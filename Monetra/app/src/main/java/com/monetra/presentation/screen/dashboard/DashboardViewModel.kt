@@ -36,19 +36,43 @@ class DashboardViewModel @Inject constructor(
     private val getWeeklySummary: GetWeeklySummaryUseCase,
     private val monthlyExpenseRepository: MonthlyExpenseRepository,
     private val loanRepository: LoanRepository,
-    private val prepareMonthlyBills: PrepareMonthlyBillsUseCase
+    private val prepareMonthlyBills: PrepareMonthlyBillsUseCase,
+    private val cloudBackupRepository: com.monetra.domain.repository.CloudBackupRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    private val _events = kotlinx.coroutines.flow.MutableSharedFlow<DashboardEvent>()
+    val events = _events.asSharedFlow()
+
+    val isRestoring = cloudBackupRepository.isRestoring.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
     private val selectedMonth = YearMonth.now()
 
     init {
         viewModelScope.launch {
+            observeBackupEvents()
             // Ensure bill instances for the current month exist before observing data
             prepareMonthlyBills(selectedMonth)
             observeDashboardData()
+            
+            // Attempt initial restore in background
+            cloudBackupRepository.runRestore()
+        }
+    }
+
+    private fun observeBackupEvents() {
+        viewModelScope.launch {
+            cloudBackupRepository.events.collect { event ->
+                if (event is com.monetra.domain.repository.BackupEvent.AuthError) {
+                    _events.emit(DashboardEvent.NavigateToWelcome)
+                }
+            }
         }
     }
 
@@ -220,4 +244,8 @@ sealed interface DashboardUiState {
         val recentTransactions: List<TransactionUiItem>
     ) : DashboardUiState
     data class Error(val message: String) : DashboardUiState
+}
+
+sealed interface DashboardEvent {
+    data object NavigateToWelcome : DashboardEvent
 }

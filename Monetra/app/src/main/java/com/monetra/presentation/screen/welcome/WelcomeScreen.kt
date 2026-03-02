@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,16 +22,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.monetra.ui.theme.Spacing
-import kotlinx.coroutines.delay
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
+import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.delay
 
 private val Brand    = Color(0xFF6C63FF)   // Indigo
 private val BrandAlt = Color(0xFF00C6FF)   // Sky blue
@@ -40,7 +39,6 @@ private val Accent   = Color(0xFF34C759)   // Emerald
 
 @Composable
 fun WelcomeScreen(
-    onNavigateToOnboarding: () -> Unit,
     onNavigateToDashboard: () -> Unit,
     viewModel: WelcomeViewModel = hiltViewModel()
 ) {
@@ -93,19 +91,11 @@ fun WelcomeScreen(
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
             when (event) {
-                is WelcomeEvent.RestoreSuccess -> {
-                    snackbarHostState.showSnackbar("Data restored! Welcome back.")
+                is WelcomeEvent.AuthSuccess -> {
                     onNavigateToDashboard()
-                }
-                is WelcomeEvent.RestoreError -> {
-                    snackbarHostState.showSnackbar(event.message)
                 }
                 is WelcomeEvent.AuthError -> {
                     snackbarHostState.showSnackbar(event.message)
-                }
-                is WelcomeEvent.NoBackupFound -> {
-                    snackbarHostState.showSnackbar("No backup found on Google Drive.")
-                    onNavigateToOnboarding()
                 }
             }
         }

@@ -15,8 +15,14 @@ import javax.inject.Inject
 class BudgetRepositoryImpl @Inject constructor(
     private val budgetDao: CategoryBudgetDao,
     private val transactionDao: TransactionDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : BudgetRepository {
+
+    private suspend fun triggerSync() {
+        syncRepository.setDirty(true)
+        syncManager.runSync()
+    }
 
     override fun getCategoryBudgets(month: YearMonth): Flow<List<CategoryBudget>> {
         val yearMonthStr = String.format("%04d-%02d", month.year, month.monthValue)
@@ -29,26 +35,35 @@ class BudgetRepositoryImpl @Inject constructor(
             
             budgets.map { budgetEntity ->
                 CategoryBudget(
+                    remoteId = budgetEntity.remoteId,
                     categoryName = budgetEntity.categoryName,
                     limit = budgetEntity.limit,
-                    currentSpent = sumsMap[budgetEntity.categoryName] ?: 0.0
+                    currentSpent = sumsMap[budgetEntity.categoryName] ?: 0.0,
+                    updatedAt = budgetEntity.updatedAt,
+                    deviceId = budgetEntity.deviceId,
+                    isSynced = budgetEntity.isSynced
                 )
             }
         }
     }
 
     override suspend fun saveCategoryBudget(budget: CategoryBudget) {
+        val deviceId = syncRepository.getDeviceId()
         budgetDao.upsertBudget(
             CategoryBudgetEntity(
+                remoteId = budget.remoteId,
                 categoryName = budget.categoryName,
-                limit = budget.limit
+                limit = budget.limit,
+                updatedAt = System.currentTimeMillis(),
+                deviceId = deviceId,
+                isSynced = false
             )
         )
-        cloudBackupRepository.scheduleBackup()
+        triggerSync()
     }
 
     override suspend fun deleteCategoryBudget(categoryName: String) {
         budgetDao.deleteBudget(categoryName)
-        cloudBackupRepository.scheduleBackup()
+        triggerSync()
     }
 }

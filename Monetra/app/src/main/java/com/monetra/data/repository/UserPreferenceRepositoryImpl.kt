@@ -11,7 +11,8 @@ import javax.inject.Inject
 
 class UserPreferenceRepositoryImpl @Inject constructor(
     private val dao: UserPreferencesDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : UserPreferenceRepository {
 
     override fun getUserPreferences(): Flow<UserPreferences> {
@@ -23,23 +24,33 @@ class UserPreferenceRepositoryImpl @Inject constructor(
                 currentSavings = entity?.currentSavings ?: 0.0,
                 isOnboardingCompleted = entity?.isOnboardingCompleted ?: false,
                 projectionRate = entity?.projectionRate ?: 10.0,
-                projectionYears = entity?.projectionYears ?: 10
+                projectionYears = entity?.projectionYears ?: 10,
+                remoteId = entity?.remoteId ?: "global_preferences",
+                updatedAt = entity?.updatedAt ?: 0L,
+                deviceId = entity?.deviceId ?: "",
+                isSynced = entity?.isSynced ?: false
             )
         }
     }
 
     override suspend fun saveUserPreferences(preferences: UserPreferences) {
+        val deviceId = syncRepository.getDeviceId()
         dao.upsertUserPreferences(
             UserPreferencesEntity(
+                remoteId = preferences.remoteId,
                 ownerName = preferences.ownerName,
                 monthlyIncome = preferences.monthlyIncome,
                 monthlySavingsGoal = preferences.monthlySavingsGoal,
                 currentSavings = preferences.currentSavings,
                 isOnboardingCompleted = preferences.isOnboardingCompleted,
                 projectionRate = preferences.projectionRate,
-                projectionYears = preferences.projectionYears
+                projectionYears = preferences.projectionYears,
+                updatedAt = System.currentTimeMillis(),
+                deviceId = deviceId,
+                isSynced = false
             )
         )
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 }

@@ -11,12 +11,25 @@ import javax.inject.Inject
 
 class SavingsRepositoryImpl @Inject constructor(
     private val savingsDao: SavingDao,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val syncManager: com.monetra.data.sync.SyncManager,
+    private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : SavingsRepository {
 
     override fun getAllSavings(): Flow<List<Savings>> {
         return savingsDao.getAllSaving().map { entities ->
-            entities.map { it.toSaving().let { s -> Savings(s.id, s.bankName, s.amount, s.interestRate, s.note) } }
+            entities.map { s ->
+                Savings(
+                    id = s.id,
+                    remoteId = s.remoteId,
+                    bankName = s.bankName,
+                    amount = s.amount,
+                    interestRate = s.interestRate,
+                    note = s.note,
+                    updatedAt = s.updatedAt,
+                    deviceId = s.deviceId,
+                    isSynced = s.isSynced
+                )
+            }
         }
     }
 
@@ -25,16 +38,36 @@ class SavingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getSavingsById(id: Long): Savings? {
-        return savingsDao.getSavingById(id)?.toSaving()?.let { s -> Savings(s.id, s.bankName, s.amount, s.interestRate, s.note) }
+        return savingsDao.getSavingById(id)?.let { s ->
+            Savings(
+                id = s.id,
+                remoteId = s.remoteId,
+                bankName = s.bankName,
+                amount = s.amount,
+                interestRate = s.interestRate,
+                note = s.note,
+                updatedAt = s.updatedAt,
+                deviceId = s.deviceId,
+                isSynced = s.isSynced
+            )
+        }
     }
 
     override suspend fun insertSavings(savings: Savings) {
-        savingsDao.insertSaving(savings.toSavingEntity())
-        cloudBackupRepository.scheduleBackup()
+        val deviceId = syncRepository.getDeviceId()
+        val syncSavings = savings.copy(
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        savingsDao.insertSaving(syncSavings.toSavingEntity())
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 
     override suspend fun deleteSavings(savings: Savings) {
         savingsDao.deleteSaving(savings.toSavingEntity())
-        cloudBackupRepository.scheduleBackup()
+        syncRepository.setDirty(true)
+        syncManager.runSync()
     }
 }

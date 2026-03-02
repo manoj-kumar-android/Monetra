@@ -9,11 +9,15 @@ import java.time.LocalDate
  */
 data class Transaction(
     val id: Long = 0L,
+    val remoteId: String = java.util.UUID.randomUUID().toString(),
     val title: String,
-    val amount: Double,          // always positive; type determines sign
+    val amount: Double,
     val type: TransactionType,
     val category: String,
     val date: LocalDate,
     val note: String = "",
-    val linkedBillId: Long? = null
+    val linkedBillId: Long? = null,
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deviceId: String = "",
+    val isSynced: Boolean = false
 )

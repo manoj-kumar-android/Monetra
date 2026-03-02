@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 data class Loan(
     val id: Long = 0L,
+    override    val remoteId: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val totalPrincipal: Double,
     val annualInterestRate: Double = 0.0, // in %, e.g. 8.5 for 8.5%
@@ -11,8 +12,11 @@ data class Loan(
     val startDate: LocalDate,
     val tenureMonths: Int,
     val remainingTenure: Int,
-    val category: String = "Personal"
-) {
+    val category: String = "Personal",
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : Syncable {
     val remainingBalance: Double
         get() = monthlyEmi * remainingTenure
 

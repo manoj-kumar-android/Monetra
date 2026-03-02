@@ -12,6 +12,7 @@ import com.monetra.data.local.util.LocalDateSerializer
 @Entity(tableName = "loans")
 data class LoanEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val totalPrincipal: Double,
     val annualInterestRate: Double = 0.0,
@@ -20,11 +21,15 @@ data class LoanEntity(
     val startDate: LocalDate,
     val tenureMonths: Int,
     val remainingTenure: Int,
-    val category: String
-)
+    val category: String,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : SyncableEntity
 
 fun LoanEntity.toDomainModel() = Loan(
     id = id,
+    remoteId = remoteId,
     name = name,
     totalPrincipal = totalPrincipal,
     annualInterestRate = annualInterestRate,
@@ -32,11 +37,15 @@ fun LoanEntity.toDomainModel() = Loan(
     startDate = startDate,
     tenureMonths = tenureMonths,
     remainingTenure = remainingTenure,
-    category = category
+    category = category,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )
 
 fun Loan.toEntity() = LoanEntity(
     id = id,
+    remoteId = remoteId,
     name = name,
     totalPrincipal = totalPrincipal,
     annualInterestRate = annualInterestRate,
@@ -44,5 +53,8 @@ fun Loan.toEntity() = LoanEntity(
     startDate = startDate,
     tenureMonths = tenureMonths,
     remainingTenure = remainingTenure,
-    category = category
+    category = category,
+    updatedAt = updatedAt,
+    deviceId = deviceId,
+    isSynced = isSynced
 )

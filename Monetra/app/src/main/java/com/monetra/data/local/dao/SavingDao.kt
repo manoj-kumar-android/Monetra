@@ -21,6 +21,24 @@ interface SavingDao {
     @Delete
     suspend fun deleteSaving(saving: SavingEntity)
 
+    @Query("SELECT * FROM savings WHERE isSynced = 0")
+    suspend fun getUnsyncedSavings(): List<SavingEntity>
+
+    @Query("SELECT * FROM savings WHERE remoteId = :remoteId")
+    suspend fun getSavingByRemoteId(remoteId: String): SavingEntity?
+
+    @Query("UPDATE savings SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSynced(remoteIds: List<String>)
+
+    suspend fun upsertSync(entity: SavingEntity) {
+        val existing = getSavingByRemoteId(entity.remoteId)
+        if (existing == null) {
+            insertSaving(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            insertSaving(entity.copy(id = existing.id, isSynced = true))
+        }
+    }
+
     @Query("SELECT * FROM savings")
     suspend fun getAllSavingsList(): List<SavingEntity>
 

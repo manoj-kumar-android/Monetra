@@ -46,6 +46,42 @@ interface MonthlyExpenseDao {
     @Query("SELECT EXISTS(SELECT 1 FROM bill_instances WHERE billId = :billId AND month = :month)")
     suspend fun hasInstanceForMonth(billId: Long, month: YearMonth): Boolean
 
+    @Query("SELECT * FROM monthly_expenses WHERE isSynced = 0")
+    suspend fun getUnsyncedExpenses(): List<MonthlyExpenseEntity>
+
+    @Query("SELECT * FROM monthly_expenses WHERE remoteId = :remoteId")
+    suspend fun getExpenseByRemoteId(remoteId: String): MonthlyExpenseEntity?
+
+    @Query("UPDATE monthly_expenses SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSyncedExpenses(remoteIds: List<String>)
+
+    suspend fun upsertSyncExpense(entity: MonthlyExpenseEntity) {
+        val existing = getExpenseByRemoteId(entity.remoteId)
+        if (existing == null) {
+            insertMonthlyExpense(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            insertMonthlyExpense(entity.copy(id = existing.id ?: 0L, isSynced = true))
+        }
+    }
+
+    @Query("SELECT * FROM bill_instances WHERE isSynced = 0")
+    suspend fun getUnsyncedInstances(): List<BillInstanceEntity>
+
+    @Query("SELECT * FROM bill_instances WHERE remoteId = :remoteId")
+    suspend fun getInstanceByRemoteId(remoteId: String): BillInstanceEntity?
+
+    @Query("UPDATE bill_instances SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
+    suspend fun markAsSyncedInstances(remoteIds: List<String>)
+
+    suspend fun upsertSyncInstance(entity: BillInstanceEntity) {
+        val existing = getInstanceByRemoteId(entity.remoteId)
+        if (existing == null) {
+            insertBillInstance(entity.copy(id = 0, isSynced = true))
+        } else if (entity.updatedAt > existing.updatedAt) {
+            insertBillInstance(entity.copy(id = existing.id, isSynced = true))
+        }
+    }
+
     @Query("SELECT * FROM monthly_expenses")
     suspend fun getAllMonthlyExpensesList(): List<MonthlyExpenseEntity>
 

@@ -2,22 +2,27 @@ package com.monetra.data.repository
 
 import android.content.Context
 import androidx.room.withTransaction
-import com.monetra.data.backup.model.BackupData
-import com.monetra.data.local.MonetraDatabase
-import com.monetra.domain.repository.CloudBackupRepository
-import com.monetra.drivebackup.api.DriveBackupManager
-import com.monetra.drivebackup.internal.security.EncryptionManager
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.monetra.data.backup.model.BackupData
+import com.monetra.data.local.MonetraDatabase
 import com.monetra.data.worker.FullBackupWorker
+import com.monetra.domain.repository.BackupEvent
+import com.monetra.domain.repository.CloudBackupRepository
+import com.monetra.domain.repository.SyncRepository
+import com.monetra.drivebackup.api.DriveBackupManager
+import com.monetra.drivebackup.internal.security.EncryptionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
@@ -28,13 +33,20 @@ class CloudBackupRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: MonetraDatabase,
     private val driveBackupManager: DriveBackupManager,
-    private val encryptionManager: EncryptionManager
+    private val encryptionManager: EncryptionManager,
+    private val syncRepository: SyncRepository
 ) : CloudBackupRepository {
 
     private val json = Json { 
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    private val _events = kotlinx.coroutines.flow.MutableSharedFlow<BackupEvent>()
+    override val events = _events.asSharedFlow()
+
+    private val _isRestoring = MutableStateFlow(false)
+    override val isRestoring: Flow<Boolean> = _isRestoring.asStateFlow()
 
     override suspend fun runBackup(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
@@ -67,15 +79,33 @@ class CloudBackupRepositoryImpl @Inject constructor(
             val result = driveBackupManager.uploadRawFile(tempFile)
             tempFile.delete()
             
+            if (result.isSuccess) {
+                syncRepository.setDirty(false)
+                syncRepository.setLastSyncedAt(System.currentTimeMillis())
+            } else {
+                handleError(result.exceptionOrNull())
+            }
+            
             result
         } catch (e: Exception) {
             android.util.Log.e("CloudBackup", "Backup failed", e)
+            handleError(e)
             Result.failure(e)
         }
     }
 
     override suspend fun runRestore(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            _isRestoring.value = true
+            // Safety Check: Is it safe to restore?
+            val isDirty = syncRepository.isDirty().first()
+            val isDbEmpty = db.transactionDao.getAllTransactionsList().isEmpty()
+            
+            if (isDirty && !isDbEmpty) {
+                android.util.Log.w("CloudBackup", "Restore skipped: Local data is newer (dirty flag set)")
+                return@withContext Result.failure(Exception("Unsynced local data found. Restore skipped to prevent data loss."))
+            }
+
             val googleUserId = driveBackupManager.googleUserId.first()
             if (googleUserId.isNullOrBlank()) {
                 return@withContext Result.failure(Exception("Not authenticated with Google"))
@@ -86,6 +116,7 @@ class CloudBackupRepositoryImpl @Inject constructor(
             
             if (downloadResult.isFailure || !downloadResult.getOrDefault(false)) {
                 tempFile.delete()
+                if (downloadResult.isFailure) handleError(downloadResult.exceptionOrNull())
                 return@withContext Result.failure(Exception("No backup found on Google Drive"))
             }
 
@@ -97,10 +128,35 @@ class CloudBackupRepositoryImpl @Inject constructor(
             val backupData = json.decodeFromString<BackupData>(jsonString)
 
             performRestore(backupData)
+            
+            // After successful restore, it's synced
+            syncRepository.setDirty(false)
+            syncRepository.setLastSyncedAt(System.currentTimeMillis())
+            
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("CloudBackup", "Restore failed", e)
+            handleError(e)
             Result.failure(e)
+        } finally {
+            _isRestoring.value = false
+        }
+    }
+
+    private suspend fun handleError(e: Throwable?) {
+        if (e == null) return
+        val message = e.message?.lowercase() ?: ""
+        val isAuthError = message.contains("401") || 
+                         message.contains("unauthorized") || 
+                         message.contains("authenticated") ||
+                         message.contains("permission") ||
+                         message.contains("403") ||
+                         message.contains("invalid_grant")
+        
+        if (isAuthError) {
+            android.util.Log.e("CloudBackup", "Critical Auth Error detected: ${e.message}")
+            driveBackupManager.signOut()
+            _events.emit(BackupEvent.AuthError)
         }
     }
 
