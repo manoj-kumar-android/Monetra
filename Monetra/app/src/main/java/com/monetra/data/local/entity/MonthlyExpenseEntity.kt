@@ -21,6 +21,7 @@ data class MonthlyExpenseEntity(
     val amount: Double,
     val category: String,
     val dueDay: Int,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -33,6 +34,7 @@ fun MonthlyExpenseEntity.toDomain() = MonthlyExpense(
     amount = amount,
     category = category,
     dueDay = dueDay,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced
@@ -45,6 +47,7 @@ fun MonthlyExpense.toEntity() = MonthlyExpenseEntity(
     amount = amount,
     category = category,
     dueDay = dueDay,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced
@@ -77,6 +80,7 @@ data class BillInstanceEntity(
     val amount: Double,
     val paidAmount: Double,
     val status: BillStatus,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -90,6 +94,7 @@ fun BillInstanceEntity.toDomain() = BillInstance(
     amount = amount,
     paidAmount = paidAmount,
     status = status,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced
@@ -103,6 +108,7 @@ fun BillInstance.toEntity() = BillInstanceEntity(
     amount = amount,
     paidAmount = paidAmount,
     status = status,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced

@@ -8,10 +8,10 @@ import com.monetra.domain.usecase.intelligence.GetWealthIntelligenceUseCase
 import com.monetra.domain.usecase.investment.AddInvestmentUseCase
 import com.monetra.domain.usecase.investment.DeleteInvestmentUseCase
 import com.monetra.domain.usecase.investment.GetInvestmentsUseCase
+import com.monetra.data.worker.PendingDeleteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,7 +20,8 @@ class InvestmentViewModel @Inject constructor(
     private val getWealthIntelligence: GetWealthIntelligenceUseCase,
     private val addInvestment: AddInvestmentUseCase,
     private val deleteInvestment: DeleteInvestmentUseCase,
-    private val userPreferenceRepository: com.monetra.domain.repository.UserPreferenceRepository
+    private val userPreferenceRepository: com.monetra.domain.repository.UserPreferenceRepository,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
     fun onSimulationRateChange(rate: Double) {
@@ -37,9 +38,14 @@ class InvestmentViewModel @Inject constructor(
         }
     }
 
-    private val _investments = getInvestments()
+    private val _rawInvestments = getInvestments()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val investments: StateFlow<List<Investment>> = _investments
+    
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("INVESTMENT")
+
+    val investments: StateFlow<List<Investment>> = combine(_rawInvestments, _pendingDeleteIds) { list, pendingIds ->
+        list.filter { it.id !in pendingIds }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val wealthIntelligence = getWealthIntelligence()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -129,9 +135,6 @@ class InvestmentViewModel @Inject constructor(
             stepChanges = state.stepChanges
         )
 
-        // Assuming future projection if calculating preview logic based on end date,
-        // Calculate wealth to now or end date (domain logic handles it if today parameter is passed)
-        // If end date is in the future, we pass limit date
         val limitDate = state.endDate ?: java.time.LocalDate.now()
         val calcDate = if (limitDate.isAfter(java.time.LocalDate.now())) limitDate else java.time.LocalDate.now()
 
@@ -142,9 +145,26 @@ class InvestmentViewModel @Inject constructor(
             )
         }
     }
+
+    fun requestDeleteInvestment(investment: Investment) {
+        _uiState.update { it.copy(pendingDeleteInvestment = investment) }
+        viewModelScope.launch {
+            pendingDeleteManager.requestDelete(investment.id, investment.remoteId, "INVESTMENT")
+        }
+    }
+
+    fun undoDeleteInvestment() {
+        val investment = _uiState.value.pendingDeleteInvestment ?: return
+        _uiState.update { it.copy(pendingDeleteInvestment = null) }
+        viewModelScope.launch {
+            pendingDeleteManager.cancelDelete(investment.id, "INVESTMENT")
+        }
+    }
+
     fun onDeleteInvestment(investment: Investment) {
         viewModelScope.launch { deleteInvestment(investment) }
     }
+
     fun toggleAddSheet(isOpen: Boolean) {
         _uiState.update {
             if (isOpen) it.copy(isAddSheetOpen = true)
@@ -240,5 +260,6 @@ data class InvestmentUiState(
     val amountError: String? = null,
     val monthlyAmountError: String? = null,
     val interestRateError: String? = null,
-    val currentValueError: String? = null
+    val currentValueError: String? = null,
+    val pendingDeleteInvestment: Investment? = null
 )

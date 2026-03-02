@@ -5,6 +5,7 @@ data class CategoryBudget(
     val categoryName: String,
     val limit: Double,
     val currentSpent: Double = 0.0,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

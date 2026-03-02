@@ -25,7 +25,8 @@ interface MonthlyExpenseDao {
 
     @Query("SELECT SUM(amount) FROM monthly_expenses")
     fun getTotalMonthlyExpenseAmount(): Flow<Double?>
-
+    @Query("SELECT * FROM bill_instances WHERE billId = :billId")
+    suspend fun getAllInstancesForBillList(billId: Long): List<BillInstanceEntity>
 
     // --- BillInstance (Monthly Data) ---
     @Query("SELECT * FROM bill_instances WHERE month = :month")
@@ -46,6 +47,9 @@ interface MonthlyExpenseDao {
     @Query("SELECT EXISTS(SELECT 1 FROM bill_instances WHERE billId = :billId AND month = :month)")
     suspend fun hasInstanceForMonth(billId: Long, month: YearMonth): Boolean
 
+    @Query("DELETE FROM bill_instances WHERE id = :id")
+    suspend fun deleteBillInstanceById(id: Long)
+
     @Query("SELECT * FROM monthly_expenses WHERE isSynced = 0")
     suspend fun getUnsyncedExpenses(): List<MonthlyExpenseEntity>
 
@@ -57,10 +61,18 @@ interface MonthlyExpenseDao {
 
     suspend fun upsertSyncExpense(entity: MonthlyExpenseEntity) {
         val existing = getExpenseByRemoteId(entity.remoteId)
-        if (existing == null) {
-            insertMonthlyExpense(entity.copy(id = 0, isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
-            insertMonthlyExpense(entity.copy(id = existing.id ?: 0L, isSynced = true))
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            insertMonthlyExpense(entity.copy(id = id, isSynced = true))
         }
     }
 
@@ -75,10 +87,18 @@ interface MonthlyExpenseDao {
 
     suspend fun upsertSyncInstance(entity: BillInstanceEntity) {
         val existing = getInstanceByRemoteId(entity.remoteId)
-        if (existing == null) {
-            insertBillInstance(entity.copy(id = 0, isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
-            insertBillInstance(entity.copy(id = existing.id, isSynced = true))
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            insertBillInstance(entity.copy(id = id, isSynced = true))
         }
     }
 

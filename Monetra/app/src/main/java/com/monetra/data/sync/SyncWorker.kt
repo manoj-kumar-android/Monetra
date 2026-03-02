@@ -56,7 +56,7 @@ class SyncWorker @AssistedInject constructor(
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-            val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(3, java.util.concurrent.TimeUnit.HOURS)
+            val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(6, java.util.concurrent.TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,

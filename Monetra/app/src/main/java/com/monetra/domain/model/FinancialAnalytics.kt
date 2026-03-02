@@ -13,6 +13,7 @@ data class Loan(
     val tenureMonths: Int,
     val remainingTenure: Int,
     val category: String = "Personal",
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

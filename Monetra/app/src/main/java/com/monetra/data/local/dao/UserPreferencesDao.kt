@@ -23,7 +23,16 @@ interface UserPreferencesDao {
 
     suspend fun upsertSync(entity: UserPreferencesEntity) {
         val existing = getAllUserPreferences().firstOrNull()
-        if (existing == null || entity.updatedAt > existing.updatedAt) {
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
             upsertUserPreferences(entity.copy(id = 0, isSynced = true))
         }
     }

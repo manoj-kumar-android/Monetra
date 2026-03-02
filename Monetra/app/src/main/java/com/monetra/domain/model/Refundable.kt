@@ -18,6 +18,7 @@ data class Refundable(
     val isPaid: Boolean = false,
     val remindMe: Boolean = false,
     val entryType: RefundableType = RefundableType.LENT,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

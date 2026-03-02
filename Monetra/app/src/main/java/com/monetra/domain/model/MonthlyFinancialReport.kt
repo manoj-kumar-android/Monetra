@@ -14,8 +14,13 @@ data class MonthlyFinancialReport(
     val expenseToIncomeRatio: Double,
     val emiToIncomeRatio: Double,
     val investmentRatio: Double,
-    val status: FinancialBalanceStatus
-)
+    val status: FinancialBalanceStatus,
+    override val remoteId: String = "report_$month",
+    override val version: Long = 1L,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : Syncable
 
 enum class FinancialBalanceStatus {
     HEALTHY,

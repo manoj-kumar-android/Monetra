@@ -13,14 +13,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.UserPreferenceRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
     private val driveBackupManager: DriveBackupManager,
-    private val cloudBackupRepository: CloudBackupRepository,
     private val userPreferenceRepository: com.monetra.domain.repository.UserPreferenceRepository
 ) : ViewModel() {
 

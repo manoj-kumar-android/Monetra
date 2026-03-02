@@ -27,6 +27,7 @@ data class Investment(
     val currentValue: Double = 0.0,
     val frequency: ContributionFrequency,
     val stepChanges: List<StepChange> = emptyList(),
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

@@ -20,6 +20,7 @@ data class GoalEntity(
     @Serializable(with = LocalDateSerializer::class)
     val deadline: LocalDate?,
     val category: GoalCategory,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -33,6 +34,7 @@ fun GoalEntity.toDomain(): FinancialGoal = FinancialGoal(
     currentAmount = currentAmount,
     deadline = deadline,
     category = category,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced
@@ -46,6 +48,7 @@ fun FinancialGoal.toEntity(): GoalEntity = GoalEntity(
     currentAmount = currentAmount,
     deadline = deadline,
     category = category,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced

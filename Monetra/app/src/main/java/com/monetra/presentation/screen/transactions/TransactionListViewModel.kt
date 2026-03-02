@@ -16,7 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
+import com.monetra.data.worker.PendingDeleteManager
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -36,7 +36,8 @@ class TransactionListViewModel @Inject constructor(
     private val getPreferences: com.monetra.domain.repository.UserPreferenceRepository,
     private val getCategoryBudgets: com.monetra.domain.usecase.intelligence.GetCategoryBudgetsUseCase,
     private val updateCategoryBudget: com.monetra.domain.usecase.intelligence.UpdateCategoryBudgetUseCase,
-    private val detectRecurringExpenses: com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase
+    private val detectRecurringExpenses: com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
     // ── State ─────────────────────────────────────────────────────────────
@@ -53,7 +54,7 @@ class TransactionListViewModel @Inject constructor(
 
     private val selectedMonth = MutableStateFlow(YearMonth.now())
     private val activeFilter = MutableStateFlow(TransactionFilter.ALL)
-    private var recentlyDeletedTransaction: Transaction? = null
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("TRANSACTION")
 
     val incomeInput = MutableStateFlow("")
     val isIncomeDialogOpen = MutableStateFlow(false)
@@ -100,9 +101,11 @@ class TransactionListViewModel @Inject constructor(
                         ) { (t, s, sts), (burn, pref, rec) -> 
                             CoreIntelligence(t, s, sts, burn, pref, rec)
                         },
-                        getCategoryBudgets(month)
-                    ) { core, budgets ->
+                        getCategoryBudgets(month),
+                        _pendingDeleteIds
+                    ) { core, budgets, pendingIds ->
                         val filtered = applyFilter(core.transactions, filter)
+                            .filter { it.id !in pendingIds }
                         val grouped = filtered.groupBy { it.date }
                             .toSortedMap(compareByDescending { it })
                             .mapKeys { (date, _) -> formatDateHeader(date) }
@@ -245,11 +248,14 @@ class TransactionListViewModel @Inject constructor(
         }
     }
 
+    private var lastDeletedId: Long = 0L
+
     fun onDeleteClick(id: Long) {
         viewModelScope.launch {
             try {
-                recentlyDeletedTransaction = getTransactionById(id)
-                deleteTransaction(id)
+                val tx = getTransactionById(id) ?: return@launch
+                lastDeletedId = id
+                pendingDeleteManager.requestDelete(id, tx.remoteId, "TRANSACTION")
                 _events.send(ExpenseEvent.ShowUndoSnackbar("Transaction deleted"))
             } catch (e: Exception) {
                 _events.send(ExpenseEvent.ShowError("Could not delete transaction"))
@@ -259,10 +265,7 @@ class TransactionListViewModel @Inject constructor(
 
     fun undoDelete() {
         viewModelScope.launch {
-            recentlyDeletedTransaction?.let { tx ->
-                addTransaction(tx)
-                recentlyDeletedTransaction = null
-            }
+            pendingDeleteManager.cancelDelete(lastDeletedId, "TRANSACTION")
         }
     }
 

@@ -18,6 +18,9 @@ interface LoanDao {
     @Query("DELETE FROM loans WHERE id = :id")
     suspend fun deleteLoan(id: Long)
 
+    @Query("SELECT * FROM loans WHERE id = :id")
+    suspend fun getLoanById(id: Long): LoanEntity?
+
     @Query("SELECT SUM(monthlyEmi) FROM loans")
     fun getTotalMonthlyEmi(): Flow<Double?>
     @Query("SELECT * FROM loans WHERE isSynced = 0")
@@ -31,10 +34,18 @@ interface LoanDao {
 
     suspend fun upsertSync(entity: LoanEntity) {
         val existing = getLoanByRemoteId(entity.remoteId)
-        if (existing == null) {
-            insertLoan(entity.copy(id = 0, isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
-            updateLoan(entity.copy(id = existing.id, isSynced = true))
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            insertLoan(entity.copy(id = id, isSynced = true))
         }
     }
 

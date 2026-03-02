@@ -25,19 +25,41 @@ class SyncManager @Inject constructor(
 
     suspend fun runSync() {
         if (_syncState.value is SyncState.Syncing) return
-        _syncState.value = SyncState.Syncing("Starting sync...", 0, 10)
+        _syncState.value = SyncState.Syncing("Syncing...", 1, 10)
 
         try {
-            // Phase 1: Push
-            _syncState.value = SyncState.Syncing("Pushing local changes...", 1, 10)
-            pushLocalChanges()
-            
-            // Phase 2: Pull
-            _syncState.value = SyncState.Syncing("Pulling remote changes...", 5, 10)
-            pullRemoteChanges()
+            // 1. Fetch Remote State
+            val fetchResult = driveDataSource.fetchRemoteData()
+            if (fetchResult.isFailure) {
+                throw fetchResult.exceptionOrNull() ?: Exception("Failed to fetch remote data")
+            }
+            val remoteData = fetchResult.getOrNull() ?: BackupData()
+
+            // 2. Merge Remote into Local (Filtering with current local tombstones)
+            // This brings in changes from other devices and respects local pending deletions.
+            localDataSource.mergeRemoteData(remoteData)
+
+            // 3. Collect local dirty records AFTER merging remote changes
+            // (Note: some previously dirty items might have been resolved by remote newer versions)
+            val dirtyRecords = localDataSource.getDirtyRecords()
+
+            // 4. If there are local changes (edits or deletes), merge and push to Drive
+            if (!isEmpty(dirtyRecords)) {
+                _syncState.value = SyncState.Syncing("Pushing changes...", 5, 10)
+                val mergedDataForDrive = mergeForPush(remoteData, dirtyRecords)
+                
+                val commitResult = driveDataSource.commitRemoteData(mergedDataForDrive)
+                if (commitResult.isSuccess) {
+                    markLocalSynced(dirtyRecords)
+                    syncRepository.setDirty(false)
+                } else {
+                    throw commitResult.exceptionOrNull() ?: Exception("Upload failed")
+                }
+            } else {
+                syncRepository.setDirty(false)
+            }
 
             syncRepository.setLastSyncedAt(System.currentTimeMillis())
-            syncRepository.setDirty(false)
             _syncState.value = SyncState.Success
         } catch (e: Exception) {
             handleError(e)
@@ -45,51 +67,58 @@ class SyncManager @Inject constructor(
         }
     }
 
-    private suspend fun pushLocalChanges() {
-        val dirtyRecords = localDataSource.getDirtyRecords()
-        if (isEmpty(dirtyRecords)) return
-
-        val remoteData = driveDataSource.fetchRemoteData() ?: BackupData()
-        val mergedData = mergeForPush(remoteData, dirtyRecords)
-        
-        val result = driveDataSource.commitRemoteData(mergedData)
-        if (result.isSuccess) {
-            markLocalSynced(dirtyRecords)
-        } else {
-            throw result.exceptionOrNull() ?: Exception("Upload failed")
-        }
-    }
-
-    private suspend fun pullRemoteChanges() {
-        val remoteData = driveDataSource.fetchRemoteData() ?: return
-        mergeIntoLocal(remoteData)
-    }
+    // pushLocalChanges and pullRemoteChanges are now integrated into runSync for better atomicity
 
     private fun mergeForPush(remote: BackupData, localDirty: BackupData): BackupData {
+        // IDs of entities deleted either locally or remotely.
+        // Consolidation here ensures "Delete wins" across the board.
+        val allDeletedIds = (remote.deletedEntities.map { it.remoteId } + 
+                            localDirty.deletedEntities.map { it.remoteId }).toSet()
+        
         return BackupData(
-            transactions = mergeEntities(remote.transactions, localDirty.transactions),
-            savings = mergeEntities(remote.savings, localDirty.savings),
-            goals = mergeEntities(remote.goals, localDirty.goals),
-            categoryBudgets = mergeEntities(remote.categoryBudgets, localDirty.categoryBudgets),
-            investments = mergeEntities(remote.investments, localDirty.investments),
-            loans = mergeEntities(remote.loans, localDirty.loans),
-            monthlyExpenses = mergeEntities(remote.monthlyExpenses, localDirty.monthlyExpenses),
-            billInstances = mergeEntities(remote.billInstances, localDirty.billInstances),
-            refundables = mergeEntities(remote.refundables, localDirty.refundables),
-            userPreferences = mergeEntities(remote.userPreferences, localDirty.userPreferences),
+            transactions = mergeEntities(remote.transactions, localDirty.transactions, allDeletedIds),
+            savings = mergeEntities(remote.savings, localDirty.savings, allDeletedIds),
+            goals = mergeEntities(remote.goals, localDirty.goals, allDeletedIds),
+            categoryBudgets = mergeEntities(remote.categoryBudgets, localDirty.categoryBudgets, allDeletedIds),
+            investments = mergeEntities(remote.investments, localDirty.investments, allDeletedIds),
+            loans = mergeEntities(remote.loans, localDirty.loans, allDeletedIds),
+            monthlyExpenses = mergeEntities(remote.monthlyExpenses, localDirty.monthlyExpenses, allDeletedIds),
+            billInstances = mergeEntities(remote.billInstances, localDirty.billInstances, allDeletedIds),
+            refundables = mergeEntities(remote.refundables, localDirty.refundables, allDeletedIds),
+            userPreferences = mergeEntities(remote.userPreferences, localDirty.userPreferences, allDeletedIds),
+            deletedEntities = (remote.deletedEntities + localDirty.deletedEntities)
+                .associateBy { it.remoteId }
+                .values.toList(),
             createdAt = System.currentTimeMillis()
         )
     }
 
-    private suspend fun mergeIntoLocal(remote: BackupData) {
-        localDataSource.mergeRemoteData(remote)
-    }
-
-    private fun <T : SyncableEntity> mergeEntities(remote: List<T>, local: List<T>): List<T> {
-        val map = remote.associateBy { it.remoteId }.toMutableMap()
-        local.forEach { localItem ->
+    private fun <T : SyncableEntity> mergeEntities(
+        remote: List<T>, 
+        local: List<T>, 
+        allDeletedIds: Set<String>
+    ): List<T> {
+        // Filter out any entity that is supposed to be deleted
+        val map = remote.filterNot { it.remoteId in allDeletedIds }
+            .associateBy { it.remoteId }.toMutableMap()
+            
+        local.filterNot { it.remoteId in allDeletedIds }.forEach { localItem ->
             val remoteItem = map[localItem.remoteId]
-            if (remoteItem == null || localItem.updatedAt > remoteItem.updatedAt) {
+            
+            // CONFLICT RESOLUTION: Gold Standard Logic
+            // 1. Highest Version wins
+            // 2. If Versions equal, Newest Timestamp wins
+            // 3. If Timestamps equal, higher deviceId wins (Tie-Breaker)
+            val shouldOverwrite = when {
+                remoteItem == null -> true
+                localItem.version > remoteItem.version -> true
+                localItem.version < remoteItem.version -> false
+                localItem.updatedAt > remoteItem.updatedAt -> true
+                localItem.updatedAt < remoteItem.updatedAt -> false
+                else -> localItem.deviceId > remoteItem.deviceId
+            }
+
+            if (shouldOverwrite) {
                 map[localItem.remoteId] = localItem
             }
         }
@@ -97,8 +126,18 @@ class SyncManager @Inject constructor(
     }
 
     private fun isEmpty(data: BackupData): Boolean {
-        return data.transactions.isEmpty() && data.savings.isEmpty() && data.goals.isEmpty() && 
-               data.investments.isEmpty() && data.loans.isEmpty() && data.refundables.isEmpty()
+        return data.transactions.isEmpty() && 
+               data.savings.isEmpty() && 
+               data.goals.isEmpty() && 
+               data.categoryBudgets.isEmpty() &&
+               data.investments.isEmpty() && 
+               data.loans.isEmpty() && 
+               data.monthlyExpenses.isEmpty() &&
+               data.billInstances.isEmpty() &&
+               data.refundables.isEmpty() &&
+               data.monthlyReports.isEmpty() &&
+               data.userPreferences.isEmpty() &&
+               data.deletedEntities.isEmpty()
     }
 
     private suspend fun markLocalSynced(data: BackupData) {

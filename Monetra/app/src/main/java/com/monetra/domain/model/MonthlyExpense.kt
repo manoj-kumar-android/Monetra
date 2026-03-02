@@ -14,6 +14,7 @@ data class MonthlyExpense(
     val amount: Double,
     val category: String = "Bills",
     val dueDay: Int = 1, // 1 to 31
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -31,6 +32,7 @@ data class BillInstance(
     val amount: Double, // Snapshot of the bill's amount at creation
     val paidAmount: Double = 0.0,
     val status: BillStatus = BillStatus.PENDING,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

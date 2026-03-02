@@ -6,32 +6,31 @@ import com.monetra.domain.model.Loan
 import com.monetra.domain.usecase.loan.AddLoanUseCase
 import com.monetra.domain.usecase.loan.DeleteLoanUseCase
 import com.monetra.domain.usecase.loan.GetLoansUseCase
+import com.monetra.data.worker.PendingDeleteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 @HiltViewModel
 class LoanViewModel @Inject constructor(
     private val getLoans: GetLoansUseCase,
     private val addLoan: AddLoanUseCase,
-    private val deleteLoan: DeleteLoanUseCase
+    private val deleteLoan: DeleteLoanUseCase,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
-    private val _loans = getLoans().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val loans: StateFlow<List<Loan>> = _loans
+    private val _rawLoans = getLoans().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("LOAN")
 
     private val _uiState = MutableStateFlow(LoanUiState())
     val uiState: StateFlow<LoanUiState> = _uiState.asStateFlow()
 
-    // Undo-delete staging
-    private var pendingDeleteLoan: Loan? = null
-    private var deleteJob: Job? = null
+    val loans: StateFlow<List<Loan>> = combine(_rawLoans, _pendingDeleteIds) { allLoans, pendingIds ->
+        allLoans.filter { it.id !in pendingIds }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onNameChange(name: String) {
         _uiState.update { it.copy(name = name, nameError = null) }
@@ -175,37 +174,18 @@ class LoanViewModel @Inject constructor(
     }
 
     fun requestDeleteLoan(loan: Loan) {
-        deleteJob?.cancel()
-        pendingDeleteLoan = null
-        _uiState.update { it.copy(pendingDeleteLoan = null) }
-
-        // Delete immediately from DB so the list refreshes cleanly
-        viewModelScope.launch { deleteLoan(loan) }
-
-        // Keep for undo
-        pendingDeleteLoan = loan
         _uiState.update { it.copy(pendingDeleteLoan = loan) }
-
-        deleteJob = viewModelScope.launch {
-            delay(10000)
-            pendingDeleteLoan = null
-            _uiState.update { it.copy(pendingDeleteLoan = null) }
+        viewModelScope.launch {
+            pendingDeleteManager.requestDelete(loan.id, loan.remoteId, "LOAN")
         }
     }
 
     fun undoDeleteLoan() {
-        deleteJob?.cancel()
-        deleteJob = null
-        val item = pendingDeleteLoan ?: return
-        pendingDeleteLoan = null
+        val loan = _uiState.value.pendingDeleteLoan ?: return
         _uiState.update { it.copy(pendingDeleteLoan = null) }
-        // Re-insert back into DB
-        viewModelScope.launch { addLoan(item.copy(id = 0)) }
-    }
-
-    private fun commitDeleteLoan() {
-        pendingDeleteLoan = null
-        _uiState.update { it.copy(pendingDeleteLoan = null) }
+        viewModelScope.launch {
+            pendingDeleteManager.cancelDelete(loan.id, "LOAN")
+        }
     }
 
     fun onDeleteLoan(loan: Loan) {

@@ -18,6 +18,9 @@ interface CategoryBudgetDao {
 
     @Query("DELETE FROM category_budgets WHERE categoryName = :categoryName")
     suspend fun deleteBudget(categoryName: String)
+
+    @Query("SELECT * FROM category_budgets WHERE categoryName = :categoryName")
+    suspend fun getBudgetByName(categoryName: String): CategoryBudgetEntity?
     @Query("SELECT * FROM category_budgets WHERE isSynced = 0")
     suspend fun getUnsyncedBudgets(): List<CategoryBudgetEntity>
 
@@ -29,9 +32,16 @@ interface CategoryBudgetDao {
 
     suspend fun upsertSync(entity: CategoryBudgetEntity) {
         val existing = getBudgetByRemoteId(entity.remoteId)
-        if (existing == null) {
-            upsertBudget(entity.copy(isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
             upsertBudget(entity.copy(isSynced = true))
         }
     }

@@ -25,20 +25,26 @@ class DriveSyncDataSource @Inject constructor(
         encodeDefaults = true
     }
 
-    suspend fun fetchRemoteData(): BackupData? = withContext(Dispatchers.IO) {
-        val googleUserId = driveManager.googleUserId.first() ?: return@withContext null
+    suspend fun fetchRemoteData(): Result<BackupData?> = withContext(Dispatchers.IO) {
+        val googleUserId = driveManager.googleUserId.first() 
+            ?: return@withContext Result.failure(Exception("No Google account"))
+        
         val tempFile = File(context.cacheDir, "remote_sync.enc")
         
-        val exists = driveManager.downloadRawFile(tempFile).getOrDefault(false)
-        if (!exists) return@withContext null
+        val downloadResult = driveManager.downloadRawFile(tempFile)
+        if (downloadResult.isFailure) {
+            return@withContext Result.failure(downloadResult.exceptionOrNull() ?: Exception("Download failed"))
+        }
+
+        val exists = downloadResult.getOrDefault(false)
+        if (!exists) return@withContext Result.success(null)
         
         return@withContext try {
             val encryptedBytes = tempFile.readBytes()
             val decryptedJson = encryptionManager.decrypt(googleUserId, encryptedBytes).decodeToString()
-            json.decodeFromString<BackupData>(decryptedJson)
+            Result.success(json.decodeFromString<BackupData>(decryptedJson))
         } catch (e: Exception) {
-            e.printStackTrace()
-            null
+            Result.failure(e)
         } finally {
             tempFile.delete()
         }

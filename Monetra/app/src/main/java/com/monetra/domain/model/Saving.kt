@@ -7,6 +7,7 @@ data class Saving(
     val amount: Double,
     val interestRate: Double?,
     val note: String,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

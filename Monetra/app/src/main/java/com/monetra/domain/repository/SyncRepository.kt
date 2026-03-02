@@ -9,4 +9,6 @@ interface SyncRepository {
     suspend fun setLastSyncedAt(timestamp: Long)
     suspend fun getDeviceId(): String
     fun requestSync()
+    suspend fun markDeleted(remoteId: String, entityType: String)
+    suspend fun clearTombstone(remoteId: String)
 }

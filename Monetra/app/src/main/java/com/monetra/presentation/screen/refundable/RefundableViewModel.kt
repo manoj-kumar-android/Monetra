@@ -7,6 +7,7 @@ import androidx.work.WorkManager
 import com.monetra.domain.model.Refundable
 import com.monetra.domain.model.RefundableStatus
 import com.monetra.domain.repository.RefundableRepository
+import com.monetra.data.worker.PendingDeleteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,24 +16,26 @@ import javax.inject.Inject
 @HiltViewModel
 class RefundableViewModel @Inject constructor(
     private val repository: RefundableRepository,
-    private val application: Application
+    private val application: Application,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.ALL)
     val filter: StateFlow<RefundableFilter> = _filter.asStateFlow()
 
-    val allRefundables: StateFlow<List<Refundable>> = repository.getAllRefundables()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE")
 
     val refundables: StateFlow<List<Refundable>> = combine(
         repository.getAllRefundables(),
-        _filter
-    ) { list, filter ->
+        _filter,
+        _pendingDeleteIds
+    ) { list, filter, pendingIds ->
+        val filteredList = list.filter { it.id !in pendingIds }
         when (filter) {
-            RefundableFilter.ALL -> list
-            RefundableFilter.PENDING -> list.filter { it.status == RefundableStatus.PENDING }
-            RefundableFilter.OVERDUE -> list.filter { it.status == RefundableStatus.OVERDUE }
-            RefundableFilter.PAID -> list.filter { it.status == RefundableStatus.PAID }
+            RefundableFilter.ALL -> filteredList
+            RefundableFilter.PENDING -> filteredList.filter { it.status == RefundableStatus.PENDING }
+            RefundableFilter.OVERDUE -> filteredList.filter { it.status == RefundableStatus.OVERDUE }
+            RefundableFilter.PAID -> filteredList.filter { it.status == RefundableStatus.PAID }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -51,16 +54,17 @@ class RefundableViewModel @Inject constructor(
 
     fun deleteRefundable(refundable: Refundable) {
         viewModelScope.launch {
-            repository.deleteRefundable(refundable)
+            pendingDeleteManager.requestDelete(refundable.id, refundable.remoteId, "REFUNDABLE")
+            // Note: Reminders will be canceled when the garbage collector actually deletes the item
+            // or we could cancel them here if preferred. But let's cancel them here for immediate effect
             WorkManager.getInstance(application).cancelUniqueWork("refundable_reminder_${refundable.id}")
         }
     }
 
-    fun restoreRefundable(refundable: Refundable) {
+    fun restoreRefundable(id: Long) {
         viewModelScope.launch {
-            repository.upsertRefundable(refundable)
-            // Note: Reminders are not automatically re-scheduled upon simple undo
-            // to prevent notification spam logic, though it could be added if needed.
+            pendingDeleteManager.cancelDelete(id, "REFUNDABLE")
+            // Reminders should ideally be re-added, but that requires more logic
         }
     }
 }

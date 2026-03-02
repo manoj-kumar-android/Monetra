@@ -11,6 +11,7 @@ data class FinancialGoal(
     val currentAmount: Double,
     val deadline: LocalDate?,
     val category: GoalCategory,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

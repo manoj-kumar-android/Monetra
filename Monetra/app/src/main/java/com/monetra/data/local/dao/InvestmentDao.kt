@@ -28,10 +28,18 @@ interface InvestmentDao {
 
     suspend fun upsertSync(entity: InvestmentEntity) {
         val existing = getInvestmentByRemoteId(entity.remoteId)
-        if (existing == null) {
-            upsertInvestment(entity.copy(id = 0, isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
-            upsertInvestment(entity.copy(id = existing.id, isSynced = true))
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            upsertInvestment(entity.copy(id = id, isSynced = true))
         }
     }
 

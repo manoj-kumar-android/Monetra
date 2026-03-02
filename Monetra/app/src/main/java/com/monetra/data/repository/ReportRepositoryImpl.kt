@@ -4,7 +4,6 @@ import com.monetra.data.local.dao.MonthlyReportDao
 import com.monetra.data.local.entity.MonthlyReportEntity
 import com.monetra.domain.model.FinancialBalanceStatus
 import com.monetra.domain.model.MonthlyFinancialReport
-import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.ReportRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -19,6 +18,9 @@ class ReportRepositoryImpl @Inject constructor(
 
     override suspend fun saveReport(report: MonthlyFinancialReport) {
         val deviceId = syncRepository.getDeviceId()
+        val existing = dao.getReportByMonth(report.month.toString())
+        val nextVersion = if (existing == null) 1L else existing.version + 1L
+        
         dao.insertReport(
             MonthlyReportEntity(
                 month = report.month.toString(),
@@ -29,6 +31,7 @@ class ReportRepositoryImpl @Inject constructor(
                 actualSavings = report.actualSavings,
                 targetSavings = report.targetSavings,
                 status = report.status.name,
+                version = nextVersion,
                 updatedAt = System.currentTimeMillis(),
                 deviceId = deviceId,
                 isSynced = false
@@ -52,7 +55,12 @@ class ReportRepositoryImpl @Inject constructor(
                 expenseToIncomeRatio = if (entity.income > 0) (entity.expenses / entity.income) * 100 else 0.0,
                 emiToIncomeRatio = if (entity.income > 0) (entity.emis / entity.income) * 100 else 0.0,
                 investmentRatio = if (entity.income > 0) (entity.investments / entity.income) * 100 else 0.0,
-                status = FinancialBalanceStatus.valueOf(entity.status)
+                status = FinancialBalanceStatus.valueOf(entity.status),
+                remoteId = entity.remoteId,
+                version = entity.version,
+                updatedAt = entity.updatedAt,
+                deviceId = entity.deviceId,
+                isSynced = entity.isSynced
             )
         }
     }
@@ -72,7 +80,12 @@ class ReportRepositoryImpl @Inject constructor(
                     expenseToIncomeRatio = if (entity.income > 0) (entity.expenses / entity.income) * 100 else 0.0,
                     emiToIncomeRatio = if (entity.income > 0) (entity.emis / entity.income) * 100 else 0.0,
                     investmentRatio = if (entity.income > 0) (entity.investments / entity.income) * 100 else 0.0,
-                    status = FinancialBalanceStatus.valueOf(entity.status)
+                    status = FinancialBalanceStatus.valueOf(entity.status),
+                    remoteId = entity.remoteId,
+                    version = entity.version,
+                    updatedAt = entity.updatedAt,
+                    deviceId = entity.deviceId,
+                    isSynced = entity.isSynced
                 )
             }
         }

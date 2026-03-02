@@ -3,7 +3,6 @@ package com.monetra.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.monetra.domain.model.Saving
-import com.monetra.domain.model.Savings
 
 import kotlinx.serialization.Serializable
 
@@ -17,6 +16,7 @@ data class SavingEntity(
     val amount: Double,
     val interestRate: Double?,
     val note: String,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -28,6 +28,7 @@ data class SavingEntity(
         amount = amount,
         interestRate = interestRate,
         note = note,
+        version = version,
         updatedAt = updatedAt,
         deviceId = deviceId,
         isSynced = isSynced
@@ -41,18 +42,7 @@ fun Saving.toSavingEntity(): SavingEntity = SavingEntity(
     amount = amount,
     interestRate = interestRate,
     note = note,
-    updatedAt = updatedAt,
-    deviceId = deviceId,
-    isSynced = isSynced
-)
-
-fun Savings.toSavingEntity(): SavingEntity = SavingEntity(
-    id = id,
-    remoteId = remoteId,
-    bankName = bankName,
-    amount = amount,
-    interestRate = interestRate,
-    note = note,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced

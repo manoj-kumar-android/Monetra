@@ -30,6 +30,7 @@ data class TransactionEntity(
     val date: LocalDate,
     val note: String,
     val linkedBillId: Long? = null,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -46,6 +47,7 @@ fun TransactionEntity.toDomainModel(): Transaction {
         date = date,
         note = note,
         linkedBillId = linkedBillId,
+        version = version,
         updatedAt = updatedAt,
         deviceId = deviceId,
         isSynced = isSynced
@@ -63,6 +65,7 @@ fun Transaction.toEntity(): TransactionEntity {
         date = date,
         note = note,
         linkedBillId = linkedBillId,
+        version = version,
         updatedAt = updatedAt,
         deviceId = deviceId,
         isSynced = isSynced

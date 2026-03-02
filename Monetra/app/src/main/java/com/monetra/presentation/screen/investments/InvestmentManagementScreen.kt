@@ -27,6 +27,7 @@ import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
 import androidx.compose.ui.res.stringResource
 import com.monetra.R
+import kotlinx.coroutines.launch
 
 private val shortDateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yy")
 private val fullDateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")
@@ -41,12 +42,19 @@ fun InvestmentManagementScreen(
     val investments by viewModel.investments.collectAsStateWithLifecycle()
     val intelligence by viewModel.wealthIntelligence.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val hapticAddClick = com.monetra.presentation.components.rememberHapticClick { 
         viewModel.toggleAddSheet(true) 
     }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
+            }
+        },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -116,7 +124,20 @@ fun InvestmentManagementScreen(
                     items(monthlyInvestments, key = { it.id }, contentType = { "investment" }) { inv ->
                         InvestmentCard(
                             inv = inv, 
-                            onDelete = { viewModel.onDeleteInvestment(inv) },
+                            onDelete = { 
+                                viewModel.requestDeleteInvestment(inv)
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "\"${inv.name}\" deleted",
+                                        actionLabel = "UNDO",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.undoDeleteInvestment()
+                                    }
+                                }
+                            },
                             onEdit = { viewModel.onEditInvestment(inv) }
                         )
                     }
@@ -130,7 +151,20 @@ fun InvestmentManagementScreen(
                     items(oneTimeInvestments, key = { it.id }, contentType = { "investment" }) { inv ->
                         InvestmentCard(
                             inv = inv, 
-                            onDelete = { viewModel.onDeleteInvestment(inv) },
+                            onDelete = { 
+                                viewModel.requestDeleteInvestment(inv)
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "\"${inv.name}\" deleted",
+                                        actionLabel = "UNDO",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.undoDeleteInvestment()
+                                    }
+                                }
+                            },
                             onEdit = { viewModel.onEditInvestment(inv) }
                         )
                     }

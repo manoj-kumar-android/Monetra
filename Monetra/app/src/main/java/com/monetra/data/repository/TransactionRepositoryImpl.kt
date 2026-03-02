@@ -4,7 +4,6 @@ import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
-import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.TransactionRepository
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -82,28 +81,36 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction) {
         val deviceId = syncRepository.getDeviceId()
+        
+        // Resolve the actual identity of the record
+        val existing = if (transaction.id != 0L) {
+            dao.getTransactionById(transaction.id)
+        } else {
+            dao.getTransactionByRemoteId(transaction.remoteId)
+        }
+        
         val syncTransaction = transaction.copy(
+            id = existing?.id ?: transaction.id, // Prefer database ID if found
+            remoteId = existing?.remoteId ?: transaction.remoteId, // PRESERVE existing remoteId
+            version = if (existing == null) 1L else existing.version + 1L,
             updatedAt = System.currentTimeMillis(),
             deviceId = deviceId,
             isSynced = false
         )
         dao.insertTransaction(syncTransaction.toEntity())
+        syncRepository.clearTombstone(syncTransaction.remoteId)
         syncRepository.setDirty(true)
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
-        val deviceId = syncRepository.getDeviceId()
-        val syncTransaction = transaction.copy(
-            updatedAt = System.currentTimeMillis(),
-            deviceId = deviceId,
-            isSynced = false
-        )
-        dao.updateTransaction(syncTransaction.toEntity())
-        syncRepository.setDirty(true)
+        // We use the same 'idempotent' logic here to ensure zero duplicates.
+        insertTransaction(transaction)
     }
 
     override suspend fun deleteTransaction(id: Long) {
-        dao.deleteTransactionById(id)
-        syncRepository.setDirty(true)
+        dao.getTransactionById(id)?.let { entity ->
+            syncRepository.markDeleted(entity.remoteId, "TRANSACTION")
+            dao.deleteTransactionById(id)
+        }
     }
 }

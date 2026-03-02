@@ -11,6 +11,7 @@ data class CategoryBudgetEntity(
     @PrimaryKey val categoryName: String,
     override val remoteId: String = "cat_$categoryName",
     val limit: Double,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

@@ -5,9 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.BillInstance
 import com.monetra.domain.model.MonthlyExpense
 import com.monetra.domain.usecase.intelligence.*
+import com.monetra.data.worker.PendingDeleteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -24,28 +23,29 @@ class MonthlyExpenseViewModel @Inject constructor(
     private val addMonthlyExpense: AddMonthlyExpenseUseCase,
     private val deleteMonthlyExpense: DeleteMonthlyExpenseUseCase,
     private val prepareMonthlyBills: PrepareMonthlyBillsUseCase,
-    private val getBillInstances: GetBillInstancesUseCase
+    private val getBillInstances: GetBillInstancesUseCase,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
     private val selectedMonth = YearMonth.now()
 
     private val _expenses = getMonthlyExpenses()
     private val _instances = getBillInstances(selectedMonth)
-
-    val billModels: StateFlow<List<BillUiModel>> = combine(_expenses, _instances) { rules, instances ->
-        rules.map { rule ->
-            BillUiModel(
-                rule = rule,
-                instance = instances.find { it.billId == rule.id }
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("MONTHLY_EXPENSE")
 
     private val _uiState = MutableStateFlow(MonthlyExpenseUiState())
     val uiState: StateFlow<MonthlyExpenseUiState> = _uiState.asStateFlow()
 
-    private var pendingDeleteItem: MonthlyExpense? = null
-    private var deleteJob: Job? = null
+    val billModels: StateFlow<List<BillUiModel>> = combine(_expenses, _instances, _pendingDeleteIds) { rules, instances, pendingIds ->
+        rules
+            .filter { it.id !in pendingIds } // Hide pending-delete items
+            .map { rule ->
+                BillUiModel(
+                    rule = rule,
+                    instance = instances.find { it.billId == rule.id }
+                )
+            }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -116,31 +116,17 @@ class MonthlyExpenseViewModel @Inject constructor(
     }
 
     fun requestDelete(expense: MonthlyExpense) {
-        deleteJob?.cancel()
-        pendingDeleteItem = null
-        _uiState.update { it.copy(pendingDeleteExpense = null) }
-
-        viewModelScope.launch { deleteMonthlyExpense(expense) }
-
-        pendingDeleteItem = expense
         _uiState.update { it.copy(pendingDeleteExpense = expense) }
-
-        deleteJob = viewModelScope.launch {
-            delay(10000)
-            pendingDeleteItem = null
-            _uiState.update { it.copy(pendingDeleteExpense = null) }
+        viewModelScope.launch {
+            pendingDeleteManager.requestDelete(expense.id, expense.remoteId, "MONTHLY_EXPENSE")
         }
     }
 
     fun undoDelete() {
-        deleteJob?.cancel()
-        deleteJob = null
-        val item = pendingDeleteItem ?: return
-        pendingDeleteItem = null
+        val expense = _uiState.value.pendingDeleteExpense ?: return
         _uiState.update { it.copy(pendingDeleteExpense = null) }
-        viewModelScope.launch { 
-            addMonthlyExpense(item)
-            prepareMonthlyBills(selectedMonth)
+        viewModelScope.launch {
+            pendingDeleteManager.cancelDelete(expense.id, "MONTHLY_EXPENSE")
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
 import com.monetra.domain.model.Refundable
 import com.monetra.domain.repository.RefundableRepository
+import com.monetra.data.worker.PendingDeleteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RefundableDetailViewModel @Inject constructor(
     private val repository: RefundableRepository,
-    private val application: Application
+    private val application: Application,
+    private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
     private val _refundableId = MutableStateFlow(-1L)
@@ -25,17 +27,20 @@ class RefundableDetailViewModel @Inject constructor(
         _refundableId.value = id
     }
 
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE")
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val refundable: StateFlow<Refundable?> = _refundableId
-        .flatMapLatest { id ->
-            if (id == -1L) flowOf(null)
-            else repository.observeRefundableById(id)
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    val refundable: StateFlow<Refundable?> = combine(_refundableId, _pendingDeleteIds) { id, pendingIds ->
+        if (id == -1L || id in pendingIds) null
+        else id
+    }.flatMapLatest { id ->
+        if (id == null) flowOf(null)
+        else repository.observeRefundableById(id)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     fun markAsPaid(isPaid: Boolean) {
         val id = _refundableId.value
@@ -49,8 +54,12 @@ class RefundableDetailViewModel @Inject constructor(
     }
 
     fun deleteRefundable() {
+        val id = _refundableId.value
+        if (id == -1L) return
+        val item = refundable.value ?: return
+        
         viewModelScope.launch {
-            refundable.value?.let { repository.deleteRefundable(it) }
+            pendingDeleteManager.requestDelete(id, item.remoteId, "REFUNDABLE")
             cancelReminder()
             _isDeleted.value = true
         }

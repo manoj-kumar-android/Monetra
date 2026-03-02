@@ -25,6 +25,7 @@ data class InvestmentEntity(
     val currentValue: Double,
     val frequency: com.monetra.domain.model.ContributionFrequency,
     val stepChanges: String = "",
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -50,6 +51,7 @@ fun InvestmentEntity.toDomain(): Investment {
         currentValue = currentValue,
         frequency = frequency,
         stepChanges = decodedSteps,
+        version = version,
         updatedAt = updatedAt,
         deviceId = deviceId,
         isSynced = isSynced
@@ -71,6 +73,7 @@ fun Investment.toEntity(): InvestmentEntity {
         currentValue = currentValue,
         frequency = frequency,
         stepChanges = encodedSteps,
+        version = version,
         updatedAt = updatedAt,
         deviceId = deviceId,
         isSynced = isSynced

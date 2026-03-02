@@ -18,9 +18,11 @@ import com.monetra.data.local.entity.*
         MonthlyExpenseEntity::class,
         BillInstanceEntity::class,
         RefundableEntity::class,
-        SavingEntity::class
+        SavingEntity::class,
+        DeletedEntity::class,
+        PendingDeleteEntity::class
     ], 
-    version = 3, 
+    version = 6, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -36,6 +38,8 @@ abstract class MonetraDatabase : RoomDatabase() {
     abstract val monthlyExpenseDao: MonthlyExpenseDao
     abstract val refundableDao: RefundableDao
     abstract val savingDao: SavingDao
+    abstract val deletedEntityDao: DeletedEntityDao
+    abstract val pendingDeleteDao: PendingDeleteDao
 
     companion object {
         val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {

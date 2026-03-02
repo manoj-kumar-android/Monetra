@@ -7,7 +7,6 @@ import com.monetra.domain.model.RefundableType
 import com.monetra.domain.repository.RefundableRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import com.monetra.domain.repository.CloudBackupRepository
 import javax.inject.Inject
 
 class RefundableRepositoryImpl @Inject constructor(
@@ -31,27 +30,44 @@ class RefundableRepositoryImpl @Inject constructor(
 
     override suspend fun upsertRefundable(refundable: Refundable): Long {
         val deviceId = syncRepository.getDeviceId()
+        
+        val existing = if (refundable.id != 0L) {
+            dao.getRefundableById(refundable.id)
+        } else {
+            dao.getRefundableByRemoteId(refundable.remoteId)
+        }
+
         val syncRefundable = refundable.copy(
+            id = existing?.id ?: refundable.id,
+            remoteId = existing?.remoteId ?: refundable.remoteId,
+            version = if (existing == null) 1L else existing.version + 1L,
             updatedAt = System.currentTimeMillis(),
             deviceId = deviceId,
             isSynced = false
         )
         val id = dao.upsertRefundable(syncRefundable.toEntity())
+        syncRepository.clearTombstone(syncRefundable.remoteId)
         syncRepository.setDirty(true)
         return id
     }
 
     override suspend fun deleteRefundable(refundable: Refundable) {
+        syncRepository.markDeleted(refundable.remoteId, "REFUNDABLE")
         dao.deleteRefundable(refundable.toEntity())
-        syncRepository.setDirty(true)
     }
 
     override suspend fun updatePaidStatus(id: Long, isPaid: Boolean) {
-        // Since we are updating a single field, we should ideally fetch the entity, 
-        // update it with metadata, and save it. 
-        // For simplicity, I'll assume we handle metadata in upsert.
-        dao.updatePaidStatus(id, isPaid)
-        syncRepository.setDirty(true)
+        dao.getRefundableById(id)?.let { entity ->
+            val updated = entity.copy(
+                isPaid = isPaid,
+                version = entity.version + 1L,
+                isSynced = false,
+                updatedAt = System.currentTimeMillis(),
+                deviceId = syncRepository.getDeviceId()
+            )
+            dao.upsertRefundable(updated)
+            syncRepository.setDirty(true)
+        }
     }
 
     private fun RefundableEntity.toDomain() = Refundable(

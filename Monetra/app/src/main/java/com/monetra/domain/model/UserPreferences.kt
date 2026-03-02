@@ -9,6 +9,7 @@ data class UserPreferences(
     val projectionRate: Double = 10.0,
     val projectionYears: Int = 10,
     override val remoteId: String = "global_preferences",
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

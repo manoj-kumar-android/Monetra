@@ -9,7 +9,7 @@ import java.time.LocalDate
  */
 data class Transaction(
     val id: Long = 0L,
-    val remoteId: String = java.util.UUID.randomUUID().toString(),
+    override val remoteId: String = java.util.UUID.randomUUID().toString(),
     val title: String,
     val amount: Double,
     val type: TransactionType,
@@ -17,7 +17,8 @@ data class Transaction(
     val date: LocalDate,
     val note: String = "",
     val linkedBillId: Long? = null,
-    val updatedAt: Long = System.currentTimeMillis(),
-    val deviceId: String = "",
-    val isSynced: Boolean = false
-)
+    override val version: Long = 1L,
+    override val updatedAt: Long = System.currentTimeMillis(),
+    override val deviceId: String = "",
+    override val isSynced: Boolean = false
+) : Syncable

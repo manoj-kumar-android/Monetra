@@ -6,7 +6,6 @@ import com.monetra.domain.model.Saving
 import com.monetra.domain.repository.SavingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import com.monetra.domain.repository.CloudBackupRepository
 import javax.inject.Inject
 
 class SavingRepositoryImpl @Inject constructor(
@@ -30,17 +29,28 @@ class SavingRepositoryImpl @Inject constructor(
 
     override suspend fun insertSaving(saving: Saving) {
         val deviceId = syncRepository.getDeviceId()
+        
+        val existing = if (saving.id != 0L) {
+            savingDao.getSavingById(saving.id)
+        } else {
+            savingDao.getSavingByRemoteId(saving.remoteId)
+        }
+        
         val syncSaving = saving.copy(
+            id = existing?.id ?: saving.id,
+            remoteId = existing?.remoteId ?: saving.remoteId,
+            version = if (existing == null) 1L else existing.version + 1L,
             updatedAt = System.currentTimeMillis(),
             deviceId = deviceId,
             isSynced = false
         )
         savingDao.insertSaving(syncSaving.toSavingEntity())
+        syncRepository.clearTombstone(syncSaving.remoteId)
         syncRepository.setDirty(true)
     }
 
     override suspend fun deleteSaving(saving: Saving) {
+        syncRepository.markDeleted(saving.remoteId, "SAVING")
         savingDao.deleteSaving(saving.toSavingEntity())
-        syncRepository.setDirty(true)
     }
 }

@@ -29,10 +29,18 @@ interface GoalDao {
 
     suspend fun upsertSync(entity: GoalEntity) {
         val existing = getGoalByRemoteId(entity.remoteId)
-        if (existing == null) {
-            upsertGoal(entity.copy(id = 0, isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
-            upsertGoal(entity.copy(id = existing.id, isSynced = true))
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            upsertGoal(entity.copy(id = id, isSynced = true))
         }
     }
 

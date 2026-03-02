@@ -26,9 +26,16 @@ interface MonthlyReportDao {
 
     suspend fun upsertSync(entity: MonthlyReportEntity) {
         val existing = getReportByRemoteId(entity.remoteId)
-        if (existing == null) {
-            insertReport(entity.copy(isSynced = true))
-        } else if (entity.updatedAt > existing.updatedAt) {
+        val shouldOverwrite = when {
+            existing == null -> true
+            entity.version > existing.version -> true
+            entity.version < existing.version -> false
+            entity.updatedAt > existing.updatedAt -> true
+            entity.updatedAt < existing.updatedAt -> false
+            else -> entity.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
             insertReport(entity.copy(isSynced = true))
         }
     }

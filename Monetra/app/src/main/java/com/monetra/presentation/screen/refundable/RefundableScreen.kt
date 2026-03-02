@@ -100,7 +100,7 @@ fun RefundableScreen(
     onNavigateToHelp: () -> Unit,
     viewModel: RefundableViewModel = hiltViewModel()
 ) {
-    val allRefundables by viewModel.allRefundables.collectAsStateWithLifecycle()
+    val allRefundables by viewModel.refundables.collectAsStateWithLifecycle()
     val currentFilter by viewModel.filter.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { RefundableFilter.entries.size })
@@ -200,7 +200,7 @@ fun RefundableScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(pageRefundables.size, key = { index -> pageRefundables[index].id }, contentType = { "refundable" }) { index ->
-                            val item = pageRefundables[index]
+                            val refundableItem = pageRefundables[index]
                         
                         // Staggered entry animation
                         val isVisible = remember { mutableStateOf(false) }
@@ -214,7 +214,7 @@ fun RefundableScreen(
                         ) {
                             SwipeToDeleteContainer(
                                 onDelete = { 
-                                    viewModel.deleteRefundable(item)
+                                    viewModel.deleteRefundable(refundableItem)
                                     scope.launch {
                                         snackbarHostState.currentSnackbarData?.dismiss()
                                         val result = snackbarHostState.showSnackbar(
@@ -223,7 +223,7 @@ fun RefundableScreen(
                                             duration = SnackbarDuration.Short
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
-                                            viewModel.restoreRefundable(item)
+                                            viewModel.restoreRefundable(refundableItem.id)
                                         }
                                     }
                                 },
@@ -231,8 +231,8 @@ fun RefundableScreen(
                                 message = "Are you sure you want to remove this refundable entry?"
                             ) {
                                 RefundableItemRow(
-                                    item = item,
-                                    onClick = { onEntryClick(item.id) }
+                                    item = refundableItem,
+                                    onClick = { onEntryClick(refundableItem.id) }
                                 )
                             }
                         }

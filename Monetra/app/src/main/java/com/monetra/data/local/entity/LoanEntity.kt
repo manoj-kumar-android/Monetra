@@ -22,6 +22,7 @@ data class LoanEntity(
     val tenureMonths: Int,
     val remainingTenure: Int,
     val category: String,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false
@@ -38,6 +39,7 @@ fun LoanEntity.toDomainModel() = Loan(
     tenureMonths = tenureMonths,
     remainingTenure = remainingTenure,
     category = category,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced
@@ -54,6 +56,7 @@ fun Loan.toEntity() = LoanEntity(
     tenureMonths = tenureMonths,
     remainingTenure = remainingTenure,
     category = category,
+    version = version,
     updatedAt = updatedAt,
     deviceId = deviceId,
     isSynced = isSynced

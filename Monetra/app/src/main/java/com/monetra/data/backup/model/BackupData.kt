@@ -16,5 +16,6 @@ data class BackupData(
     val billInstances: List<BillInstanceEntity> = emptyList(),
     val refundables: List<RefundableEntity> = emptyList(),
     val userPreferences: List<UserPreferencesEntity> = emptyList(),
+    val deletedEntities: List<DeletedEntity> = emptyList(),
     val createdAt: Long = System.currentTimeMillis()
 )

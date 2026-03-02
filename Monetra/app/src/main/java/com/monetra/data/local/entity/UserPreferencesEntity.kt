@@ -17,6 +17,7 @@ data class UserPreferencesEntity(
     val isOnboardingCompleted: Boolean = false,
     val projectionRate: Double = 10.0,
     val projectionYears: Int = 10,
+    override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",
     override val isSynced: Boolean = false

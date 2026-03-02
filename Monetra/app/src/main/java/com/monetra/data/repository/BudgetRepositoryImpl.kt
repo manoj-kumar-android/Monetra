@@ -5,7 +5,6 @@ import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.CategoryBudgetEntity
 import com.monetra.domain.model.CategoryBudget
 import com.monetra.domain.repository.BudgetRepository
-import com.monetra.domain.repository.CloudBackupRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -33,6 +32,7 @@ class BudgetRepositoryImpl @Inject constructor(
                     categoryName = budgetEntity.categoryName,
                     limit = budgetEntity.limit,
                     currentSpent = sumsMap[budgetEntity.categoryName] ?: 0.0,
+                    version = budgetEntity.version,
                     updatedAt = budgetEntity.updatedAt,
                     deviceId = budgetEntity.deviceId,
                     isSynced = budgetEntity.isSynced
@@ -43,21 +43,28 @@ class BudgetRepositoryImpl @Inject constructor(
 
     override suspend fun saveCategoryBudget(budget: CategoryBudget) {
         val deviceId = syncRepository.getDeviceId()
+        val existing = budgetDao.getBudgetByName(budget.categoryName)
+        val nextVersion = if (existing == null) 1L else existing.version + 1L
+        
         budgetDao.upsertBudget(
             CategoryBudgetEntity(
                 remoteId = budget.remoteId,
                 categoryName = budget.categoryName,
                 limit = budget.limit,
+                version = nextVersion,
                 updatedAt = System.currentTimeMillis(),
                 deviceId = deviceId,
                 isSynced = false
             )
         )
+        syncRepository.clearTombstone(budget.remoteId)
         syncRepository.setDirty(true)
     }
 
     override suspend fun deleteCategoryBudget(categoryName: String) {
-        budgetDao.deleteBudget(categoryName)
-        syncRepository.setDirty(true)
+        budgetDao.getBudgetByName(categoryName)?.let { entity ->
+            syncRepository.markDeleted(entity.remoteId, "CATEGORY_BUDGET")
+            budgetDao.deleteBudget(categoryName)
+        }
     }
 }

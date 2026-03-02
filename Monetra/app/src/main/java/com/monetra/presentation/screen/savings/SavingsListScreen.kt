@@ -110,7 +110,7 @@ fun SavingsListScreen(
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.restoreSaving(saving)
+                                    viewModel.restoreSaving(saving.id)
                                 }
                             }
                         },
