@@ -34,34 +34,59 @@ class CalculateSafeToSpendUseCase @Inject constructor(
         return combine(
             userPreferenceRepository.getUserPreferences(),
             loanRepository.getTotalMonthlyEmi(),
-            monthlyExpenseRepository.getTotalReservedAmountForMonth(currentMonth),
-            transactionRepository.getTotalExpense(currentMonth),
-            transactionRepository.getTotalExpenseBetweenDates(today, today),
-            budgetRepository.getCategoryBudgets(currentMonth),
+            monthlyExpenseRepository.getAllMonthlyExpenses(),
             transactionRepository.getExpenseSumByCategory(currentMonth),
             transactionRepository.getExpenseSumByCategoryBetweenDates(today, today)
         ) { results ->
             val prefs = results[0] as com.monetra.domain.model.UserPreferences
             val totalEmi = results[1] as Double
-            val totalMonthlyExpense = results[2] as Double
-            val monthlySpent = results[3] as Double
-            val todaySpent = results[4] as Double
-            val monthlyBaseline =
-                (prefs.monthlyIncome - prefs.monthlySavingsGoal - totalEmi - totalMonthlyExpense)
+            val monthlyBills = results[2] as List<com.monetra.domain.model.MonthlyExpense>
+            val monthlySpentByCategory = results[3] as Map<String, Double>
+            val todaySpentByCategory = results[4] as Map<String, Double>
 
-            val spentBeforeToday = monthlySpent - todaySpent
+            // 1. Calculate the Discretionary Pool
+            // We subtract the TOTAL bill limits upfront, effectively "reserving" that money.
+            val totalBillLimits = monthlyBills.sumOf { it.amount }
+            val monthlyDiscretionaryPool = (prefs.monthlyIncome - prefs.monthlySavingsGoal - totalEmi - totalBillLimits)
 
-            val remainingMonthAllowance = monthlyBaseline - spentBeforeToday
+            // 2. Calculate Effective Discretionary Spending
+            // For Bill categories: only count spending that EXCEEDS the limit.
+            // For Normal categories: count everything.
+            val billCategories = monthlyBills.map { it.category }.toSet()
+            
+            // Calculate effective spent before today
+            val totalMonthlySpent = monthlySpentByCategory.values.sum()
+            val totalTodaySpent = todaySpentByCategory.values.sum()
+            
+            fun calculateEffectiveSpent(categoryMap: Map<String, Double>): Double {
+                var effective = 0.0
+                categoryMap.forEach { (cat, spent) ->
+                    val limit = monthlyBills.find { it.category == cat }?.amount ?: 0.0
+                    if (billCategories.contains(cat)) {
+                        effective += (spent - limit).coerceAtLeast(0.0)
+                    } else {
+                        effective += spent
+                    }
+                }
+                return effective
+            }
 
+            val effectiveSpentInMonth = calculateEffectiveSpent(monthlySpentByCategory)
+            val effectiveSpentToday = calculateEffectiveSpent(todaySpentByCategory)
+            
+            val effectiveSpentBeforeToday = effectiveSpentInMonth - effectiveSpentToday
+
+            // 3. Final Calculations
+            val remainingAllowance = (monthlyDiscretionaryPool - effectiveSpentBeforeToday).coerceAtLeast(0.0)
             val remainingDays = (daysInMonth - today.dayOfMonth + 1).coerceAtLeast(1)
 
-            val dailyLimit = remainingMonthAllowance / remainingDays
-            val remainingToday = dailyLimit - todaySpent
+            val dailyLimit = remainingAllowance / remainingDays
+            val remainingToday = dailyLimit - effectiveSpentToday
 
             SafeToSpend(
                 dailyLimit = dailyLimit,
                 remainingToday = remainingToday,
-                monthlyAllowance = remainingMonthAllowance
+                monthlyAllowance = remainingAllowance
             )
         }.flowOn(Dispatchers.Default)
     }
