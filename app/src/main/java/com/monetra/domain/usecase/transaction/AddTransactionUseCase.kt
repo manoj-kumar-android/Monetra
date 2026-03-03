@@ -23,20 +23,6 @@ class AddTransactionUseCase @Inject constructor(
             for (rule in rules) {
                 val instance = monthlyExpenseRepository.getInstanceByBillAndMonth(rule.id, month)
                 if (instance != null && instance.status != BillStatus.PAID) {
-                    val newPaidAmount = instance.paidAmount + transaction.amount
-                    val newStatus = when {
-                        newPaidAmount >= instance.amount -> BillStatus.PAID
-                        newPaidAmount > 0 -> BillStatus.PARTIAL
-                        else -> BillStatus.PENDING
-                    }
-                    
-                    monthlyExpenseRepository.insertBillInstance(
-                        instance.copy(
-                            paidAmount = newPaidAmount,
-                            status = newStatus
-                        )
-                    )
-                    
                     finalTransaction = transaction.copy(linkedBillId = instance.id)
                     break // Link to the first matching unpaid bill in category
                 }

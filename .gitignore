@@ -1,5 +1,51 @@
-.gradle/
+# Build folders
 build/
-local.properties
+**/build/
+
+# Generated sources
+**/generated/
+**/intermediates/
+**/kapt/
+**/ksp/
+**/build-cache/
+**/test-results/
+**/outputs/
+**/tmp/
+
+# Android Studio / IntelliJ
 .idea/
 *.iml
+*.iws
+*.ipr
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+cmake-build-*/
+
+# Gradle
+.gradle/
+gradlew
+gradlew.bat
+local.properties
+.gradle.kts
+gradle-wrapper.jar
+
+# Logs
+*.log
+
+# Sensitive Info / Keys
+*.jks
+*.keystore
+google-services.json
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Kotlin
+.kotlin/
+*.kotlin_module
+
+# Device specific
+.deviceexplorer/

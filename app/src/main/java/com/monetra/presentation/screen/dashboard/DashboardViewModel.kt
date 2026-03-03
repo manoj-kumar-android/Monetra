@@ -137,7 +137,9 @@ class DashboardViewModel @Inject constructor(
                     budgets = activeBudgets.map { it.toUiModel() },
                     recurringTotal = "₹%,.2f".format(rec.sumOf { it.amount }),
                     recurringItems = rec.map { it.toUiModel() },
-                    recentTransactions = txs.take(3).map { it.toUiItem() }
+                    recentTransactions = txs
+                        .take(3)
+                        .map { it.toUiItem() }
                 )
             }
             .flowOn(Dispatchers.Default)

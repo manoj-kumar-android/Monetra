@@ -8,7 +8,10 @@ import java.time.YearMonth
 
 @Dao
 interface MonthlyExpenseDao {
-    @Query("SELECT * FROM monthly_expenses")
+    @Query("""
+        SELECT * FROM monthly_expenses 
+        WHERE id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'MONTHLY_EXPENSE')
+    """)
     fun getAllMonthlyExpenses(): Flow<List<MonthlyExpenseEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -29,19 +32,97 @@ interface MonthlyExpenseDao {
     suspend fun getAllInstancesForBillList(billId: Long): List<BillInstanceEntity>
 
     // --- BillInstance (Monthly Data) ---
-    @Query("SELECT * FROM bill_instances WHERE month = :month")
+    // --- BillInstance (Monthly Data) ---
+    @Query("""
+        SELECT 
+            bi.id, bi.remoteId, bi.billId, bi.month, bi.amount, 
+            bi.version, bi.updatedAt, bi.deviceId, bi.isSynced,
+            COALESCE(trans.totalPaid, 0.0) AS paidAmount,
+            CASE 
+                WHEN COALESCE(trans.totalPaid, 0.0) >= bi.amount THEN 'PAID'
+                WHEN COALESCE(trans.totalPaid, 0.0) > 0 THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END AS status
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+              AND t.id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+        WHERE bi.month = :month
+          AND bi.billId NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'MONTHLY_EXPENSE')
+    """)
     fun getInstancesForMonth(month: YearMonth): Flow<List<BillInstanceEntity>>
 
-    @Query("SELECT * FROM bill_instances WHERE billId = :billId AND month = :month")
+    @Query("""
+        SELECT 
+            bi.id, bi.remoteId, bi.billId, bi.month, bi.amount, 
+            bi.version, bi.updatedAt, bi.deviceId, bi.isSynced,
+            COALESCE(trans.totalPaid, 0.0) AS paidAmount,
+            CASE 
+                WHEN COALESCE(trans.totalPaid, 0.0) >= bi.amount THEN 'PAID'
+                WHEN COALESCE(trans.totalPaid, 0.0) > 0 THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END AS status
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+              AND t.id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+        WHERE bi.billId = :billId AND bi.month = :month
+          AND bi.billId NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'MONTHLY_EXPENSE')
+    """)
     suspend fun getInstanceByBillAndMonth(billId: Long, month: YearMonth): BillInstanceEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBillInstance(instance: BillInstanceEntity)
 
-    @Query("SELECT * FROM bill_instances WHERE id = :id")
+    @Query("""
+        SELECT 
+            bi.id, bi.remoteId, bi.billId, bi.month, bi.amount, 
+            bi.version, bi.updatedAt, bi.deviceId, bi.isSynced,
+            COALESCE(trans.totalPaid, 0.0) AS paidAmount,
+            CASE 
+                WHEN COALESCE(trans.totalPaid, 0.0) >= bi.amount THEN 'PAID'
+                WHEN COALESCE(trans.totalPaid, 0.0) > 0 THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END AS status
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+              AND t.id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+        WHERE bi.id = :id
+          AND bi.billId NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'MONTHLY_EXPENSE')
+    """)
     suspend fun getInstanceById(id: Long?): BillInstanceEntity?
 
-    @Query("SELECT SUM(amount - paidAmount) FROM bill_instances WHERE month = :month AND status != 'PAID'")
+    @Query("""
+        SELECT SUM(bi.amount - COALESCE(trans.totalPaid, 0.0))
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+              AND t.id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+        WHERE bi.month = :month 
+          AND (bi.amount - COALESCE(trans.totalPaid, 0.0)) > 0
+          AND bi.billId NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'MONTHLY_EXPENSE')
+    """)
     fun getTotalReservedAmountForMonth(month: YearMonth): Flow<Double?>
     
     @Query("SELECT EXISTS(SELECT 1 FROM bill_instances WHERE billId = :billId AND month = :month)")
@@ -79,7 +160,26 @@ interface MonthlyExpenseDao {
     @Query("SELECT * FROM bill_instances WHERE isSynced = 0")
     suspend fun getUnsyncedInstances(): List<BillInstanceEntity>
 
-    @Query("SELECT * FROM bill_instances WHERE remoteId = :remoteId")
+    @Query("""
+        SELECT 
+            bi.id, bi.remoteId, bi.billId, bi.month, bi.amount, 
+            bi.version, bi.updatedAt, bi.deviceId, bi.isSynced,
+            COALESCE(trans.totalPaid, 0.0) AS paidAmount,
+            CASE 
+                WHEN COALESCE(trans.totalPaid, 0.0) >= bi.amount THEN 'PAID'
+                WHEN COALESCE(trans.totalPaid, 0.0) > 0 THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END AS status
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+        WHERE bi.remoteId = :remoteId
+    """)
     suspend fun getInstanceByRemoteId(remoteId: String): BillInstanceEntity?
 
     @Query("UPDATE bill_instances SET isSynced = 1 WHERE remoteId IN (:remoteIds)")
@@ -111,12 +211,32 @@ interface MonthlyExpenseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllMonthlyExpenses(expenses: List<MonthlyExpenseEntity>)
 
-    @Query("SELECT * FROM bill_instances")
+    @Query("""
+        SELECT 
+            bi.id, bi.remoteId, bi.billId, bi.month, bi.amount, 
+            bi.version, bi.updatedAt, bi.deviceId, bi.isSynced,
+            COALESCE(trans.totalPaid, 0.0) AS paidAmount,
+            CASE 
+                WHEN COALESCE(trans.totalPaid, 0.0) >= bi.amount THEN 'PAID'
+                WHEN COALESCE(trans.totalPaid, 0.0) > 0 THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END AS status
+        FROM bill_instances bi
+        JOIN monthly_expenses me ON me.id = bi.billId
+        LEFT JOIN (
+            SELECT t.category, strftime('%Y-%m', t.date) as tMonth, SUM(t.amount) as totalPaid
+            FROM transactions t
+            WHERE t.type = 'EXPENSE'
+            GROUP BY t.category, tMonth
+        ) trans ON trans.tMonth = bi.month AND trans.category = me.category
+    """)
     suspend fun getAllBillInstances(): List<BillInstanceEntity>
+
 
     @Query("DELETE FROM bill_instances")
     suspend fun deleteAllBillInstances()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllBillInstances(instances: List<BillInstanceEntity>)
+
 }

@@ -10,34 +10,79 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-    @Query("SELECT * FROM transactions WHERE strftime('%Y-%m', date) = :yearMonth ORDER BY date DESC, id DESC")
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE strftime('%Y-%m', date) = :yearMonth 
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        ORDER BY date DESC, id DESC
+    """)
     fun getTransactionsByMonth(yearMonth: String): Flow<List<TransactionEntity>>
 
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        ORDER BY date DESC
+    """)
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getTransactionById(id: Long): TransactionEntity?
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE strftime('%Y-%m', date) = :yearMonth AND type = 'INCOME'")
+    @Query("""
+        SELECT SUM(amount) FROM transactions 
+        WHERE strftime('%Y-%m', date) = :yearMonth 
+          AND type = 'INCOME'
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
     fun getTotalIncomeByMonth(yearMonth: String): Flow<Double?>
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE strftime('%Y-%m', date) = :yearMonth AND type = 'EXPENSE'")
+    @Query("""
+        SELECT SUM(amount) FROM transactions 
+        WHERE strftime('%Y-%m', date) = :yearMonth 
+          AND type = 'EXPENSE'
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
     fun getTotalExpenseByMonth(yearMonth: String): Flow<Double?>
 
-    @Query("SELECT category, SUM(amount) as total FROM transactions WHERE strftime('%Y-%m', date) = :yearMonth AND type = 'EXPENSE' GROUP BY category")
+    @Query("""
+        SELECT category, SUM(amount) as total FROM transactions 
+        WHERE strftime('%Y-%m', date) = :yearMonth 
+          AND type = 'EXPENSE' 
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        GROUP BY category
+    """)
     fun getExpenseSumByCategory(yearMonth: String): Flow<List<CategorySum>>
 
-    @Query("SELECT category, SUM(amount) as total FROM transactions WHERE date BETWEEN :startDate AND :endDate AND type = 'EXPENSE' GROUP BY category")
+    @Query("""
+        SELECT category, SUM(amount) as total FROM transactions 
+        WHERE date BETWEEN :startDate AND :endDate 
+          AND type = 'EXPENSE' 
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        GROUP BY category
+    """)
     fun getExpenseSumByCategoryBetweenDates(startDate: String, endDate: String): Flow<List<CategorySum>>
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE date BETWEEN :startDate AND :endDate AND type = 'INCOME'")
+    @Query("""
+        SELECT SUM(amount) FROM transactions 
+        WHERE date BETWEEN :startDate AND :endDate 
+          AND type = 'INCOME'
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
     fun getTotalIncomeBetweenDates(startDate: String, endDate: String): Flow<Double?>
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE date BETWEEN :startDate AND :endDate AND type = 'EXPENSE'")
+    @Query("""
+        SELECT SUM(amount) FROM transactions 
+        WHERE date BETWEEN :startDate AND :endDate 
+          AND type = 'EXPENSE'
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
     fun getTotalExpenseBetweenDates(startDate: String, endDate: String): Flow<Double?>
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE type = :type")
+    @Query("""
+        SELECT SUM(amount) FROM transactions 
+        WHERE type = :type
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
     fun getLifetimeTotal(type: String): Flow<Double?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
