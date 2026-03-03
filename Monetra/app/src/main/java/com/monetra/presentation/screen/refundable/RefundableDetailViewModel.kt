@@ -25,6 +25,7 @@ class RefundableDetailViewModel @Inject constructor(
 
     fun loadRefundable(id: Long) {
         _refundableId.value = id
+        _isDeleted.value = false
     }
 
     private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE")

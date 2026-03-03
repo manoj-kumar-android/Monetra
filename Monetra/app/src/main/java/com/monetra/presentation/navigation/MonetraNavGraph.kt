@@ -1,14 +1,9 @@
 package com.monetra.presentation.navigation
 
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
@@ -79,6 +74,13 @@ fun MonetraNavGraph(
             }
         }
     }
+    // TRACK DIRECTION
+    var previousBackStackSize by remember { mutableIntStateOf(backStack.size) }
+    val isPop = remember(backStack.size) {
+        val pop = backStack.size < previousBackStackSize
+        previousBackStackSize = backStack.size
+        pop
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -88,21 +90,25 @@ fun MonetraNavGraph(
             }
         },
         transitionSpec = {
-            val enterAnim = fadeIn(
-                animationSpec = tween(
-                    durationMillis = 100,
-                    easing = androidx.compose.animation.core.FastOutSlowInEasing
-                )
-            )
-
-            val exitAnim = fadeOut(
-                animationSpec = tween(
-                    durationMillis = 100,
-                    easing = androidx.compose.animation.core.FastOutSlowInEasing
-                )
-            )
-            
-            enterAnim togetherWith exitAnim
+            if (isPop) {
+                slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(400, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(400)) togetherWith
+                slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(400, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(400))
+            } else {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(400, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(400)) togetherWith
+                slideOutHorizontally(
+                    targetOffsetX = { -it },
+                    animationSpec = tween(400, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(400))
+            }
         },
         entryProvider = { key ->
             when (key) {

@@ -23,7 +23,11 @@ class RefundableViewModel @Inject constructor(
     private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.ALL)
     val filter: StateFlow<RefundableFilter> = _filter.asStateFlow()
 
-    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE")
+    private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE").stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
     val refundables: StateFlow<List<Refundable>> = combine(
         repository.getAllRefundables(),

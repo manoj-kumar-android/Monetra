@@ -66,7 +66,7 @@ ksp {
 }
 
 dependencies {
-    implementation(project(":drivebackup"))
+    implementation(project(":drive_backup"))
     // ── Core ──────────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -81,7 +81,6 @@ dependencies {
 
     // ── Compose ───────────────────────────────────────────────────────────
     implementation(libs.androidx.activity.compose)
-    //implementation(libs.androidx.navigation.compose)
     implementation(libs.navigation3.runtime)
     implementation(libs.navigation3.ui)
     implementation(libs.kotlinx.serialization.json)

@@ -77,7 +77,7 @@ class PendingDeleteWorker @AssistedInject constructor(
 
     companion object {
         private const val WORK_NAME = "pending_delete_gc"
-        private const val GRACE_PERIOD_MS = 3_000L
+        private const val GRACE_PERIOD_MS = 5_000L
 
         fun enqueue(context: Context) {
             val request = OneTimeWorkRequestBuilder<PendingDeleteWorker>()

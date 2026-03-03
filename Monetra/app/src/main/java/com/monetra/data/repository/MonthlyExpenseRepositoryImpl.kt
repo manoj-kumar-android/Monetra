@@ -102,7 +102,7 @@ class MonthlyExpenseRepositoryImpl @Inject constructor(
         syncRepository.setDirty(true)
     }
 
-    override suspend fun getInstanceById(id: Long): BillInstance? {
+    override suspend fun getInstanceById(id: Long?): BillInstance? {
         return dao.getInstanceById(id)?.toDomain()
     }
 

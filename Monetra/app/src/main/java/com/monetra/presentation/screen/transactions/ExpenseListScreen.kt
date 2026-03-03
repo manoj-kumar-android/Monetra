@@ -121,8 +121,6 @@ fun ExpenseListScreen(
         }
     }
 
-    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onNavigateToAdd)
-
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -138,16 +136,6 @@ fun ExpenseListScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = hapticAddClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_transaction_cd))
-            }
         }
     ) { paddingValues ->
         val pagerState = rememberPagerState(

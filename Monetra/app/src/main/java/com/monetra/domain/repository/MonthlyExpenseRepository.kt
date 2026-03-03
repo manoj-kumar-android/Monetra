@@ -18,7 +18,7 @@ interface MonthlyExpenseRepository {
     fun getInstancesForMonth(month: YearMonth): Flow<List<BillInstance>>
     suspend fun getInstanceByBillAndMonth(billId: Long, month: YearMonth): BillInstance?
     suspend fun insertBillInstance(instance: BillInstance)
-    suspend fun getInstanceById(id: Long): BillInstance?
+    suspend fun getInstanceById(id: Long?): BillInstance?
     fun getTotalReservedAmountForMonth(month: YearMonth): Flow<Double>
     suspend fun hasInstanceForMonth(billId: Long, month: YearMonth): Boolean
 }

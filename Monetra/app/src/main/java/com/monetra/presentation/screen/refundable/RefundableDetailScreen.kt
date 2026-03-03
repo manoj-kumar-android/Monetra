@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -122,8 +123,6 @@ fun RefundableDetailScreen(
                 RefundableStatus.PENDING -> MaterialTheme.colorScheme.primary
             }
 
-            var isVisible by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) { isVisible = true }
 
             Column(
                 modifier = Modifier
@@ -134,10 +133,6 @@ fun RefundableDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.xl)
             ) {
                 // Header Card: Amount & Status with Gradient
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = isVisible,
-                    enter = androidx.compose.animation.fadeIn()
-                ) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(32.dp),
@@ -188,7 +183,6 @@ fun RefundableDetailScreen(
                             }
                         }
                     }
-                }
 
                 // Quick Actions
                 if (!item.isPaid) {
@@ -245,7 +239,7 @@ fun RefundableDetailScreen(
                         DetailItem(icon = Icons.Default.Event, label = stringResource(R.string.due_date), value = item.dueDate.format(fullDateFormatter))
                         
                         if (!item.note.isNullOrBlank()) {
-                            DetailItem(icon = Icons.Default.StickyNote2, label = stringResource(R.string.note), value = item.note)
+                            DetailItem(icon = Icons.AutoMirrored.Filled.StickyNote2, label = stringResource(R.string.note), value = item.note?:"")
                         }
                     }
                 }

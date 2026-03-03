@@ -78,6 +78,7 @@ import java.time.ZoneId
 fun AddEditExpenseScreen(
     transactionId: Long? = null,
     onNavigateBack: () -> Unit,
+    isSheet: Boolean = false,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
     LaunchedEffect(transactionId) {
@@ -117,6 +118,7 @@ fun AddEditExpenseScreen(
         amountError = uiState.amountError,
         isLoading = uiState.isLoading,
         isEditing = uiState.isEditing,
+        isSheet = isSheet,
         onSaveClick = {
             viewModel.onSaveClick()
         }
@@ -175,9 +177,98 @@ private fun AddEditExpenseContent(
     amountError: String?,
     isLoading: Boolean,
     isEditing: Boolean,
+    isSheet: Boolean,
     onSaveClick: () -> Unit
 ) {
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    // When shown as a sheet, render a plain scrollable column that inherits
+    // the sheet's surface background — no nested Scaffold.
+    if (isSheet) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Spacing.lg)
+        ) {
+            // ── Sheet header with title + close ──────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.lg, bottom = Spacing.md),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(if (isEditing) R.string.edit_transaction_title else R.string.add_transaction_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                /*IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }*/
+            }
+
+            SheetFormBody(
+                title = title,
+                onTitleChange = onTitleChange,
+                amount = amount,
+                onAmountChange = onAmountChange,
+                note = note,
+                onNoteChange = onNoteChange,
+                formattedDate = formattedDate,
+                onDateClick = onDateClick,
+                isIncome = isIncome,
+                onTypeChange = onTypeChange,
+                category = category,
+                onCategoryChange = onCategoryChange,
+                titleError = titleError,
+                amountError = amountError,
+                cardContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+
+            // ── Save button at bottom of scroll ──────────────────────────
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            Button(
+                onClick = {
+                    keyboardController?.hide()
+                    onSaveClick()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(14.dp),
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.save),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(Spacing.lg))
+        }
+        return
+    }
+
+    // ── Full-screen mode (non-sheet) — keep the original Scaffold layout ──
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -255,125 +346,162 @@ private fun AddEditExpenseContent(
                 .padding(horizontal = Spacing.lg),
         ) {
             Spacer(modifier = Modifier.height(Spacing.md))
-            
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = !isIncome,
-                    onClick = { onTypeChange(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                ) {
-                    Text(stringResource(R.string.expense))
-                }
-                SegmentedButton(
-                    selected = isIncome,
-                    onClick = { onTypeChange(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                ) {
-                    Text(stringResource(R.string.income))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.md))
-            
-            // Suggestions (localized suggestions would be better, but for now we keep the strings or skip if not critical)
-            val suggestions = if (!isIncome) {
-                listOf("Groceries", "Coffee", "Dinner", "Fuel", "Rent", "WiFi")
-            } else {
-                listOf("Salary", "Gift", "Refund", "Freelance")
-            }
-            
-            androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
-                items(suggestions, key = { it }, contentType = { "suggestion" }) { suggestion ->
-                    SuggestionChip(
-                        onClick = { onTitleChange(suggestion) },
-                        label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.lg))
-
-            Text(
-                text = stringResource(R.string.details_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
+            SheetFormBody(
+                title = title,
+                onTitleChange = onTitleChange,
+                amount = amount,
+                onAmountChange = onAmountChange,
+                note = note,
+                onNoteChange = onNoteChange,
+                formattedDate = formattedDate,
+                onDateClick = onDateClick,
+                isIncome = isIncome,
+                onTypeChange = onTypeChange,
+                category = category,
+                onCategoryChange = onCategoryChange,
+                titleError = titleError,
+                amountError = amountError,
+                cardContainerColor = MaterialTheme.colorScheme.surface
             )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column {
-                    GroupedTextField(
-                        value = amount,
-                        onValueChange = onAmountChange,
-                        placeholder = stringResource(R.string.amount_placeholder),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        textStyle = MaterialTheme.typography.headlineMedium,
-                        isError = amountError != null
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
-                    GroupedTextField(
-                        value = title,
-                        onValueChange = onTitleChange,
-                        placeholder = stringResource(R.string.title_placeholder),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        isError = titleError != null
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
-                    GroupedTextField(
-                        value = note,
-                        onValueChange = onNoteChange,
-                        placeholder = stringResource(R.string.notes_placeholder),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        singleLine = false
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.xl))
-
-            Text(
-                text = stringResource(R.string.category_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
-            )
-            
-            EmojiCategoryGrid(isIncome, category, onCategoryChange)
-            
-            if (amountError != null) ErrorText(amountError)
-            if (titleError != null) ErrorText(titleError)
-
-            Spacer(modifier = Modifier.height(Spacing.xl))
-
-            Text(
-                text = stringResource(R.string.date_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth().clickable(onClick = onDateClick),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(stringResource(R.string.date_label), modifier = Modifier.weight(1f))
-                    Text(formattedDate, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
             Spacer(modifier = Modifier.height(Spacing.xxxl))
+        }
+    }
+}
+
+// ── Shared form body used in both sheet and full-screen modes ────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SheetFormBody(
+    title: String,
+    onTitleChange: (String) -> Unit,
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    formattedDate: String,
+    onDateClick: () -> Unit,
+    isIncome: Boolean,
+    onTypeChange: (Boolean) -> Unit,
+    category: String,
+    onCategoryChange: (String) -> Unit,
+    titleError: String?,
+    amountError: String?,
+    cardContainerColor: androidx.compose.ui.graphics.Color
+) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        SegmentedButton(
+            selected = !isIncome,
+            onClick = { onTypeChange(false) },
+            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+        ) {
+            Text(stringResource(R.string.expense))
+        }
+        SegmentedButton(
+            selected = isIncome,
+            onClick = { onTypeChange(true) },
+            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+        ) {
+            Text(stringResource(R.string.income))
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.md))
+
+    val suggestions = if (!isIncome) {
+        listOf("Groceries", "Coffee", "Dinner", "Fuel", "Rent", "WiFi")
+    } else {
+        listOf("Salary", "Gift", "Refund", "Freelance")
+    }
+
+    androidx.compose.foundation.lazy.LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        items(suggestions, key = { it }, contentType = { "suggestion" }) { suggestion ->
+            SuggestionChip(
+                onClick = { onTitleChange(suggestion) },
+                label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.lg))
+
+    Text(
+        text = stringResource(R.string.details_label),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor)
+    ) {
+        Column {
+            GroupedTextField(
+                value = amount,
+                onValueChange = onAmountChange,
+                placeholder = stringResource(R.string.amount_placeholder),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                textStyle = MaterialTheme.typography.headlineMedium,
+                isError = amountError != null
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
+            GroupedTextField(
+                value = title,
+                onValueChange = onTitleChange,
+                placeholder = stringResource(R.string.title_placeholder),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                textStyle = MaterialTheme.typography.bodyLarge,
+                isError = titleError != null
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = Spacing.lg))
+            GroupedTextField(
+                value = note,
+                onValueChange = onNoteChange,
+                placeholder = stringResource(R.string.notes_placeholder),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                textStyle = MaterialTheme.typography.bodyLarge,
+                singleLine = false
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.xl))
+
+    Text(
+        text = stringResource(R.string.category_label),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
+    )
+
+    EmojiCategoryGrid(isIncome, category, onCategoryChange, cardContainerColor)
+
+    if (amountError != null) ErrorText(amountError)
+    if (titleError != null) ErrorText(titleError)
+
+    Spacer(modifier = Modifier.height(Spacing.xl))
+
+    Text(
+        text = stringResource(R.string.date_label),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onDateClick),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(stringResource(R.string.date_label), modifier = Modifier.weight(1f))
+            Text(formattedDate, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -407,7 +535,12 @@ private fun GroupedTextField(
 }
 
 @Composable
-private fun EmojiCategoryGrid(isIncome: Boolean, selected: String, onSelect: (String) -> Unit) {
+private fun EmojiCategoryGrid(
+    isIncome: Boolean,
+    selected: String,
+    onSelect: (String) -> Unit,
+    cardContainerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surface
+) {
     val expenseCategories = listOf(
         "General" to (R.string.cat_general to "💰"),
         "Food" to (R.string.cat_food to "🍔"),
@@ -442,7 +575,7 @@ private fun EmojiCategoryGrid(isIncome: Boolean, selected: String, onSelect: (St
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onSelect(id) },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else cardContainerColor
                 ),
                 border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
             ) {
