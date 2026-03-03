@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.monetra.drivebackup" >
+
+    <uses-sdk android:minSdkVersion="30" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+
+    <queries>
+        <package android:name="com.google.android.gms" />
+
+        <intent>
+            <action android:name="com.google.android.gms.auth.SERVICE_COMBINE" />
+        </intent>
+    </queries>
+
+</manifest>

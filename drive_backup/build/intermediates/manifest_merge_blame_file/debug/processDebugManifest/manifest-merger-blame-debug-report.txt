@@ -1,0 +1,28 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.monetra.drivebackup" >
+4
+5    <uses-sdk android:minSdkVersion="30" />
+6
+7    <uses-permission android:name="android.permission.INTERNET" />
+7-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:5:5-67
+7-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:5:22-64
+8    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+8-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:6:5-71
+8-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:6:22-68
+9
+10    <queries>
+10-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:8:5-13:15
+11        <package android:name="com.google.android.gms" />
+11-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:9:9-58
+11-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:9:18-55
+12
+13        <intent>
+13-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:10:9-12:18
+14            <action android:name="com.google.android.gms.auth.SERVICE_COMBINE" />
+14-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:11:13-82
+14-->/home/vishal/Desktop/Monetra/drive_backup/src/main/AndroidManifest.xml:11:21-79
+15        </intent>
+16    </queries>
+17
+18</manifest>
