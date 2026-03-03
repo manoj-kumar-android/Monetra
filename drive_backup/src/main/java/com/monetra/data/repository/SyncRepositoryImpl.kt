@@ -16,15 +16,17 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.syncDataStore by preferencesDataStore(name = "sync_prefs")
 
+@OptIn(FlowPreview::class)
 @Singleton
 class SyncRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val db: MonetraDatabase
 ) : SyncRepository {
 

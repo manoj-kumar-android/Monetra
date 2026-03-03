@@ -38,15 +38,20 @@ fun TransactionRow(
         elevation = CardDefaults.cardElevation(defaultElevation = Elevation.none)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (item.isIncome) SemanticIncome.copy(alpha = 0.1f) else SemanticExpense.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                    .background(
+                        if (item.isIncome) SemanticIncome.copy(alpha = 0.1f) else SemanticExpense.copy(
+                            alpha = 0.1f
+                        )
+                    ), contentAlignment = Alignment.Center
             ) {
                 Text(text = item.categoryEmoji, style = MaterialTheme.typography.titleMedium)
             }
@@ -103,7 +108,11 @@ fun IntelligenceCard(intelligence: IntelligenceUiModel) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = Elevation.card)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.xl)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.xl)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -125,7 +134,7 @@ fun IntelligenceCard(intelligence: IntelligenceUiModel) {
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .background(
-                            when(intelligence.burnRateStatus) {
+                            when (intelligence.burnRateStatus) {
                                 "Critical" -> MaterialTheme.colorScheme.error
                                 "Warning" -> Color(0xFFFFA500)
                                 else -> Color(0xFF4CAF50)
@@ -136,7 +145,7 @@ fun IntelligenceCard(intelligence: IntelligenceUiModel) {
                     Text(
                         text = intelligence.burnRateStatus,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = when(intelligence.burnRateStatus) {
+                        color = when (intelligence.burnRateStatus) {
                             "Critical" -> MaterialTheme.colorScheme.error
                             "Warning" -> Color(0xFFFFA500)
                             else -> Color(0xFF4CAF50)
@@ -147,7 +156,9 @@ fun IntelligenceCard(intelligence: IntelligenceUiModel) {
             Spacer(modifier = Modifier.height(Spacing.md))
             HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(Spacing.md))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Column {
                     Text(
                         text = "Projected Month End",
@@ -186,10 +197,26 @@ fun BudgetSection(budgets: List<CategoryBudgetUiModel>, onManageClick: () -> Uni
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = Elevation.card)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.lg)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Budget Guard", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                TextButton(onClick = onManageClick) { Text("Manage", style = MaterialTheme.typography.labelMedium) }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Budget Guard",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                TextButton(onClick = onManageClick) {
+                    Text(
+                        "Manage", style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(Spacing.sm))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -202,20 +229,43 @@ fun BudgetSection(budgets: List<CategoryBudgetUiModel>, onManageClick: () -> Uni
 @Composable
 fun BudgetProgressRow(budget: CategoryBudgetUiModel) {
     Column {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
             Column {
-                Text(text = budget.categoryName, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
-                Text(text = "Remaining: ${budget.remaining}", style = MaterialTheme.typography.labelSmall, color = if (budget.status == "Alert") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                Text(
+                    text = budget.categoryName,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Remaining: ${budget.remaining}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (budget.status == "Alert") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
             }
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(text = budget.spent, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = Color(budget.progressColor))
-                Text(text = " / ${budget.limit}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = budget.spent,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(budget.progressColor)
+                )
+                Text(
+                    text = " / ${budget.limit}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         Spacer(modifier = Modifier.height(Spacing.xs))
         LinearProgressIndicator(
             progress = { budget.progress },
-            modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(CircleShape),
             color = Color(budget.progressColor),
             trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
             strokeCap = StrokeCap.Round
@@ -231,10 +281,22 @@ fun RecurringSection(total: String, items: List<RecurringExpenseUiModel>) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = Elevation.card)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.lg)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg)
+        ) {
             Column {
-                Text(text = "Recurring Subscriptions", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Text(text = "Monthly Total: $total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "Recurring Subscriptions",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Monthly Total: $total",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Spacer(modifier = Modifier.height(Spacing.md))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -246,12 +308,28 @@ fun RecurringSection(total: String, items: List<RecurringExpenseUiModel>) {
 
 @Composable
 fun RecurringExpenseRow(item: RecurringExpenseUiModel) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Column {
-            Text(text = item.title, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            Text(text = "Next: ${item.nextDate}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Next: ${item.nextDate}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-        Text(text = item.amount, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = item.amount,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -261,36 +339,28 @@ fun MonthlySummaryCard(summary: SummaryUiModel) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.xl)) {
-            Text(
-                text = "Available to Spend", 
-                style = MaterialTheme.typography.labelLarge, 
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(Spacing.xs))
-            Text(
-                text = summary.formattedBalance, 
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Black), 
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(Spacing.xl))
-            
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.xl)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 SummaryColumn(
-                    label = "Income", 
-                    amount = summary.formattedIncome, 
+                    label = "Income",
+                    amount = summary.formattedIncome,
                     isPositive = true,
                     modifier = Modifier.weight(1f)
                 )
                 SummaryColumn(
-                    label = "Expenses", 
-                    amount = summary.formattedExpense, 
+                    label = "Expenses",
+                    amount = summary.formattedExpense,
                     isPositive = false,
                     modifier = Modifier.weight(1f)
                 )
@@ -300,17 +370,27 @@ fun MonthlySummaryCard(summary: SummaryUiModel) {
 }
 
 @Composable
-private fun SummaryColumn(label: String, amount: String, isPositive: Boolean, modifier: Modifier = Modifier) {
+private fun SummaryColumn(
+    label: String, amount: String, isPositive: Boolean, modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isPositive) Color(0xFF34C759).copy(alpha = 0.05f) else Color(0xFFFF3B30).copy(alpha = 0.05f))
+            .background(
+                if (isPositive) Color(0xFF34C759).copy(alpha = 0.05f) else Color(0xFFFF3B30).copy(
+                    alpha = 0.05f
+                )
+            )
             .padding(Spacing.md)
     ) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            text = amount, 
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), 
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = amount,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = if (isPositive) Color(0xFF34C759) else Color(0xFFFF3B30)
         )
     }

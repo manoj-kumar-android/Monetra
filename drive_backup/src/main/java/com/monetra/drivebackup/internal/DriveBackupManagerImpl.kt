@@ -3,6 +3,7 @@ package com.monetra.drivebackup.internal
 import android.app.Activity
 import android.content.Context
 import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.datastore.preferences.core.edit
@@ -34,7 +35,7 @@ private val Context.dataStore by preferencesDataStore(name = "drive_backup_prefs
 
 @Singleton
 class DriveBackupManagerImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val driveService: DriveService,
     private val encryptionManager: EncryptionManager
 ) : DriveBackupManager {
@@ -72,37 +73,41 @@ class DriveBackupManagerImpl @Inject constructor(
 
     private suspend fun handleCredentialResponse(response: GetCredentialResponse): Boolean {
         val credential = response.credential
-        if (credential is GoogleIdTokenCredential) {
-            // .id is the user's email address if the idToken was requested with the email scope
-            val email = credential.id
-            val displayName = credential.displayName
-            
-            android.util.Log.d("DriveBackup", "Authenticated: Email='$email', Name='$displayName'")
-            
-            val accountName = if (!email.isNullOrBlank() && email.contains("@")) {
-                email
-            } else {
-                android.util.Log.w("DriveBackup", "Credential ID is not an email: '$email'. Falling back to displayName.")
-                displayName
-            }
+        if (credential is CustomCredential) {
+            if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
 
-            if (accountName.isNullOrBlank()) {
-                android.util.Log.e("DriveBackup", "Google credential returned no usable identifier (email or displayName)")
-                return false
-            }
+                val email = googleIdTokenCredential.email
+                val displayName = googleIdTokenCredential.displayName
 
-            // Persist for background sync
-            context.dataStore.edit { prefs ->
-                prefs[googleUserIdKey] = email ?: ""
-                prefs[accountNameKey] = accountName
+                android.util.Log.d("DriveBackup", "Authenticated: Email='$email', Name='$displayName'")
+
+                val accountName = if (email?.isNotBlank() == true && email.contains("@")) {
+                    email
+                } else {
+                    android.util.Log.w("DriveBackup", "Credential ID is not an email: '$email'. Falling back to displayName.")
+                    displayName
+                }
+
+                if (accountName.isNullOrBlank()) {
+                    android.util.Log.e("DriveBackup", "Google credential returned no usable identifier (email or displayName)")
+                    return false
+                }
+
+                // Persist for background sync
+                context.dataStore.edit { prefs ->
+                    prefs[googleUserIdKey] = email?:""
+                    prefs[accountNameKey] = accountName
+                }
+
+                android.util.Log.d("DriveBackup", "Saved to DataStore, initializing service with '$accountName'...")
+                driveService.initialize(accountName)
+                return true
             }
-            
-            android.util.Log.d("DriveBackup", "Saved to DataStore, initializing service with '$accountName'...")
-            driveService.initialize(accountName)
-            return true
-        }
-        android.util.Log.e("DriveBackup", "Received unsupported credential type: ${credential::class.java.simpleName}")
-        return false
+            android.util.Log.e("DriveBackup", "Received unsupported credential type: ${credential::class.java.simpleName}")
+            return false
+            }
+           return false
     }
 
     override fun scheduleBackup(databaseFile: File) {

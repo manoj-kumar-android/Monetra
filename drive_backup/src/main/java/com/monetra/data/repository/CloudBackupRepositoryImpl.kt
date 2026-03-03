@@ -30,7 +30,7 @@ import javax.inject.Singleton
 
 @Singleton
 class CloudBackupRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val db: MonetraDatabase,
     private val driveBackupManager: DriveBackupManager,
     private val encryptionManager: EncryptionManager,

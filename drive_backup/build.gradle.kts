@@ -57,9 +57,7 @@ dependencies {
     implementation(libs.googleid)
  
     // Google Drive REST API
-    api(libs.google.api.client.android)
-    implementation(libs.google.api.services.drive)
-    implementation(libs.google.http.client.gson)
+    implementation(libs.bundles.google.drive)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

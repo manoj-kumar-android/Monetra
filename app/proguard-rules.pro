@@ -2,7 +2,6 @@
 # For more details, see http://developer.android.com/guide/developing/tools/proguard.html
 
 # Room
--keep class androidx.room.paging.PagingSource { *; }
 
 # Hilt
 -keep class com.google.** { *; }

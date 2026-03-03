@@ -3,21 +3,20 @@ package com.monetra.presentation.screen.settings
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.UserPreferenceRepository
 import com.monetra.domain.usecase.intelligence.UpdateUserPreferencesUseCase
+import com.monetra.drivebackup.api.DriveBackupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.monetra.drivebackup.api.DriveBackupManager
-import com.monetra.domain.repository.CloudBackupRepository
-import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 
 data class SettingsUiState(
     val ownerName: String = "",

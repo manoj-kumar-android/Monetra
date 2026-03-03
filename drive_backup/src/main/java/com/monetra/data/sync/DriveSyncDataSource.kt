@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class DriveSyncDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val driveManager: DriveBackupManager,
     private val encryptionManager: EncryptionManager
 ) {

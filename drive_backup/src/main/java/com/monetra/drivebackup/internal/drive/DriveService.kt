@@ -18,7 +18,7 @@ import javax.inject.Singleton
 
 @Singleton
 class DriveService @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val jsonFactory = GsonFactory.getDefaultInstance()
     private val transport = NetHttpTransport()
@@ -93,7 +93,7 @@ class DriveService @Inject constructor(
      */
     suspend fun getBackupFileMetadata(): Pair<String, Long>? = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext null
-        val result = service.files().list().setSpaces("appDataFolder")
+        val result = service.files().list().setSpaces(appDataFolder)
             .setQ("name='$backupFileName' and 'appDataFolder' in parents and trashed=false")
             .setFields("files(id, name, modifiedTime)").execute()
 
@@ -122,7 +122,7 @@ class DriveService @Inject constructor(
                 android.util.Log.d("DriveBackup", "Creating new backup file in AppData folder")
                 val metadata = File().apply {
                     name = backupFileName
-                    parents = listOf("appDataFolder")
+                    parents = listOf(appDataFolder)
                 }
                 service.files().create(metadata, content).execute()
             }
