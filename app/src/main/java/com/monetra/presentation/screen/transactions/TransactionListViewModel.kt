@@ -166,6 +166,7 @@ class TransactionListViewModel @Inject constructor(
     }
 
     private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
 
     private fun Transaction.toUiItem() = TransactionUiItem(
         id = id,
@@ -177,6 +178,10 @@ class TransactionListViewModel @Inject constructor(
             append("%,.2f".format(amount))
         },
         formattedDate = date.format(dateFormatter),
+        formattedTime = java.time.Instant.ofEpochMilli(updatedAt)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalTime()
+            .format(timeFormatter),
         isIncome = type == TransactionType.INCOME,
         categoryEmoji = when (category) {
             "Food" -> "🍔"

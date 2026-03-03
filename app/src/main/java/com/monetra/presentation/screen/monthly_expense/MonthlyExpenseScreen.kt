@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -67,46 +68,51 @@ fun MonthlyExpenseScreen(
         }
     }
 
-    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick { 
-        viewModel.toggleAddSheet(true) 
+    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick {
+        viewModel.toggleAddSheet(true)
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
-            }
-        },
-        topBar = {
-            TopAppBar(
-                title = { Text("Recurring Fixed Bills", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                },
-                actions = { HelpIconButton(onClick = onNavigateToHelp) }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = hapticAddClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_fixed_cost))
-            }
+    Scaffold(snackbarHost = {
+        SnackbarHost(snackbarHostState) { data ->
+            com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
         }
-    ) { padding ->
+    }, topBar = {
+        TopAppBar(
+            title = { Text("Recurring Fixed Bills", fontWeight = FontWeight.Bold) },
+            navigationIcon = {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back)
+                    )
+                }
+            },
+            actions = { HelpIconButton(onClick = onNavigateToHelp) })
+    }, floatingActionButton = {
+        FloatingActionButton(
+            onClick = hapticAddClick,
+            containerColor = MaterialTheme.colorScheme.primary,
+            shape = CircleShape
+        ) {
+            Icon(
+                Icons.Default.Add, contentDescription = stringResource(R.string.add_fixed_cost)
+            )
+        }
+    }) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
             contentPadding = PaddingValues(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(16.dp)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        )
+                    ), shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
                         text = "Configure your monthly bills once. Monetra will automatically track them every month and reserve the amount from your available balance.",
@@ -155,10 +161,11 @@ fun MonthlyExpenseScreen(
 
     if (uiState.isAddSheetOpen) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         ModalBottomSheet(
             onDismissRequest = { viewModel.toggleAddSheet(false) },
             sheetState = sheetState,
-            dragHandle = { BottomSheetDefaults.DragHandle() }
+            sheetGesturesEnabled = !imeVisible,
         ) {
             Column(
                 modifier = Modifier
@@ -171,9 +178,9 @@ fun MonthlyExpenseScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 Text(
-                    if (uiState.editingId != null) stringResource(R.string.edit_recurring_cost_title) else stringResource(R.string.add_recurring_cost_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    if (uiState.editingId != null) stringResource(R.string.edit_recurring_cost_title) else stringResource(
+                        R.string.add_recurring_cost_title
+                    ), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold
                 )
                 // Name field
                 OutlinedTextField(
@@ -186,8 +193,7 @@ fun MonthlyExpenseScreen(
                     } else null,
                     leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Words,
-                        imeAction = ImeAction.Next
+                        capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -205,8 +211,7 @@ fun MonthlyExpenseScreen(
                     } else null,
                     leadingIcon = { Icon(Icons.Default.CurrencyRupee, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
+                        keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -214,7 +219,10 @@ fun MonthlyExpenseScreen(
                 )
                 // Due Day Selection
                 Column {
-                    Text("Due on day of month: ${uiState.dueDay}", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Due on day of month: ${uiState.dueDay}",
+                        style = MaterialTheme.typography.labelMedium
+                    )
                     Slider(
                         value = uiState.dueDay.toFloat(),
                         onValueChange = { viewModel.onDueDayChange(it.toInt()) },
@@ -239,34 +247,56 @@ fun MonthlyExpenseScreen(
                 )
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                     columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
-                    modifier = Modifier.fillMaxWidth().height(240.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                     userScrollEnabled = false
                 ) {
-                    items(categories, key = { it.first }, contentType = { "category" }) { (id, data) ->
+                    items(
+                        categories,
+                        key = { it.first },
+                        contentType = { "category" }) { (id, data) ->
                         val (resId, emoji) = data
                         val isSelected = id == uiState.category
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable { viewModel.onCategoryChange(id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onCategoryChange(id) },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                             ),
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(
+                                2.dp, MaterialTheme.colorScheme.primary
+                            ) else null
                         ) {
-                            Column(modifier = Modifier.padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(
+                                modifier = Modifier.padding(Spacing.md),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(emoji, fontSize = 24.sp)
-                                Text(stringResource(resId), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                Text(
+                                    stringResource(resId),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1
+                                )
                             }
                         }
                     }
                 }
                 Button(
                     onClick = viewModel::onSaveExpense,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_recurring_cost))
+                    Text(
+                        if (uiState.editingId != null) stringResource(R.string.save_changes) else stringResource(
+                            R.string.save_recurring_cost
+                        )
+                    )
                 }
                 Spacer(Modifier.height(Spacing.sm))
             }
@@ -284,10 +314,14 @@ fun BillItem(model: BillUiModel, onClick: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(
@@ -322,8 +356,7 @@ fun BillItem(model: BillUiModel, onClick: () -> Unit) {
                         fontWeight = FontWeight.Black
                     )
                     Surface(
-                        color = statusColor.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp)
+                        color = statusColor.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = status.name,
@@ -335,20 +368,25 @@ fun BillItem(model: BillUiModel, onClick: () -> Unit) {
                     }
                 }
             }
-            
+
             if (status != BillStatus.PAID) {
                 val paidAmount = model.instance?.paidAmount ?: 0.0
                 val totalAmount = model.rule.amount
-                
+
                 Spacer(modifier = Modifier.height(Spacing.md))
                 LinearProgressIndicator(
                     progress = { (paidAmount / totalAmount).toFloat().coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(CircleShape),
                     color = statusColor,
                     trackColor = statusColor.copy(alpha = 0.1f)
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(

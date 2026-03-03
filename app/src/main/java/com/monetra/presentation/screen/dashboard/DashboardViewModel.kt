@@ -153,6 +153,7 @@ class DashboardViewModel @Inject constructor(
 
     private companion object {
         val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
+        val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
     }
 
     private fun Transaction.toUiItem() = TransactionUiItem(
@@ -165,6 +166,10 @@ class DashboardViewModel @Inject constructor(
             append("%,.2f".format(amount))
         },
         formattedDate = date.format(dateFormatter),
+        formattedTime = java.time.Instant.ofEpochMilli(updatedAt)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalTime()
+            .format(timeFormatter),
         isIncome = type == com.monetra.domain.model.TransactionType.INCOME,
         categoryEmoji = when (category) {
             "Food" -> "🍔"

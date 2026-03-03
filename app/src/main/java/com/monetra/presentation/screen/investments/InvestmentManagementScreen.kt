@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -652,7 +653,7 @@ fun AddInvestmentSheet(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showStepDialog by remember { mutableStateOf(false) }
-    
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     if (showStartDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = uiState.startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -762,7 +763,7 @@ fun AddInvestmentSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
+        sheetGesturesEnabled = !imeVisible,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(

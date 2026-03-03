@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -133,13 +136,14 @@ fun DashboardScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (isRestoring || uiState is DashboardUiState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                when (val state = uiState) {
-                    is DashboardUiState.Loading -> {} // Already handled above
+            val renderState = when {
+                isRestoring -> DashboardUiState.Loading
+                else -> uiState
+            }
+                when (renderState) {
+                    is DashboardUiState.Loading ->  CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     is DashboardUiState.Error -> {
-                        Text(state.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
+                        Text(renderState.message, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
                     }
                 is DashboardUiState.NoSalarySet -> {
                     Column(
@@ -170,7 +174,7 @@ fun DashboardScreen(
                 }
                 is DashboardUiState.Success -> {
                     DashboardContent(
-                        state = state,
+                        state = renderState,
                         onTransactionClick = onNavigateToEdit,
                         onManageBudgetsClick = onManageBudgetsClick,
                         onFixedCostsClick = onNavigateToFixedExpenses,
@@ -178,7 +182,8 @@ fun DashboardScreen(
                     )
                 }
             }
-        }}
+
+        }
     }
 
     if (showExitSheet) {
@@ -470,10 +475,11 @@ private fun ExitConfirmationSheet(
     onConfirmExit: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        sheetGesturesEnabled = !imeVisible,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {

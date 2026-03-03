@@ -46,34 +46,16 @@ class CalculateSafeToSpendUseCase @Inject constructor(
             val totalMonthlyExpense = results[2] as Double
             val monthlySpent = results[3] as Double
             val todaySpent = results[4] as Double
-            @Suppress("UNCHECKED_CAST")
-            val budgets = results[5] as List<com.monetra.domain.model.CategoryBudget>
-            @Suppress("UNCHECKED_CAST")
-            val monthlySums = results[6] as Map<String, Double>
-            @Suppress("UNCHECKED_CAST")
-            val todaySums = results[7] as Map<String, Double>
+            val monthlyBaseline =
+                (prefs.monthlyIncome - prefs.monthlySavingsGoal - totalEmi - totalMonthlyExpense)
 
-            // Active Budget Guards (visual only - no longer deducted from baseline)
-            val budgetedCategories = budgets.filter { it.limit > 0 }.map { it.categoryName }.toSet()
-
-            // 1. Monthly Baseline (Total money available for flexible spending this month)
-            // Flexible spending = Income - Mandatory (EMI + Reserved Fixed Bills) - Savings Goal
-            // We use reservedAmount (remaining) to avoid double-deducting segments already paid.
-            val monthlyBaseline = (prefs.monthlyIncome - prefs.monthlySavingsGoal - totalEmi - totalMonthlyExpense)
-            
-            // 2. Total spent this month BEFORE today
             val spentBeforeToday = monthlySpent - todaySpent
-            
-            // 3. Remaining allowance for the rest of the month (including today)
+
             val remainingMonthAllowance = monthlyBaseline - spentBeforeToday
-            
-            // 4. Remaining days in the month (including today)
+
             val remainingDays = (daysInMonth - today.dayOfMonth + 1).coerceAtLeast(1)
-            
-            // 5. Daily limit (available flexible money divided by remaining days)
+
             val dailyLimit = remainingMonthAllowance / remainingDays
-            
-            // 6. Remaining for TODAY
             val remainingToday = dailyLimit - todaySpent
 
             SafeToSpend(
