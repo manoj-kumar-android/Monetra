@@ -4,12 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.repository.UserPreferenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,8 +32,8 @@ class MainViewModel @Inject constructor(
                 userPreferenceRepo.getUserPreferences(),
                 driveBackupManager.googleUserId
             ) { preferences, googleUserId ->
-                // User is a dashboard user if they completed onboarding/welcome AND have a valid google session
-                _isDashboardUser.value = preferences.isOnboardingCompleted && !googleUserId.isNullOrBlank()
+                // User is a dashboard user if they completed onboarding/welcome
+                _isDashboardUser.value = preferences.isOnboardingCompleted
                 if (_isDashboardUser.value) {
                     viewModelScope.launch {
                         syncUseCase()
