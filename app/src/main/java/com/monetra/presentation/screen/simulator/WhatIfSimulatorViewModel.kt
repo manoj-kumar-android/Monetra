@@ -6,8 +6,14 @@ import com.monetra.domain.model.SimulationParams
 import com.monetra.domain.model.SimulationResult
 import com.monetra.domain.usecase.intelligence.SimulateFinancialScenarioUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -26,6 +32,7 @@ class WhatIfSimulatorViewModel @Inject constructor(
         observeSimulation()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeSimulation() {
         _params.flatMapLatest { currentParams ->
             simulateUseCase(YearMonth.now(), currentParams)

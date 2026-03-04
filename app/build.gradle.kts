@@ -22,9 +22,17 @@ android {
         versionName           = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:\\Users\\HP\\OneDrive\\Desktop\\MONETRA")
+            storePassword = "/0H2Df0PMwbYONDlhw"
+            keyAlias = "monetrakey"
+            keyPassword = "/0H2Df0PMwbYONDlhw"
+        }
+    }
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

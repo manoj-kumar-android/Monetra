@@ -56,7 +56,7 @@ class SettingsViewModel @Inject constructor(
     private val driveBackupManager: DriveBackupManager,
     private val cloudBackupRepository: CloudBackupRepository,
     private val syncUseCase: com.monetra.domain.usecase.SyncUseCase,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+    @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())

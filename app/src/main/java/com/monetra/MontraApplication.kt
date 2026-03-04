@@ -1,28 +1,25 @@
 package com.monetra
 
 import android.app.Application
+import android.content.Intent
 import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import com.monetra.intelligence.notification.InsightWorker
-import com.monetra.data.worker.EmiReminderWorker
-import dagger.hilt.android.HiltAndroidApp
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.monetra.domain.repository.UserPreferenceRepository
+import androidx.work.Configuration
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.monetra.data.worker.EmiReminderWorker
 import com.monetra.presentation.screen.lock.LockActivity
-import android.content.Intent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @HiltAndroidApp
 class MontraApplication : Application(), Configuration.Provider, LifecycleEventObserver {
@@ -40,7 +37,6 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
         
         // Offload blocking WorkManager initialization to IO thread
         applicationScope.launch(Dispatchers.IO) {
-            scheduleFinancialInsights()
             scheduleEmiReminders()
             scheduleRefundableReminders()
             scheduleSync()
@@ -77,17 +73,6 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
             workRequest
         )
     }
-
-    private fun scheduleFinancialInsights() {
-        val workRequest = PeriodicWorkRequestBuilder<InsightWorker>(12, TimeUnit.HOURS)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "financial_insights",
-            ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
-    }
-
     private fun scheduleEmiReminders() {
         val workRequest = PeriodicWorkRequestBuilder<EmiReminderWorker>(1, TimeUnit.DAYS)
             .build()
