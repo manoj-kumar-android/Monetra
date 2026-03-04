@@ -76,4 +76,15 @@ interface DriveBackupManager {
      * Clears the current authentication session and local credentials.
      */
     suspend fun signOut()
+
+    /**
+     * Check if the required Drive permissions are granted.
+     */
+    suspend fun checkDrivePermission(): Boolean
+
+    /**
+     * Get an intent to request Drive permissions if needed.
+     * Returns null if no permission resolution is required.
+     */
+    fun getDrivePermissionIntent(): Flow<android.content.Intent?>
 }

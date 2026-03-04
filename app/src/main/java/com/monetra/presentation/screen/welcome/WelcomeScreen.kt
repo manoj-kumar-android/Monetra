@@ -1,9 +1,28 @@
 package com.monetra.presentation.screen.welcome
 
 import android.app.Activity
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,8 +32,24 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,7 +83,7 @@ fun WelcomeScreen(
     var showPasswordDialog by remember { mutableStateOf(false) }
     var pendingUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
-    val restoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+    androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             uri?.let { 
@@ -57,6 +92,21 @@ fun WelcomeScreen(
             }
         }
     )
+
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            viewModel.onPermissionResult(result.resultCode == Activity.RESULT_OK)
+        }
+    )
+
+    val recoveryIntent by viewModel.recoveryIntent.collectAsStateWithLifecycle(initialValue = null)
+
+    LaunchedEffect(recoveryIntent) {
+        recoveryIntent?.let {
+            permissionLauncher.launch(it)
+        }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "logoPulse")
     val logoScale by infiniteTransition.animateFloat(
@@ -257,6 +307,20 @@ fun WelcomeScreen(
                         }
                     }
                     
+                    OutlinedButton(
+                        onClick   = { viewModel.onSkipForNow() },
+                        modifier  = Modifier.fillMaxWidth().height(56.dp),
+                        shape     = RoundedCornerShape(16.dp),
+                        enabled   = !uiState.isRestoring && !uiState.isAuthenticating,
+                        border    = androidx.compose.foundation.BorderStroke(1.dp, Brand.copy(alpha = 0.4f)),
+                        colors    = ButtonDefaults.outlinedButtonColors(contentColor = Brand)
+                    ) {
+                        Text(
+                            text  = "Skip for now",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+
                     Text(
                         text = "Secure automatic backup to Google Drive",
                         style = MaterialTheme.typography.bodySmall,

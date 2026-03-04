@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "013d5a5eb1303c11e33706cadea68c54",
+    "identityHash": "5cbc5b40ee6e679d6317ad5855fc8403",
     "entities": [
       {
         "tableName": "transactions",
@@ -116,7 +116,7 @@
       },
       {
         "tableName": "user_preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `remoteId` TEXT NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `currentSavings` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, `projectionRate` REAL NOT NULL, `projectionYears` INTEGER NOT NULL, `version` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deviceId` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `remoteId` TEXT NOT NULL, `ownerName` TEXT NOT NULL, `monthlyIncome` REAL NOT NULL, `monthlySavingsGoal` REAL NOT NULL, `currentSavings` REAL NOT NULL, `isOnboardingCompleted` INTEGER NOT NULL, `projectionRate` REAL NOT NULL, `projectionYears` INTEGER NOT NULL, `isBackupEnabled` INTEGER NOT NULL, `version` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deviceId` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -169,6 +169,12 @@
           {
             "fieldPath": "projectionYears",
             "columnName": "projectionYears",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isBackupEnabled",
+            "columnName": "isBackupEnabled",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -1050,7 +1056,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '013d5a5eb1303c11e33706cadea68c54')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5cbc5b40ee6e679d6317ad5855fc8403')"
     ]
   }
 }

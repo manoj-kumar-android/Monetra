@@ -11,4 +11,7 @@ interface SyncRepository {
     fun requestSync()
     suspend fun markDeleted(remoteId: String, entityType: String)
     suspend fun clearTombstone(remoteId: String)
+
+    fun getLastSyncedEmail(): Flow<String?>
+    suspend fun setLastSyncedEmail(email: String?)
 }

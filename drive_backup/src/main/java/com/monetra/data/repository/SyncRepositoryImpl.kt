@@ -5,18 +5,18 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.monetra.domain.repository.SyncRepository
 import com.monetra.data.local.MonetraDatabase
 import com.monetra.data.local.entity.DeletedEntity
+import com.monetra.domain.repository.SyncRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,13 +33,14 @@ class SyncRepositoryImpl @Inject constructor(
     private val isDirtyKey = booleanPreferencesKey("is_dirty")
     private val lastSyncedAtKey = longPreferencesKey("last_synced_at")
     private val deviceIdKey = androidx.datastore.preferences.core.stringPreferencesKey("device_id")
+    private val lastSyncedEmailKey = androidx.datastore.preferences.core.stringPreferencesKey("last_synced_email")
     
     private val scope = CoroutineScope(Dispatchers.Default)
     private val syncRequests = MutableSharedFlow<Unit>(replay = 0)
 
     init {
         scope.launch {
-            syncRequests.debounce(15000).collect {
+            syncRequests.debounce(600).collect {
                 com.monetra.data.sync.SyncWorker.startSync(context)
             }
         }
@@ -86,5 +87,16 @@ class SyncRepositoryImpl @Inject constructor(
 
     override suspend fun clearTombstone(remoteId: String) {
         db.deletedEntityDao.deleteByRemoteIds(listOf(remoteId))
+    }
+
+    override fun getLastSyncedEmail(): Flow<String?> = context.syncDataStore.data.map {
+        it[lastSyncedEmailKey]
+    }
+
+    override suspend fun setLastSyncedEmail(email: String?) {
+        context.syncDataStore.edit { prefs ->
+            if (email == null) prefs.remove(lastSyncedEmailKey)
+            else prefs[lastSyncedEmailKey] = email
+        }
     }
 }

@@ -2,15 +2,22 @@ package com.monetra.data.sync
 
 import com.monetra.data.backup.model.BackupData
 import com.monetra.data.local.MonetraDatabase
+import com.monetra.data.local.entity.SyncableEntity
 import com.monetra.domain.model.SyncState
 import com.monetra.domain.repository.SyncRepository
 import com.monetra.drivebackup.api.DriveBackupManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.monetra.data.local.entity.*
+import kotlin.coroutines.cancellation.CancellationException
 
 @Singleton
 class SyncManager @Inject constructor(
@@ -20,14 +27,52 @@ class SyncManager @Inject constructor(
     private val driveManager: DriveBackupManager,
     private val db: MonetraDatabase
 ) {
-    private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
-    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val _internalSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
+    
+    val syncState: StateFlow<SyncState> = combine(
+        _internalSyncState,
+        syncRepository.isDirty(),
+        db.userPreferencesDao.getUserPreferences()
+    ) { internalState, isDirty, prefs ->
+        val isBackupEnabled = prefs?.isBackupEnabled == true
+        
+        when {
+            !isBackupEnabled -> SyncState.Idle
+            internalState is SyncState.Syncing -> internalState
+            internalState is SyncState.Error -> internalState
+            internalState is SyncState.AccountMismatch -> internalState
+            isDirty -> SyncState.Pending
+            else -> SyncState.Synced
+        }
+    }.stateIn(
+        scope = scope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SyncState.Idle
+    )
 
     suspend fun runSync() {
-        if (_syncState.value is SyncState.Syncing) return
-        _syncState.value = SyncState.Syncing("Syncing...", 1, 10)
+        if (_internalSyncState.value is SyncState.Syncing) return
+        _internalSyncState.value = SyncState.Syncing("Syncing...", 1, 10)
 
         try {
+            // 0. Check if backup is enabled
+            // Note: We use the DAO directly here for verification, although syncState flow already reacts to it.
+            val prefs = db.userPreferencesDao.getAllUserPreferences().firstOrNull()
+            if (prefs?.isBackupEnabled != true) {
+                _internalSyncState.value = SyncState.Idle
+                return
+            }
+
+            // 0. Account Mismatch Check
+            val currentEmail = driveManager.accountName.first()
+            val lastSyncedEmail = syncRepository.getLastSyncedEmail().first()
+
+            if (lastSyncedEmail != null && currentEmail != null && lastSyncedEmail != currentEmail) {
+                _internalSyncState.value = SyncState.AccountMismatch(currentEmail, lastSyncedEmail)
+                return
+            }
+
             // 1. Fetch Remote State
             val fetchResult = driveDataSource.fetchRemoteData()
             if (fetchResult.isFailure) {
@@ -36,16 +81,14 @@ class SyncManager @Inject constructor(
             val remoteData = fetchResult.getOrNull() ?: BackupData()
 
             // 2. Merge Remote into Local (Filtering with current local tombstones)
-            // This brings in changes from other devices and respects local pending deletions.
             localDataSource.mergeRemoteData(remoteData)
 
             // 3. Collect local dirty records AFTER merging remote changes
-            // (Note: some previously dirty items might have been resolved by remote newer versions)
             val dirtyRecords = localDataSource.getDirtyRecords()
 
             // 4. If there are local changes (edits or deletes), merge and push to Drive
             if (!isEmpty(dirtyRecords)) {
-                _syncState.value = SyncState.Syncing("Pushing changes...", 5, 10)
+                _internalSyncState.value = SyncState.Syncing("Pushing changes...", 5, 10)
                 val mergedDataForDrive = mergeForPush(remoteData, dirtyRecords)
                 
                 val commitResult = driveDataSource.commitRemoteData(mergedDataForDrive)
@@ -59,11 +102,18 @@ class SyncManager @Inject constructor(
                 syncRepository.setDirty(false)
             }
 
+            if (currentEmail != null) {
+                syncRepository.setLastSyncedEmail(currentEmail)
+            }
             syncRepository.setLastSyncedAt(System.currentTimeMillis())
-            _syncState.value = SyncState.Success
+            _internalSyncState.value = SyncState.Idle // Success reverts to Idle, and combine will show Synced
         } catch (e: Exception) {
+            if (e is CancellationException) {
+                _internalSyncState.value = SyncState.Idle
+                throw e
+            }
             handleError(e)
-            _syncState.value = SyncState.Error(e.message ?: "Unknown error")
+            _internalSyncState.value = SyncState.Error(e.message ?: "Unknown error")
         }
     }
 

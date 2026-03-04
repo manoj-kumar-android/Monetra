@@ -2,6 +2,7 @@ package com.monetra.drivebackup.internal
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -18,15 +19,19 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.monetra.drivebackup.api.DriveBackupManager
 import com.monetra.drivebackup.internal.drive.DriveService
 import com.monetra.drivebackup.internal.security.EncryptionManager
 import com.monetra.drivebackup.internal.worker.BackupWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,13 +46,16 @@ class DriveBackupManagerImpl @Inject constructor(
 ) : DriveBackupManager {
 
     private val credentialManager = CredentialManager.create(context)
-    private val googleUserIdKey = stringPreferencesKey("google_user_id")
     private val accountNameKey = stringPreferencesKey("account_name")
+    private val googleUserIdKey = stringPreferencesKey("google_user_id")
     private val lastBackupTimeKey = longPreferencesKey("last_backup_time")
 
     override val lastBackupTime: Flow<Long?> = context.dataStore.data.map { it[lastBackupTimeKey] }
     override val accountName: Flow<String?> = context.dataStore.data.map { it[accountNameKey] }
     override val googleUserId: Flow<String?> = context.dataStore.data.map { it[googleUserIdKey] }
+
+    private val _recoveryIntent = MutableStateFlow<Intent?>(null)
+    override fun getDrivePermissionIntent(): Flow<Intent?> = _recoveryIntent.asStateFlow()
 
     override suspend fun authenticate(activity: Activity): Boolean {
         val googleIdOption = GetGoogleIdOption.Builder()
@@ -96,8 +104,8 @@ class DriveBackupManagerImpl @Inject constructor(
 
                 // Persist for background sync
                 context.dataStore.edit { prefs ->
-                    prefs[googleUserIdKey] = email?:""
-                    prefs[accountNameKey] = accountName
+                    prefs[googleUserIdKey] = email ?: ""
+                    prefs[accountNameKey] = accountName ?: ""
                 }
 
                 android.util.Log.d("DriveBackup", "Saved to DataStore, initializing service with '$accountName'...")
@@ -117,8 +125,8 @@ class DriveBackupManagerImpl @Inject constructor(
 
         kotlinx.coroutines.MainScope().launch {
             val prefs = context.dataStore.data.first()
-            val googleUserId = prefs[googleUserIdKey]
-            val accountName = prefs[accountNameKey]
+            val googleUserId = prefs[googleUserIdKey] as? String
+            val accountName = prefs[accountNameKey] as? String
 
             if (googleUserId.isNullOrBlank() || accountName.isNullOrBlank()) return@launch
 
@@ -143,8 +151,8 @@ class DriveBackupManagerImpl @Inject constructor(
 
     override suspend fun performManualBackup(databaseFile: File): Result<Unit> {
         val prefs = context.dataStore.data.first()
-        val googleUserId = prefs[googleUserIdKey]
-        val accountName = prefs[accountNameKey]
+        val googleUserId = prefs[googleUserIdKey] as? String
+        val accountName = prefs[accountNameKey] as? String
             
         android.util.Log.d("DriveBackup", "performManualBackup: START. Account='$accountName', DB exists=${databaseFile.exists()}")
 
@@ -163,7 +171,7 @@ class DriveBackupManagerImpl @Inject constructor(
         
         return try {
             android.util.Log.d("DriveBackup", "performManualBackup: Initializing DriveService for $accountName")
-            driveService.initialize(accountName)
+            driveService.initialize(accountName ?: "")
             
             android.util.Log.d("DriveBackup", "performManualBackup: Encrypting database...")
             encryptionManager.encrypt(googleUserId, databaseFile, encryptedFile)
@@ -185,16 +193,16 @@ class DriveBackupManagerImpl @Inject constructor(
         }
     }
 
-    override suspend fun uploadRawFile(file: File): Result<Unit> {
+    override suspend fun uploadRawFile(file: File): Result<Unit> = withContext(kotlinx.coroutines.Dispatchers.IO) {
         val prefs = context.dataStore.data.first()
-        val accountName = prefs[accountNameKey]
+        val accountName = prefs[accountNameKey] as? String
 
         if (accountName.isNullOrBlank()) {
-            return Result.failure(Exception("Not authenticated"))
+            return@withContext Result.failure(Exception("Not authenticated"))
         }
 
-        return try {
-            driveService.initialize(accountName)
+        return@withContext try {
+            driveService.initialize(accountName ?: "")
             driveService.uploadBackup(file)
             context.dataStore.edit { it[lastBackupTimeKey] = System.currentTimeMillis() }
             Result.success(Unit)
@@ -203,16 +211,16 @@ class DriveBackupManagerImpl @Inject constructor(
         }
     }
 
-    override suspend fun downloadRawFile(outputFile: File): Result<Boolean> {
+    override suspend fun downloadRawFile(outputFile: File): Result<Boolean> = withContext(kotlinx.coroutines.Dispatchers.IO) {
         val prefs = context.dataStore.data.first()
-        val accountName = prefs[accountNameKey]
+        val accountName = prefs[accountNameKey] as? String
 
         if (accountName.isNullOrBlank()) {
-            return Result.failure(Exception("Not authenticated"))
+            return@withContext Result.failure(Exception("Not authenticated"))
         }
 
-        return try {
-            driveService.initialize(accountName)
+        return@withContext try {
+            driveService.initialize(accountName ?: "")
             val success = driveService.downloadBackup(outputFile)
             Result.success(success)
         } catch (e: Exception) {
@@ -265,7 +273,7 @@ class DriveBackupManagerImpl @Inject constructor(
     }
 
     override suspend fun isBackupAvailable(): Boolean {
-        val accountName = context.dataStore.data.map { it[accountNameKey] }.first()
+        val accountName = context.dataStore.data.map { it[accountNameKey] }.first() as? String
         if (accountName.isNullOrBlank()) return false
         
         return try {
@@ -293,5 +301,21 @@ class DriveBackupManagerImpl @Inject constructor(
             prefs.remove(lastBackupTimeKey)
         }
         driveService.clear()
+        _recoveryIntent.value = null
+    }
+
+    override suspend fun checkDrivePermission(): Boolean {
+        val email = accountName.first() ?: return false
+        try {
+            driveService.initialize(email)
+            driveService.checkPermission()
+            return true
+        } catch (e: UserRecoverableAuthIOException) {
+            _recoveryIntent.value = e.intent
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
     }
 }

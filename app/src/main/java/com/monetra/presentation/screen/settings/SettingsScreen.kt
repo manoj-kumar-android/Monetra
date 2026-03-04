@@ -1,6 +1,8 @@
 package com.monetra.presentation.screen.settings
 
+import android.app.Activity
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,8 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,11 +34,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -43,14 +47,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,6 +69,8 @@ import java.util.Locale
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCategories: () -> Unit,
+    onNavigateToHelp: (String) -> Unit,
+    onNavigateToSimulator: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -97,20 +108,23 @@ fun SettingsScreen(
         }
     }
 
-    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-    ) {
-        viewModel.onManualBackupClick()
-    }
+    val activity = LocalActivity.current
 
-    LaunchedEffect(uiState.recoveryIntent) {
-        uiState.recoveryIntent?.let {
-            launcher.launch(it)
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.onBackupToggle(true, activity as Activity)
+        } else {
+            viewModel.onPermissionDenied()
         }
     }
 
-
-    val activity = LocalActivity.current
+    LaunchedEffect(viewModel.recoveryIntent) {
+        viewModel.recoveryIntent.collectLatest { intent ->
+            intent?.let { permissionLauncher.launch(it) }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -219,23 +233,22 @@ fun SettingsScreen(
                 }
             }
             
-            Text(
-                text = stringResource(R.string.preferences),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             // ── Cloud Backup Section ──────────────────────────────────────────
             Text(
-                text = "Cloud Backup",
+                text = "Backup & Sync",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
+            
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, 
+                    if (uiState.isBackupEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) 
+                    else MaterialTheme.colorScheme.outlineVariant
+                )
             ) {
                 Column(modifier = Modifier.padding(Spacing.lg)) {
                     Row(
@@ -243,82 +256,91 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        if (uiState.isBackupEnabled) MaterialTheme.colorScheme.primaryContainer
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when (uiState.syncStatus) {
+                                        is com.monetra.domain.model.SyncState.Synced -> Icons.Default.CloudDone
+                                        is com.monetra.domain.model.SyncState.Pending -> Icons.Default.CloudUpload
+                                        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudDone // Keep it clean during sync or show done
+                                        else -> Icons.Default.CloudUpload
+                                    },
+                                    contentDescription = null,
+                                    tint = when (uiState.syncStatus) {
+                                        is com.monetra.domain.model.SyncState.Synced -> Color(0xFF34C759)
+                                        is com.monetra.domain.model.SyncState.Pending -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        is com.monetra.domain.model.SyncState.Syncing -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(Spacing.md))
+                            Column {
+                                Text(
+                                    "Automatic Backup",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = uiState.accountName ?: "Secure your data on Drive",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Switch(
+                            checked = uiState.isBackupEnabled,
+                            onCheckedChange = { viewModel.onBackupToggle(it, activity as Activity) },
+                            enabled = !uiState.isLoading
+                        )
+                    }
+
+                    if (uiState.isBackupEnabled) {
+                        Spacer(modifier = Modifier.height(Spacing.lg))
+                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
+                            drawRect(color = Color.LightGray.copy(alpha = 0.3f))
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = "Google Drive Sync",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
+                                "Last synced:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = if (uiState.lastBackupTime != null) {
                                     val date = Date(uiState.lastBackupTime!!)
-                                    val format = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-                                    "Last backup: ${format.format(date)}"
-                                } else {
-                                    "No backup yet"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    val format = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+                                    format.format(date)
+                                } else "Never",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        
-                        if (uiState.isSyncing || uiState.isAuthenticating) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                        } else {
-                            if (uiState.accountName != null) {
-                                if (uiState.isBackupAvailable) {
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        OutlinedButton(
-                                            onClick = viewModel::onManualBackupClick,
-                                            shape = RoundedCornerShape(12.dp),
-                                            enabled = true
-                                        ) {
-                                            Text("Backup Now")
-                                        }
-                                        Spacer(modifier = Modifier.height(Spacing.xs))
-                                        Button(
-                                            onClick = viewModel::onRestoreClick,
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ),
-                                            enabled = true
-                                        ) {
-                                            Text("Restore Data")
-                                        }
-                                    }
-                                } else {
-                                    OutlinedButton(
-                                        onClick = viewModel::onManualBackupClick,
-                                        shape = RoundedCornerShape(12.dp),
-                                        enabled = true
-                                    ) {
-                                        Text("Backup Now")
-                                    }
-                                }
-                            } else {
-                                Button(
-                                    onClick = {
-                                        activity?.let { viewModel.onAuthenticateClick(it) }
-                                    },
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text("Sign in with Google")
-                                }
-                            }
-                        }
                     }
-                    
-                    Spacer(modifier = Modifier.height(Spacing.md))
-                    
-                    Text(
-                        text = "Your data is automatically backed up when you add or edit transactions. Use \"Backup Now\" for manual synchronization.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
                 }
             }
+
+            Text(
+                text = stringResource(R.string.preferences),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToCategories),
@@ -343,7 +365,121 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Support & Intelligence ──────────────────────────────────────
+            Text(
+                text = "Support & Intelligence",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            SimulatorPremiumCard(onClick = onNavigateToSimulator)
+
+            SupportCard(onClick = { onNavigateToHelp("DASHBOARD") })
+
+            Spacer(modifier = Modifier.height(Spacing.xxl))
         }
     }
 }
+}
+
+
+@Composable
+private fun SimulatorPremiumCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF6366F1), // Indigo
+                            Color(0xFFA855F7)  // Purple
+                        )
+                    )
+                )
+                .padding(Spacing.lg)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.White.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🔮", fontSize = 28.sp)
+                }
+                Spacer(modifier = Modifier.width(Spacing.md))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "What If Simulator",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.White
+                    )
+                    Text(
+                        "Visualize your financial future",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SupportCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🤔", fontSize = 22.sp)
+            }
+            Spacer(modifier = Modifier.width(Spacing.md))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Help & Support",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Documentation and guides",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }

@@ -21,7 +21,14 @@ class FullBackupWorker @AssistedInject constructor(
             if (result.isSuccess) {
                 Result.success()
             } else {
-                if (runAttemptCount < 3) Result.retry() else Result.failure()
+                val errorMsg = result.exceptionOrNull()?.message ?: ""
+                if (errorMsg.contains("disabled")) {
+                    Result.success() // Don't retry if manually disabled
+                } else if (runAttemptCount < 3) {
+                    Result.retry()
+                } else {
+                    Result.failure()
+                }
             }
         } catch (e: Exception) {
             if (runAttemptCount < 3) Result.retry() else Result.failure()

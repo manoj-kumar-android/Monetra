@@ -2,10 +2,20 @@ package com.monetra.data.sync
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
-import androidx.work.*
-import com.monetra.data.sync.SyncManager
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
@@ -19,6 +29,7 @@ class SyncWorker @AssistedInject constructor(
             syncManager.runSync()
             Result.success()
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             if (runAttemptCount < 3) {
                 Result.retry()
             } else {

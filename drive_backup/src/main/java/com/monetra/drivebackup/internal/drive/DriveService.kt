@@ -12,7 +12,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
-import java.util.Collections
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -144,6 +143,17 @@ class DriveService @Inject constructor(
             service.files().get(fileId).executeMediaAndDownloadTo(output)
         }
         true
+    }
+
+    /**
+     * Checks if the app has permission to access Drive AppData.
+     * Throws UserRecoverableAuthIOException if resolution is required.
+     */
+    suspend fun checkPermission() = withContext(Dispatchers.IO) {
+        val service = driveService ?: throw IllegalStateException("Drive service not initialized")
+        // A simple request to list files in AppData to verify permissions
+        service.files().list().setSpaces(appDataFolder).setPageSize(1).execute()
+        Unit
     }
 
     @Synchronized

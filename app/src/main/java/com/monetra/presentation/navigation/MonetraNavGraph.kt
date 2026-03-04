@@ -200,7 +200,9 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         SettingsScreen(
                             onNavigateBack = { backStack.safePop() },
-                            onNavigateToCategories = { backStack.navigateTo(Route.Budgets) }
+                            onNavigateToCategories = { backStack.navigateTo(Route.Budgets) },
+                            onNavigateToHelp = { screenType -> backStack.navigateTo(Route.Help(screenType)) },
+                            onNavigateToSimulator = { backStack.navigateTo(Route.WhatIfSimulator) }
                         )
                     }
                 }

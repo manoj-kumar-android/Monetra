@@ -19,9 +19,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -34,7 +35,8 @@ class CloudBackupRepositoryImpl @Inject constructor(
     private val db: MonetraDatabase,
     private val driveBackupManager: DriveBackupManager,
     private val encryptionManager: EncryptionManager,
-    private val syncRepository: SyncRepository
+    private val syncRepository: SyncRepository,
+    private val syncManager: com.monetra.data.sync.SyncManager
 ) : CloudBackupRepository {
 
     private val json = Json { 
@@ -48,11 +50,21 @@ class CloudBackupRepositoryImpl @Inject constructor(
     private val _isRestoring = MutableStateFlow(false)
     override val isRestoring: Flow<Boolean> = _isRestoring.asStateFlow()
 
+    override val syncState = syncManager.syncState
+    override val accountName = driveBackupManager.accountName
+    override val lastBackupTime = driveBackupManager.lastBackupTime
+    override val recoveryIntent = driveBackupManager.getDrivePermissionIntent()
+
     override suspend fun runBackup(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val googleUserId = driveBackupManager.googleUserId.first()
             if (googleUserId.isNullOrBlank()) {
                 return@withContext Result.failure(Exception("Not authenticated with Google"))
+            }
+
+            val prefs = db.userPreferencesDao.getAllUserPreferences().firstOrNull()
+            if (prefs?.isBackupEnabled != true) {
+                return@withContext Result.failure(Exception("Backup is disabled in settings"))
             }
 
             val backupData = BackupData(
@@ -89,6 +101,16 @@ class CloudBackupRepositoryImpl @Inject constructor(
             result
         } catch (e: Exception) {
             android.util.Log.e("CloudBackup", "Backup failed", e)
+            handleError(e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun runSync(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            syncManager.runSync()
+            Result.success(Unit)
+        } catch (e: Exception) {
             handleError(e)
             Result.failure(e)
         }
@@ -175,18 +197,24 @@ class CloudBackupRepositoryImpl @Inject constructor(
             db.refundableDao.deleteAllRefundables()
             db.userPreferencesDao.deleteAllUserPreferences()
 
-            // Restore from backup
-            db.transactionDao.insertAllTransactions(backupData.transactions)
-            db.savingDao.insertAllSavings(backupData.savings)
-            db.goalDao.insertAllGoals(backupData.goals)
-            db.monthlyReportDao.insertAllMonthlyReports(backupData.monthlyReports)
-            db.categoryBudgetDao.insertAllCategoryBudgets(backupData.categoryBudgets)
-            db.investmentDao.insertAllInvestments(backupData.investments)
-            db.loanDao.insertAllLoans(backupData.loans)
-            db.monthlyExpenseDao.insertAllMonthlyExpenses(backupData.monthlyExpenses)
-            db.monthlyExpenseDao.insertAllBillInstances(backupData.billInstances)
-            db.refundableDao.insertAllRefundables(backupData.refundables)
-            db.userPreferencesDao.insertAllUserPreferences(backupData.userPreferences)
+            // Restore from backup (Ensuring all are marked as synced)
+            db.transactionDao.insertAllTransactions(backupData.transactions.map { it.copy(isSynced = true) })
+            db.savingDao.insertAllSavings(backupData.savings.map { it.copy(isSynced = true) })
+            db.goalDao.insertAllGoals(backupData.goals.map { it.copy(isSynced = true) })
+            db.monthlyReportDao.insertAllMonthlyReports(backupData.monthlyReports.map { it.copy(isSynced = true) })
+            db.categoryBudgetDao.insertAllCategoryBudgets(backupData.categoryBudgets.map { it.copy(isSynced = true) })
+            db.investmentDao.insertAllInvestments(backupData.investments.map { it.copy(isSynced = true) })
+            db.loanDao.insertAllLoans(backupData.loans.map { it.copy(isSynced = true) })
+            db.monthlyExpenseDao.insertAllMonthlyExpenses(backupData.monthlyExpenses.map { it.copy(isSynced = true) })
+            db.monthlyExpenseDao.insertAllBillInstances(backupData.billInstances.map { it.copy(isSynced = true) })
+            db.refundableDao.insertAllRefundables(backupData.refundables.map { it.copy(isSynced = true) })
+            
+            val prefs = if (backupData.userPreferences.isNotEmpty()) {
+                backupData.userPreferences.first().copy(id = 0, isSynced = true, isBackupEnabled = true)
+            } else {
+                com.monetra.data.local.entity.UserPreferencesEntity(id = 0, isSynced = true, isBackupEnabled = true)
+            }
+            db.userPreferencesDao.upsertUserPreferences(prefs)
         }
     }
 
@@ -195,18 +223,32 @@ class CloudBackupRepositoryImpl @Inject constructor(
     }
 
     override fun scheduleBackup() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        // We use a CoroutineScope to check the database since scheduleBackup is not suspend
+        kotlinx.coroutines.MainScope().launch(Dispatchers.IO) {
+            val prefs = db.userPreferencesDao.getAllUserPreferences().firstOrNull()
+            if (prefs?.isBackupEnabled == true) {
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
 
-        val workRequest = OneTimeWorkRequestBuilder<FullBackupWorker>()
-            .setConstraints(constraints)
-            .build()
+                val workRequest = OneTimeWorkRequestBuilder<FullBackupWorker>()
+                    .setConstraints(constraints)
+                    .build()
 
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "full_drive_backup",
-            ExistingWorkPolicy.REPLACE,
-            workRequest
-        )
+                WorkManager.getInstance(context).enqueueUniqueWork(
+                    "full_drive_backup",
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest
+                )
+            }
+        }
+    }
+
+    override suspend fun checkDrivePermission(): Boolean {
+        return driveBackupManager.checkDrivePermission()
+    }
+
+    override suspend fun signOut() {
+        driveBackupManager.signOut()
     }
 }

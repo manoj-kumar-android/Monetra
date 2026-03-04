@@ -3,24 +3,40 @@ package com.monetra.presentation.screen.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.Transaction
+import com.monetra.domain.repository.LoanRepository
+import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.UserPreferenceRepository
-import com.monetra.domain.usecase.intelligence.*
+import com.monetra.domain.usecase.intelligence.CalculateBurnRateUseCase
+import com.monetra.domain.usecase.intelligence.CalculateSafeToSpendUseCase
+import com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase
+import com.monetra.domain.usecase.intelligence.GetCategoryBudgetsUseCase
+import com.monetra.domain.usecase.intelligence.PrepareMonthlyBillsUseCase
 import com.monetra.domain.usecase.transaction.GetMonthlySummaryUseCase
 import com.monetra.domain.usecase.transaction.GetTransactionsUseCase
 import com.monetra.domain.usecase.transaction.GetWeeklySummaryUseCase
-import com.monetra.domain.repository.MonthlyExpenseRepository
-import com.monetra.domain.repository.LoanRepository
-import com.monetra.presentation.screen.transactions.*
+import com.monetra.presentation.screen.transactions.CategoryBudgetUiModel
+import com.monetra.presentation.screen.transactions.IntelligenceUiModel
+import com.monetra.presentation.screen.transactions.RecurringExpenseUiModel
+import com.monetra.presentation.screen.transactions.SummaryUiModel
+import com.monetra.presentation.screen.transactions.TransactionUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -57,12 +73,23 @@ class DashboardViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             observeBackupEvents()
+            observeSyncState()
             // Ensure bill instances for the current month exist before observing data
             prepareMonthlyBills(selectedMonth)
             observeDashboardData()
             
             // Attempt initial restore in background
             cloudBackupRepository.runRestore()
+        }
+    }
+
+    private fun observeSyncState() {
+        viewModelScope.launch {
+            cloudBackupRepository.syncState.collect { state ->
+                if (state is com.monetra.domain.model.SyncState.AccountMismatch) {
+                    _events.emit(DashboardEvent.ShowAccountMismatch(state.currentEmail, state.lastSyncedEmail))
+                }
+            }
         }
     }
 
@@ -88,7 +115,10 @@ class DashboardViewModel @Inject constructor(
                 getCategoryBudgets(selectedMonth),
                 getTransactions(selectedMonth),
                 monthlyExpenseRepository.getTotalReservedAmountForMonth(selectedMonth),
-                loanRepository.getTotalMonthlyEmi()
+                loanRepository.getTotalMonthlyEmi(),
+                cloudBackupRepository.syncState,
+                cloudBackupRepository.accountName,
+                cloudBackupRepository.lastBackupTime
             ) { results ->
                 val summary = results[0] as com.monetra.domain.model.MonthlySummary
                 val weekly = results[1] as com.monetra.domain.model.MonthlySummary
@@ -97,9 +127,12 @@ class DashboardViewModel @Inject constructor(
                 val pref = results[4] as com.monetra.domain.model.UserPreferences
                 val rec = results[5] as List<com.monetra.domain.model.RecurringExpense>
                 val budgets = results[6] as List<com.monetra.domain.model.CategoryBudget>
-                val txs = results[7] as List<com.monetra.domain.model.Transaction>
+                val txs = results[7] as List<Transaction>
                 val currentReserved = results[8] as Double
                 val totalEmi = results[9] as Double
+                val syncState = results[10] as com.monetra.domain.model.SyncState
+                val accountName = results[11] as String?
+                val lastBackupTime = results[12] as Long?
 
                 // Guard: if no income set, signal user to complete setup
                 if (pref.monthlyIncome <= 0.0) {
@@ -139,7 +172,11 @@ class DashboardViewModel @Inject constructor(
                     recurringItems = rec.map { it.toUiModel() },
                     recentTransactions = txs
                         .take(3)
-                        .map { it.toUiItem() }
+                        .map { it.toUiItem() },
+                    syncStatus = syncState,
+                    isBackupEnabled = pref.isBackupEnabled,
+                    accountName = accountName,
+                    lastBackupTime = lastBackupTime
                 )
             }
             .flowOn(Dispatchers.Default)
@@ -222,11 +259,26 @@ class DashboardViewModel @Inject constructor(
         nextDate = nextExpectedDate.format(dateFormatter),
         isStabilityHigh = isStabilityHigh
     )
+
+    fun onSyncClick() {
+        viewModelScope.launch {
+            val email = cloudBackupRepository.accountName.first()
+            if (email == null) {
+                _events.emit(DashboardEvent.NavigateToWelcome)
+                return@launch
+            }
+
+            val hasPermission = cloudBackupRepository.checkDrivePermission()
+            if (hasPermission) {
+                cloudBackupRepository.runSync()
+            } else {
+                // recoveryIntent is already being observed by the UI
+            }
+        }
+    }
+
+    val recoveryIntent = cloudBackupRepository.recoveryIntent
 }
-
-@Serializable
-data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
-
 sealed interface DashboardUiState {
     data object Loading : DashboardUiState
     data object NoSalarySet : DashboardUiState
@@ -248,11 +300,16 @@ sealed interface DashboardUiState {
         val budgets: List<CategoryBudgetUiModel>,
         val recurringTotal: String,
         val recurringItems: List<RecurringExpenseUiModel>,
-        val recentTransactions: List<TransactionUiItem>
+        val recentTransactions: List<TransactionUiItem>,
+        val syncStatus: com.monetra.domain.model.SyncState = com.monetra.domain.model.SyncState.Idle,
+        val isBackupEnabled: Boolean = false,
+        val accountName: String? = null,
+        val lastBackupTime: Long? = null
     ) : DashboardUiState
     data class Error(val message: String) : DashboardUiState
 }
 
 sealed interface DashboardEvent {
     data object NavigateToWelcome : DashboardEvent
+    data class ShowAccountMismatch(val currentEmail: String, val lastSyncedEmail: String) : DashboardEvent
 }

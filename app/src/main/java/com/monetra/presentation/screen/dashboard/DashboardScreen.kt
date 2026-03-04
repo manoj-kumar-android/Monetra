@@ -1,5 +1,6 @@
 package com.monetra.presentation.screen.dashboard
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.animateFloat
@@ -26,8 +27,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SyncProblem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,7 +73,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
-import com.monetra.presentation.components.HelpIconButton
 import com.monetra.presentation.screen.dashboard.components.FinancialWaterfall
 import com.monetra.presentation.screen.transactions.components.BudgetSection
 import com.monetra.presentation.screen.transactions.components.TransactionRow
@@ -87,21 +92,38 @@ fun DashboardScreen(
     onNavigateToWelcome: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    val activity = LocalActivity.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRestoring by viewModel.isRestoring.collectAsStateWithLifecycle()
-    val events by viewModel.events.collectAsStateWithLifecycle(initialValue = null)
     var showExitSheet by remember { mutableStateOf(false) }
 
-    androidx.compose.runtime.LaunchedEffect(viewModel.events) {
-        viewModel.events.collect { event ->
-            if (event is DashboardEvent.NavigateToWelcome) {
-                onNavigateToWelcome()
+    var showMismatchDialog by remember { mutableStateOf<DashboardEvent.ShowAccountMismatch?>(null) }
+
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                viewModel.onSyncClick()
             }
+        }
+    )
+
+    val recoveryIntent by viewModel.recoveryIntent.collectAsStateWithLifecycle(initialValue = null)
+
+    androidx.compose.runtime.LaunchedEffect(recoveryIntent) {
+        recoveryIntent?.let {
+            permissionLauncher.launch(it)
         }
     }
 
-    val activity = LocalActivity.current
-
+    androidx.compose.runtime.LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is DashboardEvent.NavigateToWelcome -> onNavigateToWelcome()
+                is DashboardEvent.ShowAccountMismatch -> showMismatchDialog = event
+            }
+        }
+    }
     BackHandler(enabled = !showExitSheet) {
         showExitSheet = true
     }
@@ -124,10 +146,15 @@ fun DashboardScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
-                    IconButton(onClick = onNavigateToSimulator) {
-                        Text("🔮", fontSize = 20.sp)
+                    if (uiState is DashboardUiState.Success) {
+                        val successState = uiState as DashboardUiState.Success
+                        if (successState.isBackupEnabled) {
+                            SyncStatusAction(
+                                state = successState.syncStatus,
+                                onClick = { viewModel.onSyncClick() }
+                            )
+                        }
                     }
-                    HelpIconButton(onClick = onNavigateToHelp)
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
@@ -194,6 +221,113 @@ fun DashboardScreen(
             }
         )
     }
+
+    showMismatchDialog?.let { mismatch ->
+        AccountMismatchDialog(
+            currentEmail = mismatch.currentEmail,
+            lastSyncedEmail = mismatch.lastSyncedEmail,
+            onDismiss = { showMismatchDialog = null },
+            onSignOut = {
+                showMismatchDialog = null
+                onNavigateToWelcome()
+            }
+        )
+    }
+}
+
+@Composable
+fun SyncStatusAction(
+    state: com.monetra.domain.model.SyncState,
+    onClick: () -> Unit
+) {
+    val tint = when (state) {
+        is com.monetra.domain.model.SyncState.Syncing -> MaterialTheme.colorScheme.primary
+        is com.monetra.domain.model.SyncState.Synced -> Color(0xFF34C759)
+        is com.monetra.domain.model.SyncState.Success -> Color(0xFF34C759)
+        is com.monetra.domain.model.SyncState.Error -> MaterialTheme.colorScheme.error
+        is com.monetra.domain.model.SyncState.AccountMismatch -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+    }
+
+    val icon = when (state) {
+        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudSync
+        is com.monetra.domain.model.SyncState.Synced -> Icons.Default.CloudDone
+        is com.monetra.domain.model.SyncState.Success -> Icons.Default.CloudDone
+        is com.monetra.domain.model.SyncState.Pending -> Icons.Default.CloudUpload
+        is com.monetra.domain.model.SyncState.Error -> Icons.Default.SyncProblem
+        is com.monetra.domain.model.SyncState.AccountMismatch -> Icons.Default.SyncProblem
+        else -> Icons.Default.CloudUpload
+    }
+
+    IconButton(onClick = onClick) {
+        if (state is com.monetra.domain.model.SyncState.Syncing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = tint
+            )
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = "Sync Status",
+                tint = tint,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun AccountMismatchDialog(
+    currentEmail: String,
+    lastSyncedEmail: String,
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Account Mismatch", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text(
+                    "This device's data was previously synced with:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    lastSyncedEmail,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(Spacing.md))
+                Text(
+                    "You are currently signed in as:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    currentEmail,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(Spacing.md))
+                Text(
+                    "To prevent data corruption, syncing is disabled. Please sign in with the original account or continue as guest.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSignOut) {
+                Text("Sign Out", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 @Composable
