@@ -142,6 +142,67 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onSyncClick(activity: Activity, confirmed: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
+            handleSyncValidationResult(result, activity, confirmed)
+        }
+    }
+
+    private suspend fun handleSyncValidationResult(
+        result: BackupValidationResult,
+        activity: Activity,
+        confirmed: Boolean
+    ) {
+        when (result) {
+            is BackupValidationResult.Success -> {
+                val syncResult = cloudBackupRepository.runSync()
+                if (syncResult.isSuccess) {
+                    _events.send(SettingsEvent.SyncSuccess)
+                } else {
+                    _events.send(
+                        SettingsEvent.SyncError(
+                            syncResult.exceptionOrNull()?.message ?: "Sync failed"
+                        )
+                    )
+                }
+            }
+
+            is BackupValidationResult.NotSignedIn -> {
+                val authSuccess = driveBackupManager.authenticate(activity)
+                if (authSuccess) {
+                    onSyncClick(activity, confirmed)
+                } else {
+                    _events.send(SettingsEvent.AuthError("Authentication failed"))
+                }
+            }
+
+            is BackupValidationResult.PermissionMissing -> {
+                // Handled via recoveryIntent observation in the Screen
+            }
+
+            is BackupValidationResult.AccountMismatch -> {
+                _events.send(
+                    SettingsEvent.ShowAccountMismatch(
+                        result.currentEmail,
+                        result.syncedEmail
+                    )
+                )
+            }
+
+            is BackupValidationResult.BackupExistsConfirmation -> {
+                _events.send(SettingsEvent.ShowBackupConfirmation(result.email))
+            }
+
+            is BackupValidationResult.NoBackupFound -> {
+                cloudBackupRepository.runSync()
+                _events.send(SettingsEvent.SyncSuccess)
+            }
+        }
+        _uiState.update { it.copy(isLoading = false) }
+    }
+
     fun onBackupToggle(enabled: Boolean, activity: Activity, confirmed: Boolean = false) {
         _uiState.update { it.copy(isBackupEnabled = enabled) }
         toggleJob?.cancel()

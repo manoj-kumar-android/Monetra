@@ -111,6 +111,13 @@ fun SettingsScreen(
                 }
                 is SettingsEvent.ShowAccountMismatch -> showMismatchDialog = event
                 is SettingsEvent.ShowBackupConfirmation -> showBackupConfirmationEmail = event.email
+                is SettingsEvent.SyncSuccess -> {
+                    snackbarHostState.showSnackbar("Sync completed successfully!")
+                }
+
+                is SettingsEvent.SyncError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
                 else -> {}
             }
         }
@@ -282,7 +289,7 @@ fun SettingsScreen(
                                     imageVector = when (uiState.syncStatus) {
                                         is com.monetra.domain.model.SyncState.Synced -> Icons.Default.CloudDone
                                         is com.monetra.domain.model.SyncState.Pending -> Icons.Default.CloudUpload
-                                        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudDone // Keep it clean during sync or show done
+                                        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudDone
                                         else -> Icons.Default.CloudUpload
                                     },
                                     contentDescription = null,
@@ -330,19 +337,27 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "Last synced:",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = if (uiState.lastBackupTime != null) {
-                                    val date = Date(uiState.lastBackupTime!!)
-                                    val format = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-                                    format.format(date)
-                                } else "Never",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
+                            Column {
+                                Text(
+                                    "Last synced:",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = if (uiState.lastBackupTime != null) {
+                                        val date = Date(uiState.lastBackupTime!!)
+                                        val format =
+                                            SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+                                        format.format(date)
+                                    } else "Never",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            com.monetra.presentation.components.SyncStatusAction(
+                                state = uiState.syncStatus,
+                                onClick = { viewModel.onSyncClick(activity as Activity) }
                             )
                         }
                     }
@@ -413,7 +428,7 @@ fun SettingsScreen(
                 email = email,
                 onConfirm = {
                     showBackupConfirmationEmail = null
-                    viewModel.onBackupToggle(true, activity as Activity, confirmed = true)
+                    viewModel.onSyncClick(activity as Activity, confirmed = true)
                 },
                 onCancel = {
                     showBackupConfirmationEmail = null

@@ -27,12 +27,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SyncProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -73,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
+import com.monetra.presentation.components.SyncStatusAction
 import com.monetra.presentation.screen.dashboard.components.FinancialWaterfall
 import com.monetra.presentation.screen.transactions.components.BudgetSection
 import com.monetra.presentation.screen.transactions.components.TransactionRow
@@ -258,47 +255,7 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-fun SyncStatusAction(
-    state: com.monetra.domain.model.SyncState,
-    onClick: () -> Unit
-) {
-    val tint = when (state) {
-        is com.monetra.domain.model.SyncState.Syncing -> MaterialTheme.colorScheme.primary
-        is com.monetra.domain.model.SyncState.Synced -> Color(0xFF34C759)
-        is com.monetra.domain.model.SyncState.Success -> Color(0xFF34C759)
-        is com.monetra.domain.model.SyncState.Error -> MaterialTheme.colorScheme.error
-        is com.monetra.domain.model.SyncState.AccountMismatch -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-    }
-
-    val icon = when (state) {
-        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudSync
-        is com.monetra.domain.model.SyncState.Synced -> Icons.Default.CloudDone
-        is com.monetra.domain.model.SyncState.Success -> Icons.Default.CloudDone
-        is com.monetra.domain.model.SyncState.Pending -> Icons.Default.CloudUpload
-        is com.monetra.domain.model.SyncState.Error -> Icons.Default.SyncProblem
-        is com.monetra.domain.model.SyncState.AccountMismatch -> Icons.Default.SyncProblem
-        else -> Icons.Default.CloudUpload
-    }
-
-    IconButton(onClick = onClick) {
-        if (state is com.monetra.domain.model.SyncState.Syncing) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = tint
-            )
-        } else {
-            Icon(
-                imageVector = icon,
-                contentDescription = "Sync Status",
-                tint = tint,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
+// Internal SyncStatusAction removed and replaced with common component
 
 @Composable
 fun AccountMismatchDialog(

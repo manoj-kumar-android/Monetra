@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -52,7 +53,9 @@ class CloudBackupRepositoryImpl @Inject constructor(
 
     override val syncState = syncManager.syncState
     override val accountName = driveBackupManager.accountName
-    override val lastBackupTime = driveBackupManager.lastBackupTime
+    override val lastBackupTime = syncRepository.getLastSyncedAt().map {
+        if (it == 0L) null else it
+    }
     override val recoveryIntent = driveBackupManager.getDrivePermissionIntent()
 
     override suspend fun runBackup(): Result<Unit> = withContext(Dispatchers.IO) {
