@@ -428,7 +428,7 @@ fun SettingsScreen(
                 email = email,
                 onConfirm = {
                     showBackupConfirmationEmail = null
-                    viewModel.onSyncClick(activity as Activity, confirmed = true)
+                    viewModel.onBackupToggle(true, activity as Activity, confirmed = true)
                 },
                 onCancel = {
                     showBackupConfirmationEmail = null
