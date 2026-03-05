@@ -432,6 +432,7 @@ fun SettingsScreen(
                 },
                 onCancel = {
                     showBackupConfirmationEmail = null
+                    viewModel.onSignOutClick()
                 }
             )
     }

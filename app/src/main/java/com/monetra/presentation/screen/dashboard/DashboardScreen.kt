@@ -102,6 +102,8 @@ fun DashboardScreen(
         onResult = { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 viewModel.onSyncClick()
+            } else {
+                viewModel.onSignOutClick()
             }
         }
     )
@@ -250,6 +252,7 @@ fun DashboardScreen(
             },
             onCancel = {
                 showBackupConfirmationEmail = null
+                viewModel.onSignOutClick()
             }
         )
     }
