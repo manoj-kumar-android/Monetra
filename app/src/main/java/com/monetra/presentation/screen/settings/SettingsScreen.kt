@@ -44,7 +44,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +77,10 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showMismatchDialog by remember { mutableStateOf<SettingsEvent.ShowAccountMismatch?>(null) }
+    var showBackupConfirmationEmail by remember { mutableStateOf<String?>(null) }
+
+    val activity = LocalActivity.current
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -103,12 +109,13 @@ fun SettingsScreen(
                 is SettingsEvent.NeedsAuthorization -> {
                     // Handled via LaunchedEffect below
                 }
+                is SettingsEvent.ShowAccountMismatch -> showMismatchDialog = event
+                is SettingsEvent.ShowBackupConfirmation -> showBackupConfirmationEmail = event.email
                 else -> {}
             }
         }
     }
 
-    val activity = LocalActivity.current
 
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -140,7 +147,9 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (uiState.isRestoring) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
@@ -212,7 +221,9 @@ fun SettingsScreen(
 
             Button(
                 onClick = viewModel::onSaveClick,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 enabled = !uiState.isLoading
             ) {
@@ -307,7 +318,9 @@ fun SettingsScreen(
 
                     if (uiState.isBackupEnabled) {
                         Spacer(modifier = Modifier.height(Spacing.lg))
-                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
+                        androidx.compose.foundation.Canvas(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)) {
                             drawRect(color = Color.LightGray.copy(alpha = 0.3f))
                         }
                         Spacer(modifier = Modifier.height(Spacing.md))
@@ -343,12 +356,16 @@ fun SettingsScreen(
             )
 
             Card(
-                modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToCategories),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToCategories),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(
-                    modifier = Modifier.padding(Spacing.lg).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(Spacing.lg)
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -378,6 +395,30 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(Spacing.xxl))
         }
+        }
+
+        showMismatchDialog?.let { mismatch ->
+            com.monetra.presentation.screen.dashboard.AccountMismatchDialog(
+                currentEmail = mismatch.currentEmail,
+                lastSyncedEmail = mismatch.syncedEmail,
+                onDismiss = {
+                    showMismatchDialog = null
+                    viewModel.onSignOutClick()
+                }
+            )
+        }
+
+        showBackupConfirmationEmail?.let { email ->
+            com.monetra.presentation.screen.dashboard.BackupConfirmationDialog(
+                email = email,
+                onConfirm = {
+                    showBackupConfirmationEmail = null
+                    viewModel.onBackupToggle(true, activity as Activity, confirmed = true)
+                },
+                onCancel = {
+                    showBackupConfirmationEmail = null
+                }
+            )
     }
 }
 }

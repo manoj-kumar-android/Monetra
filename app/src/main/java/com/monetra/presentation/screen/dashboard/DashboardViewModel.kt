@@ -1,11 +1,13 @@
 package com.monetra.presentation.screen.dashboard
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.repository.LoanRepository
 import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.UserPreferenceRepository
+import com.monetra.domain.usecase.BackupValidationResult
 import com.monetra.domain.usecase.intelligence.CalculateBurnRateUseCase
 import com.monetra.domain.usecase.intelligence.CalculateSafeToSpendUseCase
 import com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase
@@ -29,7 +31,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,7 +54,9 @@ class DashboardViewModel @Inject constructor(
     private val monthlyExpenseRepository: MonthlyExpenseRepository,
     private val loanRepository: LoanRepository,
     private val prepareMonthlyBills: PrepareMonthlyBillsUseCase,
-    private val cloudBackupRepository: com.monetra.domain.repository.CloudBackupRepository
+    private val cloudBackupRepository: com.monetra.domain.repository.CloudBackupRepository,
+    private val validateBackupUseCase: com.monetra.domain.usecase.ValidateBackupUseCase,
+    private val driveBackupManager: com.monetra.drivebackup.api.DriveBackupManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
@@ -260,23 +263,59 @@ class DashboardViewModel @Inject constructor(
         isStabilityHigh = isStabilityHigh
     )
 
-    fun onSyncClick() {
+    fun onSyncClick(confirmed: Boolean = false) {
         viewModelScope.launch {
-            val email = cloudBackupRepository.accountName.first()
-            if (email == null) {
-                _events.emit(DashboardEvent.NavigateToWelcome)
-                return@launch
+            val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
+            handleValidationResult(result, confirmed)
+        }
+    }
+
+    private suspend fun handleValidationResult(result: BackupValidationResult, confirmed: Boolean) {
+        when (result) {
+            is BackupValidationResult.Success -> {
+                cloudBackupRepository.runSync()
             }
 
-            val hasPermission = cloudBackupRepository.checkDrivePermission()
-            if (hasPermission) {
+            is BackupValidationResult.NotSignedIn -> {
+                _events.emit(DashboardEvent.ShowSignIn)
+            }
+
+            is BackupValidationResult.PermissionMissing -> {
+                // permissionIntent is already observed in Fragment/Compose via ViewModel.recoveryIntent
+            }
+
+            is BackupValidationResult.AccountMismatch -> {
+                _events.emit(
+                    DashboardEvent.ShowAccountMismatch(
+                        result.currentEmail,
+                        result.syncedEmail
+                    )
+                )
+            }
+
+            is BackupValidationResult.BackupExistsConfirmation -> {
+                _events.emit(DashboardEvent.ShowBackupConfirmation(result.email))
+            }
+
+            is BackupValidationResult.NoBackupFound -> {
                 cloudBackupRepository.runSync()
-            } else {
-                // recoveryIntent is already being observed by the UI
             }
         }
     }
 
+    fun onSignInClick(activity: Activity) {
+        viewModelScope.launch {
+            val success = driveBackupManager.authenticate(activity)
+            if (success) {
+                onSyncClick()
+            }
+        }
+    }
+
+    fun onSignOutClick() {
+        viewModelScope.launch { cloudBackupRepository.signOut() }
+    }
+    
     val recoveryIntent = cloudBackupRepository.recoveryIntent
 }
 sealed interface DashboardUiState {
@@ -311,5 +350,7 @@ sealed interface DashboardUiState {
 
 sealed interface DashboardEvent {
     data object NavigateToWelcome : DashboardEvent
+    data object ShowSignIn : DashboardEvent
     data class ShowAccountMismatch(val currentEmail: String, val lastSyncedEmail: String) : DashboardEvent
+    data class ShowBackupConfirmation(val email: String) : DashboardEvent
 }

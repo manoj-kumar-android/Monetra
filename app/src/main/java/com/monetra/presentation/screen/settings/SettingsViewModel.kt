@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.repository.CloudBackupRepository
 import com.monetra.domain.repository.UserPreferenceRepository
+import com.monetra.domain.usecase.BackupValidationResult
+import com.monetra.domain.usecase.ValidateBackupUseCase
 import com.monetra.domain.usecase.intelligence.UpdateUserPreferencesUseCase
 import com.monetra.drivebackup.api.DriveBackupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +49,10 @@ sealed interface SettingsEvent {
     data object AuthSuccess : SettingsEvent
     data class AuthError(val message: String) : SettingsEvent
     data class NeedsAuthorization(val intent: android.content.Intent) : SettingsEvent
+    data class ShowAccountMismatch(val currentEmail: String, val syncedEmail: String) :
+        SettingsEvent
+
+    data class ShowBackupConfirmation(val email: String) : SettingsEvent
 }
 
 @HiltViewModel
@@ -56,6 +62,7 @@ class SettingsViewModel @Inject constructor(
     private val driveBackupManager: DriveBackupManager,
     private val cloudBackupRepository: CloudBackupRepository,
     private val syncUseCase: com.monetra.domain.usecase.SyncUseCase,
+    private val validateBackupUseCase: ValidateBackupUseCase,
     @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     private var toggleJob: kotlinx.coroutines.Job? = null
@@ -69,6 +76,14 @@ class SettingsViewModel @Inject constructor(
     init {
         loadPreferences()
         observeCloudStatus()
+        validateBackupOnOpen()
+    }
+
+    private fun validateBackupOnOpen() {
+        viewModelScope.launch {
+            val result = validateBackupUseCase()
+            _uiState.update { it.copy(isBackupEnabled = it.isBackupEnabled && result is BackupValidationResult.Success) }
+        }
     }
 
     private fun observeCloudStatus() {
@@ -127,51 +142,91 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun onBackupToggle(enabled: Boolean, activity: Activity) {
+    fun onBackupToggle(enabled: Boolean, activity: Activity, confirmed: Boolean = false) {
         _uiState.update { it.copy(isBackupEnabled = enabled) }
         toggleJob?.cancel()
         toggleJob = viewModelScope.launch {
             val currentPrefs = repository.getUserPreferences().first()
             if (enabled) {
                 _uiState.update { it.copy(isLoading = true) }
-                
-                // 1. Ensure authenticated
-                var account = cloudBackupRepository.accountName.first()
-                if (account == null) {
-                    val authSuccess = driveBackupManager.authenticate(activity)
-                    if (!authSuccess) {
-                        _uiState.update { it.copy(isBackupEnabled = false, isLoading = false) }
-                        _events.send(SettingsEvent.AuthError("Authentication failed"))
-                        return@launch
-                    }
-                    account = cloudBackupRepository.accountName.first()
-                }
-
-                // 2. Ensure permission
-                val hasPermission = cloudBackupRepository.checkDrivePermission()
-                if (!hasPermission) {
-                    // This triggers recoveryIntent observation in Screen. 
-                    // Note: We don't reset isBackupEnabled here because the user is about to resolve it.
-                    _uiState.update { it.copy(isLoading = false) }
-                    return@launch 
-                }
-
-                // 3. Save Preference and Trigger Direct Sync
-                repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = true))
-                val syncResult = cloudBackupRepository.runSync()
-                
-                _uiState.update { it.copy(isLoading = false) }
-                
-                if (syncResult.isSuccess) {
-                    _events.send(SettingsEvent.SyncSuccess)
-                } else {
-                    _events.send(SettingsEvent.SyncError(syncResult.exceptionOrNull()?.message ?: "Sync failed"))
-                }
+                val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
+                handleValidationResult(result, activity, isManual = true, confirmed = confirmed)
             } else {
                 repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = false))
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
+    }
+
+    private suspend fun handleValidationResult(
+        result: BackupValidationResult,
+        activity: Activity,
+        isManual: Boolean,
+        confirmed: Boolean = false
+    ) {
+        when (result) {
+            is BackupValidationResult.Success -> {
+                repository.saveUserPreferences(
+                    repository.getUserPreferences().first().copy(isBackupEnabled = true)
+                )
+                val syncResult = cloudBackupRepository.runSync()
+                if (syncResult.isSuccess) {
+                    _events.send(SettingsEvent.SyncSuccess)
+                } else {
+                    _events.send(
+                        SettingsEvent.SyncError(
+                            syncResult.exceptionOrNull()?.message ?: "Sync failed"
+                        )
+                    )
+                }
+            }
+
+            is BackupValidationResult.NotSignedIn -> {
+                val authSuccess = driveBackupManager.authenticate(activity)
+                if (!authSuccess) {
+                    _uiState.update { it.copy(isBackupEnabled = false) }
+                    _events.send(SettingsEvent.AuthError("Authentication failed"))
+                } else {
+                    // Re-validate after sign in
+                    handleValidationResult(
+                        validateBackupUseCase(ignoreBackupCheck = confirmed),
+                        activity,
+                        isManual,
+                        confirmed
+                    )
+                }
+            }
+
+            is BackupValidationResult.PermissionMissing -> {
+                // Requesting permission is handled via recoveryIntent observation in the Screen
+                // The screen will call onBackupToggle(true) again after result
+            }
+
+            is BackupValidationResult.AccountMismatch -> {
+                _uiState.update { it.copy(isBackupEnabled = false) }
+                _events.send(
+                    SettingsEvent.ShowAccountMismatch(
+                        result.currentEmail,
+                        result.syncedEmail
+                    )
+                )
+            }
+
+            is BackupValidationResult.BackupExistsConfirmation -> {
+                _uiState.update { it.copy(isBackupEnabled = false) }
+                _events.send(SettingsEvent.ShowBackupConfirmation(result.email))
+            }
+
+            is BackupValidationResult.NoBackupFound -> {
+                // First time sync, no remote backup, so just perform initial upload
+                repository.saveUserPreferences(
+                    repository.getUserPreferences().first().copy(isBackupEnabled = true)
+                )
+                cloudBackupRepository.runBackup()
+                _events.send(SettingsEvent.BackupSuccess)
+            }
+        }
+        _uiState.update { it.copy(isLoading = false) }
     }
 
     fun onPermissionDenied() {
@@ -190,9 +245,9 @@ class SettingsViewModel @Inject constructor(
             repository.getUserPreferences().collectLatest { prefs ->
                 _uiState.update {
                     it.copy(
-                        ownerName = it.ownerName.ifEmpty { prefs.ownerName },
-                        monthlyIncome = it.monthlyIncome.ifEmpty { if (prefs.monthlyIncome > 0) prefs.monthlyIncome.toString() else "" },
-                        monthlySavingsGoal = it.monthlySavingsGoal.ifEmpty { if (prefs.monthlySavingsGoal > 0) prefs.monthlySavingsGoal.toString() else "" },
+                        ownerName = prefs.ownerName,
+                        monthlyIncome = if (prefs.monthlyIncome > 0) prefs.monthlyIncome.toString() else "",
+                        monthlySavingsGoal = if (prefs.monthlySavingsGoal > 0) prefs.monthlySavingsGoal.toString() else "",
                         isBackupEnabled = prefs.isBackupEnabled,
                         isLoading = false
                     )
@@ -211,9 +266,7 @@ class SettingsViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
-                monthlyIncome = sanitized,
-                incomeError = null,
-                isSuccess = false
+                monthlyIncome = sanitized, incomeError = null, isSuccess = false
             )
         }
     }
@@ -224,9 +277,7 @@ class SettingsViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
-                monthlySavingsGoal = sanitized,
-                savingsError = null,
-                isSuccess = false
+                monthlySavingsGoal = sanitized, savingsError = null, isSuccess = false
             )
         }
     }
@@ -265,5 +316,9 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             _events.send(SettingsEvent.SaveSuccess)
         }
+    }
+
+    fun onSignOutClick() {
+        viewModelScope.launch { driveBackupManager.signOut() }
     }
 }

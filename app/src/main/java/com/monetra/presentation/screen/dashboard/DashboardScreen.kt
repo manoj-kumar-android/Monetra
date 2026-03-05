@@ -98,6 +98,7 @@ fun DashboardScreen(
     var showExitSheet by remember { mutableStateOf(false) }
 
     var showMismatchDialog by remember { mutableStateOf<DashboardEvent.ShowAccountMismatch?>(null) }
+    var showBackupConfirmationEmail by remember { mutableStateOf<String?>(null) }
 
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
@@ -116,11 +117,15 @@ fun DashboardScreen(
         }
     }
 
+
     androidx.compose.runtime.LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
             when (event) {
                 is DashboardEvent.NavigateToWelcome -> onNavigateToWelcome()
+                is DashboardEvent.ShowSignIn -> activity?.let { viewModel.onSignInClick(it) }
                 is DashboardEvent.ShowAccountMismatch -> showMismatchDialog = event
+                is DashboardEvent.ShowBackupConfirmation -> showBackupConfirmationEmail =
+                    event.email
             }
         }
     }
@@ -138,7 +143,9 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Bold
                         ),
-                        modifier = Modifier.padding(start = Spacing.sm)
+                        modifier = Modifier
+                            .padding(start = Spacing.sm)
+                            .clickable { viewModel.onSignOutClick() }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -162,7 +169,9 @@ fun DashboardScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
             val renderState = when {
                 isRestoring -> DashboardUiState.Loading
                 else -> uiState
@@ -174,7 +183,9 @@ fun DashboardScreen(
                     }
                 is DashboardUiState.NoSalarySet -> {
                     Column(
-                        modifier = Modifier.align(Alignment.Center).padding(Spacing.lg),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(Spacing.lg),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text("👋", style = MaterialTheme.typography.displayMedium)
@@ -226,10 +237,22 @@ fun DashboardScreen(
         AccountMismatchDialog(
             currentEmail = mismatch.currentEmail,
             lastSyncedEmail = mismatch.lastSyncedEmail,
-            onDismiss = { showMismatchDialog = null },
-            onSignOut = {
+            onDismiss = { 
                 showMismatchDialog = null
-                onNavigateToWelcome()
+                viewModel.onSignOutClick()
+            }
+        )
+    }
+
+    showBackupConfirmationEmail?.let { email ->
+        BackupConfirmationDialog(
+            email = email,
+            onConfirm = {
+                showBackupConfirmationEmail = null
+                viewModel.onSyncClick(confirmed = true)
+            },
+            onCancel = {
+                showBackupConfirmationEmail = null
             }
         )
     }
@@ -281,8 +304,7 @@ fun SyncStatusAction(
 fun AccountMismatchDialog(
     currentEmail: String,
     lastSyncedEmail: String,
-    onDismiss: () -> Unit,
-    onSignOut: () -> Unit
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -300,29 +322,52 @@ fun AccountMismatchDialog(
                 )
                 Spacer(modifier = Modifier.height(Spacing.md))
                 Text(
-                    "You are currently signed in as:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    currentEmail,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    "You have selected the wrong account. Your current data is synced with this email: $lastSyncedEmail",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
                 Spacer(modifier = Modifier.height(Spacing.md))
                 Text(
-                    "To prevent data corruption, syncing is disabled. Please sign in with the original account or continue as guest.",
+                    "To prevent data corruption, syncing is disabled. Please sign in with the original account.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onSignOut) {
-                Text("Sign Out", color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onDismiss) {
+                Text("Understood", color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Dismiss")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+fun BackupConfirmationDialog(
+    email: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Backup Found", fontWeight = FontWeight.Bold) },
+        text = {
+            Text("Backup data already exists for this account ($email). Do you want to continue syncing?")
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Continue", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text("Cancel")
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -371,7 +416,7 @@ private fun DashboardContent(
         // HERO CARD: TODAY'S LIMIT
         item {
             SafeToSpendCard(
-                amount = state.dailySafeToSpend, 
+                amount = state.dailySafeToSpend,
                 limit = state.dailyLimit,
                 rawLimit = state.rawDailyLimit,
                 percent = state.stsPercent
@@ -410,7 +455,9 @@ private fun DashboardContent(
             // RECENT TRANSACTIONS HEADER
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.md),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -425,7 +472,7 @@ private fun DashboardContent(
                     }
                 }
             }
-    
+
             // TRANSACTIONS
             items(state.recentTransactions, key = { it.id }, contentType = { "transaction" }) { transaction ->
                 TransactionRow(
@@ -435,7 +482,7 @@ private fun DashboardContent(
                 )
             }
         }
-        
+
         item {
             Spacer(modifier = Modifier.height(80.dp)) // FAB padding
         }
@@ -502,7 +549,10 @@ private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, per
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     LinearProgressIndicator(
                         progress = { if (isOverspent) 1f else animatedProgress },
-                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(CircleShape),
                         color = statusColor,
                         trackColor = statusColor.copy(alpha = 0.1f),
                         strokeCap = StrokeCap.Round
@@ -518,7 +568,9 @@ private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, per
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(Spacing.sm).fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(Spacing.sm)
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
@@ -650,7 +702,9 @@ private fun ExitConfirmationSheet(
             ) {
                 OutlinedButton(
                     onClick = onConfirmExit,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
@@ -662,7 +716,9 @@ private fun ExitConfirmationSheet(
 
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary

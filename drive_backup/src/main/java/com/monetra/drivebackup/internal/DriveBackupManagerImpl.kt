@@ -300,6 +300,15 @@ class DriveBackupManagerImpl @Inject constructor(
             prefs.remove(accountNameKey)
             prefs.remove(lastBackupTimeKey)
         }
+
+        // Latest Credential Manager way to clear state
+        try {
+            val request = androidx.credentials.ClearCredentialStateRequest()
+            credentialManager.clearCredentialState(request)
+        } catch (e: Exception) {
+            android.util.Log.e("DriveBackup", "Failed to clear credential state", e)
+        }
+        
         driveService.clear()
         _recoveryIntent.value = null
     }
