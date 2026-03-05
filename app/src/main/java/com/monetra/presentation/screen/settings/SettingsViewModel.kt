@@ -81,8 +81,9 @@ class SettingsViewModel @Inject constructor(
 
     private fun validateBackupOnOpen() {
         viewModelScope.launch {
-            val result = validateBackupUseCase()
-            _uiState.update { it.copy(isBackupEnabled = it.isBackupEnabled && result is BackupValidationResult.Success) }
+            // Check validation in background to update sync status, 
+            // but NEVER flip the isBackupEnabled switch to false automatically based on result.
+            validateBackupUseCase()
         }
     }
 
@@ -204,17 +205,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onBackupToggle(enabled: Boolean, activity: Activity, confirmed: Boolean = false) {
-        _uiState.update { it.copy(isBackupEnabled = enabled) }
         toggleJob?.cancel()
         toggleJob = viewModelScope.launch {
+            _uiState.update { it.copy(isBackupEnabled = enabled) }
             val currentPrefs = repository.getUserPreferences().first()
+            repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = enabled))
             if (enabled) {
                 _uiState.update { it.copy(isLoading = true) }
                 val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
                 handleValidationResult(result, activity, isManual = true, confirmed = confirmed)
-            } else {
-                repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = false))
-                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -245,8 +244,7 @@ class SettingsViewModel @Inject constructor(
             is BackupValidationResult.NotSignedIn -> {
                 val authSuccess = driveBackupManager.authenticate(activity)
                 if (!authSuccess) {
-                    _uiState.update { it.copy(isBackupEnabled = false) }
-                    _events.send(SettingsEvent.AuthError("Authentication failed"))
+                    _events.send(SettingsEvent.AuthError("Authentication failed. Please sign in to enable backup."))
                 } else {
                     // Re-validate after sign in
                     handleValidationResult(
@@ -260,11 +258,9 @@ class SettingsViewModel @Inject constructor(
 
             is BackupValidationResult.PermissionMissing -> {
                 // Requesting permission is handled via recoveryIntent observation in the Screen
-                // The screen will call onBackupToggle(true) again after result
             }
 
             is BackupValidationResult.AccountMismatch -> {
-                _uiState.update { it.copy(isBackupEnabled = false) }
                 _events.send(
                     SettingsEvent.ShowAccountMismatch(
                         result.currentEmail,
@@ -274,7 +270,6 @@ class SettingsViewModel @Inject constructor(
             }
 
             is BackupValidationResult.BackupExistsConfirmation -> {
-                _uiState.update { it.copy(isBackupEnabled = false) }
                 _events.send(SettingsEvent.ShowBackupConfirmation(result.email))
             }
 

@@ -118,7 +118,6 @@ fun SettingsScreen(
                 is SettingsEvent.SyncError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
-                else -> {}
             }
         }
     }
