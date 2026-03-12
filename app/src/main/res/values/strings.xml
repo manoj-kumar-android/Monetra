@@ -46,7 +46,6 @@
     <string name="valid_amount_required">Enter a valid amount</string>
     <string name="personal_finance_managers">Personal Finance Managers</string>
     <string name="emis_debt">EMIs &amp; Debt</string>
-    <string name="investments_title">Investments</string>
     <string name="no_debt">No debt</string>
     <string name="not_started">Not started</string>
     <string name="value_format">Value: ₹%,.0f</string>
@@ -237,6 +236,7 @@
 
     <!-- Investments / Wealth -->
     <string name="wealth_intelligence_title">Wealth Intelligence</string>
+    <string name="investments_title">Investments</string>
     <string name="add_investment">Add Investment</string>
     <string name="monthly_investments_header">Monthly Investments (SIP/RD)</string>
     <string name="onetime_investments_header">One-time Assets (FD/Stocks/Gold)</string>

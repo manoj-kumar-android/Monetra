@@ -103,21 +103,31 @@ fun MonetraNavGraph(
             if (isPop) {
                 slideInHorizontally(
                     initialOffsetX = { -it },
-                    animationSpec = tween(100, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(100)) togetherWith
-                        slideOutHorizontally(
-                            targetOffsetX = { it },
-                            animationSpec = tween(100, easing = FastOutSlowInEasing)
-                        ) + fadeOut(animationSpec = tween(100))
+                    animationSpec = tween(
+                        durationMillis = 700,
+                        easing = FastOutSlowInEasing
+                    )
+                ) togetherWith slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = 700,
+                        easing = FastOutSlowInEasing
+                    )
+                )
             } else {
                 slideInHorizontally(
                     initialOffsetX = { it },
-                    animationSpec = tween(100, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(100)) togetherWith
-                        slideOutHorizontally(
-                            targetOffsetX = { -it },
-                            animationSpec = tween(100, easing = FastOutSlowInEasing)
-                        ) + fadeOut(animationSpec = tween(100))
+                    animationSpec = tween(
+                        durationMillis = 700,
+                        easing = FastOutSlowInEasing
+                    )
+                ) togetherWith slideOutHorizontally(
+                    targetOffsetX = { -it },
+                    animationSpec = tween(
+                        durationMillis = 700,
+                        easing = FastOutSlowInEasing
+                    )
+                )
             }
         },
         entryProvider = { key ->

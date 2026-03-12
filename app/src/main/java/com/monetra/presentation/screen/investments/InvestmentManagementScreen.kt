@@ -138,7 +138,7 @@ fun InvestmentManagementScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.wealth_intelligence_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
+                    Text(stringResource(R.string.investments_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -167,21 +167,8 @@ fun InvestmentManagementScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             state.intelligence?.let { intel ->
-                item { HeroSurvivalCard(intel) }
                 item { LiquidityBreakdownSection(intel) }
                 item { AllocationSection(intel.assetAllocation) }
-
-                item {
-                    ProjectionCard(
-                        intel = intel,
-                        onRateChange = { viewModel.onEvent(InvestmentEvent.SimulationRateChanged(it)) },
-                        onYearsChange = { viewModel.onEvent(InvestmentEvent.SimulationYearsChanged(it)) }
-                    )
-                }
-
-                item {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                }
 
                 if (state.monthlyInvestments.isNotEmpty()) {
                     item {
@@ -194,9 +181,7 @@ fun InvestmentManagementScreen(
                             onEdit = { viewModel.onEvent(InvestmentEvent.EditClick(uiModel.raw)) }
                         )
                     }
-                    item { Spacer(modifier = Modifier.height(Spacing.sm)) }
                 }
-
                 if (state.oneTimeInvestments.isNotEmpty()) {
                     item {
                         Text(stringResource(R.string.onetime_investments_header), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
@@ -208,6 +193,16 @@ fun InvestmentManagementScreen(
                             onEdit = { viewModel.onEvent(InvestmentEvent.EditClick(uiModel.raw)) }
                         )
                     }
+                }
+
+                item { HeroSurvivalCard(intel) }
+
+                item {
+                    ProjectionCard(
+                        intel = intel,
+                        onRateChange = { viewModel.onEvent(InvestmentEvent.SimulationRateChanged(it)) },
+                        onYearsChange = { viewModel.onEvent(InvestmentEvent.SimulationYearsChanged(it)) }
+                    )
                 }
             } ?: item {
                 EmptyPortfolioPlaceholder()

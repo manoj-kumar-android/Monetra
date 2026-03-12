@@ -334,9 +334,9 @@ fun RecurringExpenseRow(item: RecurringExpenseUiModel) {
 }
 
 @Composable
-fun MonthlySummaryCard(summary: SummaryUiModel) {
+fun MonthlySummaryCard(summary: SummaryUiModel, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(
@@ -353,16 +353,35 @@ fun MonthlySummaryCard(summary: SummaryUiModel) {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 SummaryColumn(
-                    label = "Income",
+                    label = "Total Income",
                     amount = summary.formattedIncome,
                     isPositive = true,
                     modifier = Modifier.weight(1f)
                 )
                 SummaryColumn(
-                    label = "Expenses",
+                    label = "Total Expense",
                     amount = summary.formattedExpense,
                     isPositive = false,
                     modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(Spacing.md))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(Spacing.md))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Net Amount",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "₹%,.2f".format(summary.netAmount),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                    color = if (summary.netAmount >= 0) SemanticIncome else SemanticExpense
                 )
             }
         }

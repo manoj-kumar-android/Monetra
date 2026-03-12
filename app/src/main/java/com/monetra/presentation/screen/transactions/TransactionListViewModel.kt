@@ -4,19 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
-import com.monetra.domain.model.BurnRateAnalysis
-import com.monetra.domain.model.SafeToSpend
-import com.monetra.domain.usecase.transaction.AddTransactionUseCase
-import com.monetra.domain.usecase.transaction.DeleteTransactionUseCase
-import com.monetra.domain.usecase.transaction.GetMonthlySummaryUseCase
-import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
-import com.monetra.domain.usecase.transaction.GetTransactionsUseCase
+import com.monetra.domain.model.TransactionFilters
+import com.monetra.domain.model.TransactionSummary
+import com.monetra.domain.usecase.transaction.*
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import com.monetra.data.worker.PendingDeleteManager
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -25,8 +26,8 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionListViewModel @Inject constructor(
-    private val getTransactions: GetTransactionsUseCase,
-    private val getMonthlySummary: GetMonthlySummaryUseCase,
+    private val getPagedTransactions: GetPagedTransactionsUseCase,
+    private val getFilterSummary: GetFilterSummaryUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
     private val getTransactionById: GetTransactionByIdUseCase,
     private val addTransaction: AddTransactionUseCase,
@@ -37,13 +38,10 @@ class TransactionListViewModel @Inject constructor(
     private val getCategoryBudgets: com.monetra.domain.usecase.intelligence.GetCategoryBudgetsUseCase,
     private val updateCategoryBudget: com.monetra.domain.usecase.intelligence.UpdateCategoryBudgetUseCase,
     private val detectRecurringExpenses: com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase,
+    private val getUsedCategories: GetUsedCategoriesUseCase,
+    private val getAmountRange: GetAmountRangeUseCase,
     private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
-
-    // ── State ─────────────────────────────────────────────────────────────
-
-    private val _uiState = MutableStateFlow<ExpenseUiState>(ExpenseUiState.Loading)
-    val uiState: StateFlow<ExpenseUiState> = _uiState.asStateFlow()
 
     // ── Events ────────────────────────────────────────────────────────────
 
@@ -51,10 +49,88 @@ class TransactionListViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     // ── Internal driving state ────────────────────────────────────────────
+    
+    val searchQuery = MutableStateFlow("")
+    val filterType = MutableStateFlow<TransactionType?>(null)
+    val filterCategories = MutableStateFlow<List<String>>(emptyList())
+    val filterStartDate = MutableStateFlow<LocalDate?>(null)
+    val filterEndDate = MutableStateFlow<LocalDate?>(null)
+    val filterMinAmount = MutableStateFlow<Double?>(null)
+    val filterMaxAmount = MutableStateFlow<Double?>(null)
 
     private val selectedMonth = MutableStateFlow(YearMonth.now())
-    private val activeFilter = MutableStateFlow(TransactionFilter.ALL)
     private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("TRANSACTION")
+
+    // Dynamic categories based on type
+    val availableCategories: StateFlow<List<String>> = filterType
+        .flatMapLatest { getUsedCategories(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Database amount range for the slider
+    val databaseAmountRange: StateFlow<Pair<Double, Double>> = getAmountRange()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0 to 100000.0)
+
+    val activeFilters = combine(
+        listOf(
+            searchQuery.debounce(300),
+            filterType,
+            filterCategories,
+            filterStartDate,
+            filterEndDate,
+            filterMinAmount,
+            filterMaxAmount
+        )
+    ) { arr ->
+        val query = arr[0] as String
+        val type = arr[1] as? TransactionType
+        val categories = arr[2] as List<String>
+        val start = arr[3] as? LocalDate
+        val end = arr[4] as? LocalDate
+        val min = arr[5] as? Double
+        val max = arr[6] as? Double
+
+        TransactionFilters(
+            query = query.takeIf { it.isNotBlank() },
+            type = type,
+            categories = categories.takeIf { it.isNotEmpty() },
+            startDate = start,
+            endDate = end,
+            minAmount = min,
+            maxAmount = max
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionFilters())
+
+    val pagedTransactions: Flow<PagingData<TransactionHistoryItem>> = activeFilters
+        .flatMapLatest { filters ->
+            getPagedTransactions(filters)
+                .map { pagingData ->
+                    pagingData.map { tx -> TransactionHistoryItem.Transaction(tx.toUiItem()) }
+                        .insertSeparators { before, after ->
+                            val beforeMonth = before?.uiItem?.fullDate?.let { YearMonth.from(it) }
+                            val afterMonth = after?.uiItem?.fullDate?.let { YearMonth.from(it) }
+                            
+                            if (afterMonth != null && (beforeMonth == null || beforeMonth != afterMonth)) {
+                                TransactionHistoryItem.MonthHeader(
+                                    afterMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault()))
+                                )
+                            } else {
+                                null
+                            }
+                        }
+                }
+        }
+        .cachedIn(viewModelScope)
+
+    val filterSummary = activeFilters
+        .flatMapLatest { getFilterSummary(it) }
+        .map { summary ->
+            SummaryUiModel(
+                formattedBalance = "₹%,.2f".format(summary.totalIncome - summary.totalExpense),
+                formattedIncome = "₹%,.2f".format(summary.totalIncome),
+                formattedExpense = "₹%,.2f".format(summary.totalExpense),
+                netAmount = summary.netAmount
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SummaryUiModel(formattedBalance="₹0.00", formattedIncome="₹0.00", formattedExpense="₹0.00"))
 
     val incomeInput = MutableStateFlow("")
     val isIncomeDialogOpen = MutableStateFlow(false)
@@ -63,107 +139,11 @@ class TransactionListViewModel @Inject constructor(
     val budgetLimitInput = MutableStateFlow("")
     val isBudgetDialogOpen = MutableStateFlow(false)
 
-    val categories = listOf("General", "Food", "Transport", "Shopping", "Entertainment", "Utilities")
-
-    private data class CoreIntelligence(
-        val transactions: List<Transaction>,
-        val summary: com.monetra.domain.model.MonthlySummary,
-        val safeToSpend: com.monetra.domain.model.SafeToSpend,
-        val burnRate: BurnRateAnalysis?,
-        val preferences: com.monetra.domain.model.UserPreferences,
-        val recurring: List<com.monetra.domain.model.RecurringExpense>
-    )
-
-    init {
-        observeTransactions()
-    }
-
     // ── Reactive pipeline ─────────────────────────────────────────────────
-
-    private fun observeTransactions() {
-        viewModelScope.launch {
-            combine(
-                selectedMonth,
-                activeFilter
-            ) { month, filter -> month to filter }.flatMapLatest { (month, filter) ->
-                    combine(
-                        combine(
-                            combine(
-                                getTransactions(month),
-                                getMonthlySummary(month),
-                                calculateSafeToSpend()
-                            ) { t, s, sts -> Triple(t, s, sts) },
-                            combine(
-                                calculateBurnRate(),
-                                getPreferences.getUserPreferences(),
-                                detectRecurringExpenses()
-                            ) { burn, pref, rec -> Triple(burn, pref, rec) }
-                        ) { (t, s, sts), (burn, pref, rec) -> 
-                            CoreIntelligence(t, s, sts, burn, pref, rec)
-                        },
-                        getCategoryBudgets(month),
-                        _pendingDeleteIds
-                    ) { core, budgets, pendingIds ->
-                        val filtered = applyFilter(core.transactions, filter)
-                            .filter { it.id !in pendingIds }
-                        val grouped = filtered.groupBy { it.date }
-                            .toSortedMap(compareByDescending { it })
-                            .mapKeys { (date, _) -> formatDateHeader(date) }
-                            .mapValues { (_, txs) -> txs.map { it.toUiItem() } }
-
-                        ExpenseUiState.Success(
-                            groupedTransactions = grouped,
-                            summary = core.summary.toSummaryUiModel(),
-                            intelligence = IntelligenceUiModel(
-                                dailySafeToSpend = "₹%,.2f".format(core.safeToSpend.remainingToday),
-                                projectedMonthEnd = "₹%,.2f".format(core.burnRate?.projectedEndMonthSpend ?: 0.0),
-                                dailyAverage = "₹%,.2f".format((core.burnRate?.currentSpend ?: 0.0) / (core.burnRate?.currentDay ?: 1).coerceAtLeast(1)),
-                                comparisonText = core.burnRate?.warningMessage ?: "Stable spending trend",
-                                burnRateStatus = when {
-                                    core.burnRate?.isOverspending == true -> "Critical"
-                                    else -> "Stable"
-                                }
-                            ),
-                            budgets = budgets.map { it.toUiModel() },
-                            recurringTotal = "₹%,.2f".format(core.recurring.sumOf { item -> item.amount }),
-                            recurringItems = core.recurring.map { item -> item.toUiModel() },
-                            selectedMonth = month,
-                            isCurrentMonth = month == YearMonth.now(),
-                            activeFilter = filter,
-                        )
-                    }
-                }.catch { throwable ->
-                    _uiState.value = ExpenseUiState.Error(
-                        message = throwable.localizedMessage ?: "Something went wrong"
-                    )
-                }.collect { _uiState.value = it }
-        }
-    }
-
-    // ── Business logic ────────────────────────────────────────────────────
-
-    private fun applyFilter(
-        transactions: List<Transaction>,
-        filter: TransactionFilter,
-    ): List<Transaction> = when (filter) {
-        TransactionFilter.ALL -> transactions
-        TransactionFilter.INCOME -> transactions.filter { it.type == TransactionType.INCOME }
-        TransactionFilter.EXPENSE -> transactions.filter { it.type == TransactionType.EXPENSE }
-    }
+    // All reactive state is derived from activeFilters above.
 
     // ── Domain → UI model mapping ─────────────────────────────────────────
     // Private to this file. Formatting logic lives here, not in composables.
-
-    private val headerDateFormatter = DateTimeFormatter.ofPattern("EEEE, dd MMM", Locale.getDefault())
-
-    private fun formatDateHeader(date: java.time.LocalDate): String {
-        val today = java.time.LocalDate.now()
-        return when (date) {
-            today -> "Today"
-            today.minusDays(1) -> "Yesterday"
-            else -> date.format(headerDateFormatter)
-        }
-    }
 
     private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
@@ -192,7 +172,8 @@ class TransactionListViewModel @Inject constructor(
             "Salary" -> "💸"
             "Gift" -> "🎁"
             else -> "💰"
-        }
+        },
+        fullDate = date
     )
 
     private fun com.monetra.domain.model.MonthlySummary.toSummaryUiModel() = SummaryUiModel(
@@ -233,12 +214,62 @@ class TransactionListViewModel @Inject constructor(
         selectedMonth.value = month
     }
 
+    fun clearAllFilters() {
+        filterType.value = null
+        filterCategories.value = emptyList()
+        filterStartDate.value = null
+        filterEndDate.value = null
+        filterMinAmount.value = null
+        filterMaxAmount.value = null
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        searchQuery.value = query
+    }
+
+    fun onFilterTypeChanged(type: TransactionType?) {
+        filterType.value = type
+    }
+
+    fun onCategorySelected(category: String) {
+        val currentList = filterCategories.value
+        if (category in currentList) {
+            filterCategories.value = currentList - category
+        } else {
+            filterCategories.value = currentList + category
+        }
+    }
+
+    fun removeCategoryFilter(category: String) {
+        filterCategories.value -= category
+    }
+
+    fun onDateRangeSelected(start: LocalDate?, end: LocalDate?) {
+        filterStartDate.value = start
+        filterEndDate.value = end
+    }
+
+    fun onAmountRangeChanged(min: Double?, max: Double?) {
+        filterMinAmount.value = min
+        filterMaxAmount.value = max
+    }
+
+    fun clearDateFilter() {
+        filterStartDate.value = null
+        filterEndDate.value = null
+    }
+
     fun onResetMonth() {
         selectedMonth.value = YearMonth.now()
     }
 
     fun onFilterSelected(filter: TransactionFilter) {
-        activeFilter.value = filter
+        // Compatibility for old UI if needed
+        when(filter) {
+            TransactionFilter.ALL -> filterType.value = null
+            TransactionFilter.INCOME -> filterType.value = TransactionType.INCOME
+            TransactionFilter.EXPENSE -> filterType.value = TransactionType.EXPENSE
+        }
     }
 
     fun onTransactionClick(id: Long) {
@@ -330,12 +361,7 @@ class TransactionListViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            val currentState = _uiState.value as? ExpenseUiState.Success ?: return@launch
-            _uiState.value = currentState.copy(isRefreshing = true)
-            
-            val updatedState = _uiState.value as? ExpenseUiState.Success ?: return@launch
-            _uiState.value = updatedState.copy(isRefreshing = false)
-        }
+        // Paging 3 automatically refreshes if the database changes.
+        // If a manual trigger is needed, we could add a pull-to-refresh mechanism.
     }
 }

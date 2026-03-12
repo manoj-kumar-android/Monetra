@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.monetra.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
+import androidx.paging.PagingSource
 
 @Dao
 interface TransactionDao {
@@ -112,6 +113,79 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllTransactions(transactions: List<TransactionEntity>)
 
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE (:query IS NULL OR 
+               title LIKE '%' || :query || '%' OR 
+               note LIKE '%' || :query || '%' OR 
+               category LIKE '%' || :query || '%' OR 
+               CAST(amount AS TEXT) LIKE '%' || :query || '%')
+          AND (:transactionType IS NULL OR type = :transactionType)
+          AND (:hasCategories = 0 OR category IN (:categories))
+          AND (:startDate IS NULL OR date >= :startDate)
+          AND (:endDate IS NULL OR date <= :endDate)
+          AND (:minAmount IS NULL OR amount >= :minAmount)
+          AND (:maxAmount IS NULL OR amount <= :maxAmount)
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        ORDER BY date DESC, id DESC
+    """)
+    fun getTransactionsPaged(
+        query: String?,
+        transactionType: String?,
+        categories: List<String>?,
+        hasCategories: Boolean,
+        startDate: String?,
+        endDate: String?,
+        minAmount: Double?,
+        maxAmount: Double?
+    ): PagingSource<Int, TransactionEntity>
+
+    @Query("""
+        SELECT 
+            SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as totalIncome,
+            SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as totalExpense
+        FROM transactions 
+        WHERE (:query IS NULL OR 
+               title LIKE '%' || :query || '%' OR 
+               note LIKE '%' || :query || '%' OR 
+               category LIKE '%' || :query || '%' OR 
+               CAST(amount AS TEXT) LIKE '%' || :query || '%')
+          AND (:transactionType IS NULL OR type = :transactionType)
+          AND (:hasCategories = 0 OR category IN (:categories))
+          AND (:startDate IS NULL OR date >= :startDate)
+          AND (:endDate IS NULL OR date <= :endDate)
+          AND (:minAmount IS NULL OR amount >= :minAmount)
+          AND (:maxAmount IS NULL OR amount <= :maxAmount)
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
+    fun getFilterSummary(
+        query: String?,
+        transactionType: String?,
+        categories: List<String>?,
+        hasCategories: Boolean,
+        startDate: String?,
+        endDate: String?,
+        minAmount: Double?,
+        maxAmount: Double?
+    ): Flow<FilterSummary?>
+
+    @Query("""
+        SELECT DISTINCT category FROM transactions 
+        WHERE (:type IS NULL OR type = :type)
+          AND id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+        ORDER BY category ASC
+    """)
+    fun getUsedCategories(type: String?): Flow<List<String>>
+
+    @Query("""
+        SELECT 
+            MIN(amount) as minAmount, 
+            MAX(amount) as maxAmount 
+        FROM transactions
+        WHERE id NOT IN (SELECT entityId FROM pending_deletes WHERE entityType = 'TRANSACTION')
+    """)
+    fun getAmountRange(): Flow<FilterAmountRange?>
+
     suspend fun upsertSync(entity: TransactionEntity) {
         val existing = getTransactionByRemoteId(entity.remoteId)
         val shouldOverwrite = when {
@@ -133,4 +207,14 @@ interface TransactionDao {
 data class CategorySum(
     val category: String,
     val total: Double
+)
+
+data class FilterSummary(
+    val totalIncome: Double?,
+    val totalExpense: Double?
+)
+
+data class FilterAmountRange(
+    val minAmount: Double,
+    val maxAmount: Double
 )

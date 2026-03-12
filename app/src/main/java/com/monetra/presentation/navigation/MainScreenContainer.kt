@@ -165,7 +165,13 @@ fun MainScreenContainer(
                 rightItems = rightItems,
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTabStr = it.route.javaClass.simpleName },
-                onFabClick = { openAddSheet() }
+                onFabClick = { 
+                    if (selectedTab == BottomNavScreen.Refundable) {
+                        onNavigateToAddRefundable()
+                    } else {
+                        openAddSheet()
+                    }
+                }
             )
         },
         snackbarHost = {

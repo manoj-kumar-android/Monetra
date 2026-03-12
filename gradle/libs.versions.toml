@@ -20,6 +20,8 @@ splashscreen = "1.2.0"
 biometric = "1.2.0-alpha05"
 datastore = "1.2.0"
 coroutines = "1.10.2"
+paging = "3.3.6"
+
 
 # Google API 2026 Versions
 credentials = "1.5.0"
@@ -63,6 +65,12 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }   # coroutines + Flow support
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }   # KSP processor
+room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+
+# ── Paging ───────────────────────────────────────────────────────────────────
+androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+
 
 # ── Test ─────────────────────────────────────────────────────────────────────
 junit = { group = "junit", name = "junit", version.ref = "junit" }

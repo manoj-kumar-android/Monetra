@@ -38,6 +38,10 @@ import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.SouthWest
+import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -57,6 +61,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.monetra.domain.model.RefundableStatus
+import com.monetra.domain.model.RefundableType
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
@@ -83,7 +89,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.domain.model.Refundable
-import com.monetra.domain.model.RefundableStatus
 import com.monetra.presentation.components.HelpIconButton
 import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
@@ -125,7 +130,6 @@ fun RefundableScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val hapticAddClick = com.monetra.presentation.components.rememberHapticClick(onClick = onAddEntryClick)
 
     Scaffold(
         snackbarHost = {
@@ -151,16 +155,6 @@ fun RefundableScreen(
                 )
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = hapticAddClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.give_money)) }
-            )
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -328,11 +322,35 @@ private fun RefundableItemRow(
             Spacer(modifier = Modifier.width(Spacing.md))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.personName,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = item.personName,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.xs))
+                    val (typeLabel, typeColor, typeIcon) = when(item.entryType) {
+                        RefundableType.LENT -> Triple("Lent", Color(0xFF34C759), Icons.Default.NorthEast)
+                        RefundableType.BORROWED -> Triple("Borrowed", Color(0xFFFF3B30), Icons.Default.SouthWest)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = typeColor.copy(alpha = 0.1f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Icon(typeIcon, null, modifier = Modifier.size(10.dp), tint = typeColor)
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = typeLabel,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                                color = typeColor
+                            )
+                        }
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Event,

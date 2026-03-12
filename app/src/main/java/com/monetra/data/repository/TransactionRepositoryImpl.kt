@@ -4,8 +4,14 @@ import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
+import com.monetra.domain.model.TransactionFilters
+import com.monetra.domain.model.TransactionSummary
 import com.monetra.domain.repository.TransactionRepository
 import android.content.Context
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -111,6 +117,60 @@ class TransactionRepositoryImpl @Inject constructor(
         dao.getTransactionById(id)?.let { entity ->
             syncRepository.markDeleted(entity.remoteId, "TRANSACTION")
             dao.deleteTransactionById(id)
+        }
+    }
+
+    override fun getTransactionsPaged(filters: TransactionFilters): Flow<PagingData<Transaction>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                dao.getTransactionsPaged(
+                    query = filters.query,
+                    transactionType = filters.type?.name,
+                    categories = filters.categories,
+                    hasCategories = filters.categories != null && filters.categories!!.isNotEmpty(),
+                    startDate = filters.startDate?.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                    endDate = filters.endDate?.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                    minAmount = filters.minAmount,
+                    maxAmount = filters.maxAmount
+                )
+            }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toDomainModel() }
+        }
+    }
+
+    override fun getFilterSummary(filters: TransactionFilters): Flow<TransactionSummary> {
+        return dao.getFilterSummary(
+            query = filters.query,
+            transactionType = filters.type?.name,
+            categories = filters.categories,
+            hasCategories = filters.categories != null && filters.categories!!.isNotEmpty(),
+            startDate = filters.startDate?.format(DateTimeFormatter.ISO_LOCAL_DATE),
+            endDate = filters.endDate?.format(DateTimeFormatter.ISO_LOCAL_DATE),
+            minAmount = filters.minAmount,
+            maxAmount = filters.maxAmount
+        ).map { summary ->
+            val income = summary?.totalIncome ?: 0.0
+            val expense = summary?.totalExpense ?: 0.0
+            TransactionSummary(
+                totalIncome = income,
+                totalExpense = expense,
+                netAmount = income - expense
+            )
+        }
+    }
+
+    override fun getUsedCategories(type: com.monetra.domain.model.TransactionType?): Flow<List<String>> {
+        return dao.getUsedCategories(type?.name)
+    }
+
+    override fun getAmountRange(): Flow<Pair<Double, Double>> {
+        return dao.getAmountRange().map {
+            (it?.minAmount ?: 0.0) to (it?.maxAmount ?: 100000.0)
         }
     }
 }
