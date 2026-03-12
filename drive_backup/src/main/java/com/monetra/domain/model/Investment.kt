@@ -131,6 +131,18 @@ data class Investment(
         if (invested <= 0) return 0.0
         return (calculateTotalReturns(today) / invested) * 100.0
     }
+
+    /**
+     * Returns the monthly contribution amount active as of [date],
+     * considering any step-ups that have already reached their effective date.
+     */
+    fun currentMonthlyAmount(date: LocalDate = LocalDate.now()): Double {
+        if (frequency != ContributionFrequency.MONTHLY) return 0.0
+        
+        return stepChanges
+            .filter { !it.effectiveDate.isAfter(date) }
+            .maxByOrNull { it.effectiveDate }?.amount ?: monthlyAmount
+    }
 }
 
 @Serializable

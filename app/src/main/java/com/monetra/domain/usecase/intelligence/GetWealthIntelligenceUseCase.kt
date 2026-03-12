@@ -41,7 +41,7 @@ class GetWealthIntelligenceUseCase @Inject constructor(
                 totalInvestedCapital += investedAmount
 
                 if (inv.frequency == ContributionFrequency.MONTHLY) {
-                    totalMonthlySIP += inv.monthlyAmount
+                    totalMonthlySIP += inv.currentMonthlyAmount(today)
                 }
 
                 when (type.liquidityClass) {

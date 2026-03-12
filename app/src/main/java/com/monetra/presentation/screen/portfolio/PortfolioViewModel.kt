@@ -42,7 +42,7 @@ class PortfolioViewModel @Inject constructor(
             val totalEmi = activeLoans.sumOf { it.monthlyEmi }
 
             val totalInvestmentValue = investments.sumOf { it.calculateCurrentValue() }
-            val totalMonthlyInvestment = investments.filter { it.frequency == ContributionFrequency.MONTHLY }.sumOf { it.monthlyAmount }
+            val totalMonthlyInvestment = investments.filter { it.frequency == ContributionFrequency.MONTHLY }.sumOf { it.currentMonthlyAmount() }
             val totalMonthlyExpenses = expenses.sumOf { it.amount }
 
             // Core calculations
