@@ -211,22 +211,7 @@ class DashboardViewModel @Inject constructor(
             .toLocalTime()
             .format(timeFormatter),
         isIncome = type == com.monetra.domain.model.TransactionType.INCOME,
-        categoryEmoji = when (category) {
-            "Food" -> "🍔"
-            "Transport" -> "🚗"
-            "Shopping" -> "🛍️"
-            "Entertainment", "Fun" -> "🎭"
-            "Utilities", "Bills" -> "💡"
-            "Salary" -> "💸"
-            "Gift" -> "🎁"
-            "Rent" -> "🏠"
-            "Groceries" -> "🛒"
-            "Subscription" -> "🔄"
-            "Health" -> "🏥"
-            "Refund" -> "🔙"
-            "Mobile Recharge" -> "📱"
-            else -> "💰"
-        }
+        categoryEmoji = TransactionUiItem.getEmojiForCategory(category)
     )
 
     private fun com.monetra.domain.model.MonthlySummary.toSummaryUiModel(ownerName: String) = SummaryUiModel(

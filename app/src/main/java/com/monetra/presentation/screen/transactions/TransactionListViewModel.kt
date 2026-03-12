@@ -163,16 +163,7 @@ class TransactionListViewModel @Inject constructor(
             .toLocalTime()
             .format(timeFormatter),
         isIncome = type == TransactionType.INCOME,
-        categoryEmoji = when (category) {
-            "Food" -> "🍔"
-            "Transport" -> "🚗"
-            "Shopping" -> "🛍️"
-            "Entertainment" -> "🎭"
-            "Utilities" -> "💡"
-            "Salary" -> "💸"
-            "Gift" -> "🎁"
-            else -> "💰"
-        },
+        categoryEmoji = TransactionUiItem.getEmojiForCategory(category),
         fullDate = date
     )
 

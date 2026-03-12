@@ -99,7 +99,7 @@ fun MonetraNavGraph(
                 backStack.safePop()
             }
         },
-        transitionSpec = {
+        /*transitionSpec = {
             if (isPop) {
                 slideInHorizontally(
                     initialOffsetX = { -it },
@@ -129,7 +129,7 @@ fun MonetraNavGraph(
                     )
                 )
             }
-        },
+        }*/
         entryProvider = { key ->
             when (key) {
 

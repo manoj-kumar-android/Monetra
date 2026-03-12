@@ -26,7 +26,30 @@ data class TransactionUiItem(
     val categoryEmoji: String,
     val formattedTime: String = "",
     val fullDate: java.time.LocalDate? = null // Used for header grouping logic
-)
+) {
+    companion object {
+        fun getEmojiForCategory(category: String): String {
+            return when (category) {
+                "Food" -> "🍔"
+                "Transport" -> "🚗"
+                "Shopping" -> "🛍️"
+                "Entertainment", "Fun" -> "🎭"
+                "Utilities", "Bills" -> "💡"
+                "Salary" -> "💸"
+                "Gift" -> "🎁"
+                "Rent", "Room Rent" -> "🏠"
+                "Groceries" -> "🛒"
+                "Subscription" -> "🔄"
+                "Health" -> "🏥"
+                "Refund" -> "🔙"
+                "Mobile Recharge" -> "📱"
+                "Education" -> "📚"
+                "Investment" -> "💹"
+                else -> "💰"
+            }
+        }
+    }
+}
 
 @Immutable
 data class SummaryUiModel(
