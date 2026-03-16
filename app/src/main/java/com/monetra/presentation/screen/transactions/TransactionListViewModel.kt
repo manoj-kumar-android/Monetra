@@ -164,7 +164,9 @@ class TransactionListViewModel @Inject constructor(
             .format(timeFormatter),
         isIncome = type == TransactionType.INCOME,
         categoryEmoji = TransactionUiItem.getEmojiForCategory(category),
-        fullDate = date
+        fullDate = date,
+        accountName = accountName,
+        balanceAfter = "₹%,.2f".format(balanceAfter)
     )
 
     private fun com.monetra.domain.model.MonthlySummary.toSummaryUiModel() = SummaryUiModel(

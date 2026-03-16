@@ -16,12 +16,20 @@ object NotificationParser {
     private val refIdPattern =
         Pattern.compile("(?:Ref|UPIRef|id|no)\\s?:?\\s?([0-9]{10,12})", Pattern.CASE_INSENSITIVE)
 
+    private val accountPattern =
+        Pattern.compile("(?:A/c|Acct|ending in|XX|X{2,})\\s?([0-9]{3,4})", Pattern.CASE_INSENSITIVE)
+
+    private val balancePattern =
+        Pattern.compile("(?:Avl|Available|Bal|Balance)\\s?(?:Rs\\.?|INR|₹)?\\s?([0-9,]+(?:\\.[0-9]{2})?)", Pattern.CASE_INSENSITIVE)
+
     fun parse(text: String, packageName: String): PendingTransaction? {
         val amount = extractAmount(text) ?: return null
         val type = detectType(text) ?: return null
 
         val senderReceiver = extractSenderReceiver(text, type) ?: packageName.split(".").last()
         val refId = extractRefId(text)
+        val accountPart = extractAccountPart(text)
+        val balanceAfter = extractBalance(text)
 
         return PendingTransaction(
             amount = amount,
@@ -30,7 +38,9 @@ object NotificationParser {
             sourceApp = packageName,
             rawText = text,
             timestamp = System.currentTimeMillis(),
-            referenceId = refId
+            referenceId = refId,
+            accountPart = accountPart,
+            balanceAfter = balanceAfter
         )
     }
 
@@ -82,6 +92,22 @@ object NotificationParser {
         val matcher = refIdPattern.matcher(text)
         if (matcher.find()) {
             return matcher.group(1)
+        }
+        return null
+    }
+
+    private fun extractAccountPart(text: String): String? {
+        val matcher = accountPattern.matcher(text)
+        if (matcher.find()) {
+            return matcher.group(1)
+        }
+        return null
+    }
+
+    private fun extractBalance(text: String): Double? {
+        val matcher = balancePattern.matcher(text)
+        if (matcher.find()) {
+            return matcher.group(1)?.replace(",", "")?.toDoubleOrNull()
         }
         return null
     }

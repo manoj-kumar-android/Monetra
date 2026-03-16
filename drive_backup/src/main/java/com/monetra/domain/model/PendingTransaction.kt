@@ -8,5 +8,7 @@ data class PendingTransaction(
     val sourceApp: String,
     val rawText: String,
     val timestamp: Long,
-    val referenceId: String? = null
+    val referenceId: String? = null,
+    val accountPart: String? = null,
+    val balanceAfter: Double? = null
 )

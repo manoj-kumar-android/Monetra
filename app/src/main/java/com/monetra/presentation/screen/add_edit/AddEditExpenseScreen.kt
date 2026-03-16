@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -117,6 +118,11 @@ fun AddEditExpenseScreen(
         onCategoryChange = viewModel::onCategoryChange,
         titleError = uiState.titleError,
         amountError = uiState.amountError,
+        accountName = uiState.accountName,
+        onAccountChange = viewModel::onAccountChange,
+        balanceAfter = uiState.balanceAfter,
+        onBalanceChange = viewModel::onBalanceChange,
+        availableAccounts = uiState.availableAccounts,
         isLoading = uiState.isLoading,
         isEditing = uiState.isEditing,
         isSheet = isSheet,
@@ -174,6 +180,11 @@ private fun AddEditExpenseContent(
     onTypeChange: (Boolean) -> Unit,
     category: String,
     onCategoryChange: (String) -> Unit,
+    accountName: String,
+    onAccountChange: (String) -> Unit,
+    balanceAfter: String,
+    onBalanceChange: (String) -> Unit,
+    availableAccounts: List<String>,
     titleError: String?,
     amountError: String?,
     isLoading: Boolean,
@@ -228,6 +239,11 @@ private fun AddEditExpenseContent(
                 onTypeChange = onTypeChange,
                 category = category,
                 onCategoryChange = onCategoryChange,
+                accountName = accountName,
+                onAccountChange = onAccountChange,
+                balanceAfter = balanceAfter,
+                onBalanceChange = onBalanceChange,
+                availableAccounts = availableAccounts,
                 titleError = titleError,
                 amountError = amountError,
                 cardContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -362,6 +378,11 @@ private fun AddEditExpenseContent(
                 onTypeChange = onTypeChange,
                 category = category,
                 onCategoryChange = onCategoryChange,
+                accountName = accountName,
+                onAccountChange = onAccountChange,
+                balanceAfter = balanceAfter,
+                onBalanceChange = onBalanceChange,
+                availableAccounts = availableAccounts,
                 titleError = titleError,
                 amountError = amountError,
                 cardContainerColor = MaterialTheme.colorScheme.surface
@@ -387,9 +408,14 @@ private fun SheetFormBody(
     onTypeChange: (Boolean) -> Unit,
     category: String,
     onCategoryChange: (String) -> Unit,
+    accountName: String,
+    onAccountChange: (String) -> Unit,
+    balanceAfter: String,
+    onBalanceChange: (String) -> Unit,
+    availableAccounts: List<String>,
     titleError: String?,
     amountError: String?,
-    cardContainerColor: androidx.compose.ui.graphics.Color
+    cardContainerColor: Color
 ) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         SegmentedButton(
@@ -424,6 +450,100 @@ private fun SheetFormBody(
                 onClick = { onTitleChange(suggestion) },
                 label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
             )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.lg))
+
+    Text(
+        text = stringResource(R.string.account_label),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            val baseAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
+            val allAccounts = (baseAccounts + availableAccounts).distinct()
+
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                items(allAccounts, key = { it }, contentType = { "account" }) { acc ->
+                    val isSelected = acc.equals(accountName, ignoreCase = true)
+                    androidx.compose.material3.InputChip(
+                        selected = isSelected,
+                        onClick = { onAccountChange(acc) },
+                        label = { Text(acc, style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                }
+                item {
+                    var showAddAccountDialog by remember { mutableStateOf(false) }
+                    if (showAddAccountDialog) {
+                        var newAccountName by remember { mutableStateOf("") }
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showAddAccountDialog = false },
+                            title = { Text(stringResource(R.string.add_account_title)) },
+                            text = {
+                                TextField(
+                                    value = newAccountName,
+                                    onValueChange = { newAccountName = it },
+                                    placeholder = { Text(stringResource(R.string.account_name_placeholder)) },
+                                    singleLine = true
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    if (newAccountName.isNotBlank()) {
+                                        onAccountChange(newAccountName.trim().uppercase())
+                                    }
+                                    showAddAccountDialog = false
+                                }) {
+                                    Text(stringResource(R.string.add_entry))
+                                }
+                            }
+                        )
+                    }
+                    SuggestionChip(
+                        onClick = { showAddAccountDialog = true },
+                        label = { Text("+", style = MaterialTheme.typography.labelLarge) }
+                    )
+                }
+            }
+
+            val isBank = accountName.uppercase() !in listOf("CASH", "OTHER")
+            androidx.compose.animation.AnimatedVisibility(visible = isBank) {
+                Column {
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    GroupedTextField(
+                        value = balanceAfter,
+                        onValueChange = onBalanceChange,
+                        placeholder = stringResource(R.string.balance_after_placeholder),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                        ),
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        singleLine = true
+                    )
+                }
+            }
         }
     }
 

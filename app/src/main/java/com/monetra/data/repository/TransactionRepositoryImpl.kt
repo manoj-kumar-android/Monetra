@@ -1,6 +1,7 @@
 package com.monetra.data.repository
 
 import com.monetra.data.local.dao.TransactionDao
+import com.monetra.data.local.dao.AccountDao
 import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
@@ -22,6 +23,7 @@ import javax.inject.Inject
 
 class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
+    private val accountDao: AccountDao,
     @param:ApplicationContext private val context: Context,
     private val syncRepository: com.monetra.domain.repository.SyncRepository
 ) : TransactionRepository {
@@ -172,5 +174,21 @@ class TransactionRepositoryImpl @Inject constructor(
         return dao.getAmountRange().map {
             (it?.minAmount ?: 0.0) to (it?.maxAmount ?: 100000.0)
         }
+    }
+
+    override fun getAccountNames(): Flow<List<String>> {
+        return dao.getAccountNames()
+    }
+
+    override suspend fun getLastBalanceForAccount(accountName: String): Double? {
+        return dao.getLastBalanceForAccount(accountName)
+    }
+
+    override fun getAccounts(): kotlinx.coroutines.flow.Flow<List<String>> {
+        return accountDao.getAllAccounts().map { it.map { account -> account.name } }
+    }
+
+    override suspend fun insertAccount(accountName: String) {
+        accountDao.insertAccount(com.monetra.data.local.entity.AccountEntity(name = accountName))
     }
 }

@@ -28,4 +28,9 @@ interface TransactionRepository {
     fun getFilterSummary(filters: TransactionFilters): Flow<TransactionSummary>
     fun getUsedCategories(type: com.monetra.domain.model.TransactionType?): Flow<List<String>>
     fun getAmountRange(): Flow<Pair<Double, Double>>
+    fun getAccountNames(): Flow<List<String>>
+    suspend fun getLastBalanceForAccount(accountName: String): Double?
+    
+    fun getAccounts(): kotlinx.coroutines.flow.Flow<List<String>>
+    suspend fun insertAccount(accountName: String)
 }

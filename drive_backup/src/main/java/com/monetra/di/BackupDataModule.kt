@@ -34,7 +34,7 @@ abstract class BackupDataModule {
                 MonetraDatabase::class.java,
                 "monetra_db"
             )
-            .addMigrations(MonetraDatabase.MIGRATION_1_2)
+            .addCallback(MonetraDatabase.CALLBACK)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
         }
@@ -95,5 +95,9 @@ abstract class BackupDataModule {
         @Singleton
         fun providePendingTransactionDao(db: MonetraDatabase): PendingTransactionDao =
             db.pendingTransactionDao
+
+        @Provides
+        @Singleton
+        fun provideAccountDao(db: MonetraDatabase): AccountDao = db.accountDao
     }
 }

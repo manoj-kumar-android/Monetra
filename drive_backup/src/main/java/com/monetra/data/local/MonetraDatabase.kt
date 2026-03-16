@@ -22,9 +22,10 @@ import com.monetra.data.local.entity.*
         NoteEntity::class,
         DeletedEntity::class,
         PendingDeleteEntity::class,
-        PendingTransactionEntity::class
+        PendingTransactionEntity::class,
+        AccountEntity::class
     ],
-    version = 7, 
+    version = 1, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -44,21 +45,16 @@ abstract class MonetraDatabase : RoomDatabase() {
     abstract val deletedEntityDao: DeletedEntityDao
     abstract val pendingDeleteDao: PendingDeleteDao
     abstract val pendingTransactionDao: PendingTransactionDao
+    abstract val accountDao: AccountDao
 
     companion object {
-        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
-            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS `savings` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-                        `bankName` TEXT NOT NULL, 
-                        `amount` REAL NOT NULL, 
-                        `interestRate` REAL, 
-                        `note` TEXT
-                    )
-                    """.trimIndent()
-                )
+        val CALLBACK = object : RoomDatabase.Callback() {
+            override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                super.onCreate(db)
+                val defaultAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
+                defaultAccounts.forEach { name ->
+                    db.execSQL("INSERT INTO accounts (name) VALUES ('$name')")
+                }
             }
         }
     }

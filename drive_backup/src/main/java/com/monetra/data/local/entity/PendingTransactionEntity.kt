@@ -14,7 +14,9 @@ data class PendingTransactionEntity(
     val sourceApp: String,
     val rawText: String,
     val timestamp: Long,
-    val referenceId: String? = null
+    val referenceId: String? = null,
+    val accountPart: String? = null,
+    val balanceAfter: Double? = null
 )
 
 fun PendingTransactionEntity.toDomainModel(): PendingTransaction {
@@ -26,7 +28,9 @@ fun PendingTransactionEntity.toDomainModel(): PendingTransaction {
         sourceApp = sourceApp,
         rawText = rawText,
         timestamp = timestamp,
-        referenceId = referenceId
+        referenceId = referenceId,
+        accountPart = accountPart,
+        balanceAfter = balanceAfter
     )
 }
 
@@ -39,6 +43,8 @@ fun PendingTransaction.toEntity(): PendingTransactionEntity {
         sourceApp = sourceApp,
         rawText = rawText,
         timestamp = timestamp,
-        referenceId = referenceId
+        referenceId = referenceId,
+        accountPart = accountPart,
+        balanceAfter = balanceAfter
     )
 }

@@ -186,6 +186,12 @@ interface TransactionDao {
     """)
     fun getAmountRange(): Flow<FilterAmountRange?>
 
+    @Query("SELECT DISTINCT accountName FROM transactions ORDER BY accountName ASC")
+    fun getAccountNames(): Flow<List<String>>
+
+    @Query("SELECT balanceAfter FROM transactions WHERE accountName = :accountName ORDER BY id DESC LIMIT 1")
+    suspend fun getLastBalanceForAccount(accountName: String): Double?
+
     suspend fun upsertSync(entity: TransactionEntity) {
         val existing = getTransactionByRemoteId(entity.remoteId)
         val shouldOverwrite = when {

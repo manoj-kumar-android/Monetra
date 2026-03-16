@@ -88,6 +88,11 @@
     <string name="title_placeholder">Title</string>
     <string name="notes_placeholder">Notes</string>
     <string name="amount_placeholder">₹0.00</string>
+    <string name="account_label">ACCOUNT / WALLET</string>
+    <string name="balance_after_label">BALANCE AFTER</string>
+    <string name="add_account_title">Add Account</string>
+    <string name="account_name_placeholder">Account Name (e.g. Kotak)</string>
+    <string name="balance_after_placeholder">Account Balance after this</string>
 
     <!-- Help Screens Guide Titles -->
     <string name="help_center">Help Center</string>
@@ -142,8 +147,8 @@
     <string name="help_investments_step3_desc">The \"Free Money\" card is your liquidity indicator. It calculates what extra cash is comfortably available AFTER clearing off all loans, budgets, and investments limits. Positive means you are thriving.</string>
     <string name="help_investments_step4_title">4. Manage Portfolios Faster</string>
     <string name="help_investments_step4_desc">Use the highly accessible \"Manage\" chips block at the bottom of the Portfolio Screen to instantly jump into your specific Loan logs, Expense logs, and Investment profiles.</string>
-    <string name="help_investments_step5_title">5. Wealth Projection Simulator</string>
-    <string name="help_investments_step5_desc">Analyze exactly how rich you will be down the line. Add your expected Return on Investment %, enter your projection horizon in years, and watch how Compound Interest exponentially grows your Net Worth over a decade.</string>
+    <!-- <string name="help_investments_step5_title">5. Wealth Projection Simulator</string>
+    <string name="help_investments_step5_desc">Analyze exactly how rich you will be down the line. Add your expected Return on Investment %, enter your projection horizon in years, and watch how Compound Interest exponentially grows your Net Worth over a decade.</string> -->
 
     <!-- Fixed Costs Help Content -->
     <string name="help_fixed_costs_step1_title">1. Handle Monthly Obligations</string>
@@ -195,8 +200,8 @@
     <string name="top_spending_categories">Top Spending Categories</string>
     <string name="emi_stress_level_label">EMI Stress Level</string>
     <string name="personalized_improvements">Personalized Improvements</string>
-    <string name="what_if_simulator">What-If Simulator</string>
-    <string name="what_if_simulator_desc">Test life decisions and see their impact on your financial health score.</string>
+    <!-- <string name="what_if_simulator">What-If Simulator</string>
+    <string name="what_if_simulator_desc">Test life decisions and see their impact on your financial health score.</string> -->
 
     <string name="stress_critical">CRITICAL</string>
     <string name="stress_high">HIGH</string>
@@ -288,8 +293,8 @@
     <string name="locked_label">Locked</string>
 
     <!-- Simulator -->
-    <string name="simulator_title">What-If Simulator</string>
-    <string name="simulator_subtitle">Safe future planning — no real money at risk</string>
+    <!-- <string name="simulator_title">What-If Simulator</string>
+    <string name="simulator_subtitle">Safe future planning — no real money at risk</string> -->
     <string name="reset_all">Reset all</string>
     <string name="fetching_data">Fetching your financial data…</string>
     <string name="budget_overloaded_title">Budget Overloaded! ⚠️</string>
@@ -386,8 +391,8 @@
     <string name="feature1_subtitle">Track every expense, EMI and fixed cost — all in one beautiful place.</string>
     <string name="feature2_title">Grow Your Wealth</string>
     <string name="feature2_subtitle">Set savings goals, monitor investments and see your net worth rise.</string>
-    <string name="feature3_title">AI-Powered Insights</string>
-    <string name="feature3_subtitle">Smart nudges and what-if simulations guide every financial decision.</string>
+    <string name="feature3_title">Auto Detection &amp; Notes</string>
+    <string name="feature3_subtitle">Instantly detect bank alerts and maintain secure notes for total precision.</string>
     <string name="privacy_badge_text">100%% offline &amp; private — your data never leaves your device</string>
     <string name="get_started">Get Started</string>
     <string name="im_new">I\'m New</string>

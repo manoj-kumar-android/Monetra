@@ -17,6 +17,8 @@ data class Transaction(
     val date: LocalDate,
     val note: String = "",
     val linkedBillId: Long? = null,
+    val accountName: String = "Cash",
+    val balanceAfter: Double = 0.0,
     override val version: Long = 1L,
     override val updatedAt: Long = System.currentTimeMillis(),
     override val deviceId: String = "",

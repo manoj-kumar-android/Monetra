@@ -25,7 +25,9 @@ data class TransactionUiItem(
     val isIncome: Boolean,        // drives color; avoids passing an enum to the row
     val categoryEmoji: String,
     val formattedTime: String = "",
-    val fullDate: java.time.LocalDate? = null // Used for header grouping logic
+    val fullDate: java.time.LocalDate? = null, // Used for header grouping logic
+    val accountName: String = "",
+    val balanceAfter: String = ""
 ) {
     companion object {
         fun getEmojiForCategory(category: String): String {

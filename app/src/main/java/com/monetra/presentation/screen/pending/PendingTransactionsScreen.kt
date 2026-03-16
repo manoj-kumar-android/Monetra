@@ -53,7 +53,13 @@ fun PendingTransactionsScreen(
     val context = LocalContext.current
 
     // Check if permission is granted
-    var isPermissionGranted by remember { mutableStateOf(false) }
+    var isPermissionGranted by remember { 
+        val listeners = Settings.Secure.getString(
+            context.contentResolver,
+            "enabled_notification_listeners"
+        )
+        mutableStateOf(listeners != null && listeners.contains(context.packageName))
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {

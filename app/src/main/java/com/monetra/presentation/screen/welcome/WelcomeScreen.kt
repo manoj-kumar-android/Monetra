@@ -30,7 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -264,7 +264,7 @@ fun WelcomeScreen(
                     )
                     AnimatedFeatureCard(
                         visible  = card3,
-                        icon     = Icons.Default.AutoAwesome,
+                        icon     = Icons.Default.NotificationsActive,
                         iconTint = Color(0xFFFF9F0A),
                         title    = stringResource(R.string.feature3_title),
                         subtitle = stringResource(R.string.feature3_subtitle)
