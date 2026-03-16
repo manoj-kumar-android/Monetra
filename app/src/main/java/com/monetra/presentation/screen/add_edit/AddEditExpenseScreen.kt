@@ -80,7 +80,6 @@ fun AddEditExpenseScreen(
     transactionId: Long? = null,
     pendingId: Long? = null,
     onNavigateBack: () -> Unit,
-    isSheet: Boolean = false,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
     LaunchedEffect(transactionId, pendingId) {
@@ -125,7 +124,6 @@ fun AddEditExpenseScreen(
         availableAccounts = uiState.availableAccounts,
         isLoading = uiState.isLoading,
         isEditing = uiState.isEditing,
-        isSheet = isSheet,
         onSaveClick = {
             viewModel.onSaveClick()
         }
@@ -189,103 +187,11 @@ private fun AddEditExpenseContent(
     amountError: String?,
     isLoading: Boolean,
     isEditing: Boolean,
-    isSheet: Boolean,
     onSaveClick: () -> Unit
 ) {
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
-    // When shown as a sheet, render a plain scrollable column that inherits
-    // the sheet's surface background — no nested Scaffold.
-    if (isSheet) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.lg)
-        ) {
-            // ── Sheet header with title + close ──────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.lg, bottom = Spacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(if (isEditing) R.string.edit_transaction_title else R.string.add_transaction_title),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                /*IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }*/
-            }
-
-            SheetFormBody(
-                title = title,
-                onTitleChange = onTitleChange,
-                amount = amount,
-                onAmountChange = onAmountChange,
-                note = note,
-                onNoteChange = onNoteChange,
-                formattedDate = formattedDate,
-                onDateClick = onDateClick,
-                isIncome = isIncome,
-                onTypeChange = onTypeChange,
-                category = category,
-                onCategoryChange = onCategoryChange,
-                accountName = accountName,
-                onAccountChange = onAccountChange,
-                balanceAfter = balanceAfter,
-                onBalanceChange = onBalanceChange,
-                availableAccounts = availableAccounts,
-                titleError = titleError,
-                amountError = amountError,
-                cardContainerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-
-            // ── Save button at bottom of scroll ──────────────────────────
-            Spacer(modifier = Modifier.height(Spacing.lg))
-            Button(
-                onClick = {
-                    keyboardController?.hide()
-                    onSaveClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(14.dp),
-                enabled = !isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.save),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.navigationBarsPadding())
-            Spacer(modifier = Modifier.height(Spacing.lg))
-        }
-        return
-    }
-
-    // ── Full-screen mode (non-sheet) — keep the original Scaffold layout ──
+    // ── Full-screen mode ──
     Scaffold(
         modifier = Modifier
             .fillMaxSize()

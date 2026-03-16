@@ -16,7 +16,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,13 +44,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,13 +69,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
 import com.monetra.presentation.screen.transactions.ExpenseListScreen
 import kotlinx.serialization.Serializable
 
@@ -134,13 +128,8 @@ fun MainScreenContainer(
         }
     }
 
-    var showAddTransactionSheet by remember { mutableStateOf(false) }
-    var editTransactionId       by remember { mutableStateOf<Long?>(null) }
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    fun openAddSheet() { editTransactionId = null; showAddTransactionSheet = true }
-    fun openEditSheet(id: Long) { editTransactionId = id; showAddTransactionSheet = true }
+    fun openAddSheet() { onNavigateToAdd() }
+    fun openEditSheet(id: Long) { onNavigateToEdit(id) }
 
     BackHandler(enabled = isTopLevel && selectedTab != BottomNavScreen.Dashboard) {
         selectedTabStr = "Dashboard"
@@ -170,7 +159,7 @@ fun MainScreenContainer(
                     if (selectedTab == BottomNavScreen.Refundable) {
                         onNavigateToAddRefundable()
                     } else {
-                        openAddSheet()
+                        onNavigateToAdd()
                     }
                 }
             )
@@ -190,8 +179,8 @@ fun MainScreenContainer(
             when (selectedTab) {
                 BottomNavScreen.Dashboard -> {
                     com.monetra.presentation.screen.dashboard.DashboardScreen(
-                        onNavigateToAdd          = { openAddSheet() },
-                        onNavigateToEdit         = { openEditSheet(it) },
+                        onNavigateToAdd          = { onNavigateToAdd() },
+                        onNavigateToEdit         = { onNavigateToEdit(it) },
                         onNavigateToSettings     = onNavigateToSettings,
                         onManageBudgetsClick     = onManageBudgetsClick,
                         onNavigateToFixedExpenses = onNavigateToFixedExpenses,
@@ -204,8 +193,8 @@ fun MainScreenContainer(
                 BottomNavScreen.Transactions -> {
                     ExpenseListScreen(
                         snackbarHostState = snackbarHostState,
-                        onNavigateToAdd  = { openAddSheet() },
-                        onNavigateToEdit = { openEditSheet(it) },
+                        onNavigateToAdd  = { onNavigateToAdd() },
+                        onNavigateToEdit = { onNavigateToEdit(it) },
                         onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") },
                         onNavigateToPending = onNavigateToPending
                     )
@@ -229,23 +218,6 @@ fun MainScreenContainer(
         }
     }
 
-    // ── Add / Edit Bottom Sheet ───────────────────────────────────────────────
-    if (showAddTransactionSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAddTransactionSheet = false; editTransactionId = null },
-            sheetState       = sheetState,
-            containerColor   = MaterialTheme.colorScheme.surface,
-            dragHandle       = null,
-            sheetGesturesEnabled = !imeVisible,
-            shape            = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        ) {
-            AddEditExpenseScreen(
-                transactionId  = editTransactionId,
-                isSheet        = true,
-                onNavigateBack = { showAddTransactionSheet = false; editTransactionId = null }
-            )
-        }
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
