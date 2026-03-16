@@ -55,4 +55,12 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindSavingRepository(impl: SavingRepositoryImpl): SavingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNoteRepository(impl: NoteRepositoryImpl): NoteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPendingTransactionRepository(impl: PendingTransactionRepositoryImpl): PendingTransactionRepository
 }

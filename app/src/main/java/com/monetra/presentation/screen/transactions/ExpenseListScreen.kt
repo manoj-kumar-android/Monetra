@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DateRange
@@ -97,6 +98,7 @@ fun ExpenseListScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
     onNavigateToHelp: () -> Unit,
+    onNavigateToPending: () -> Unit,
     viewModel: TransactionListViewModel = hiltViewModel()
 ) {
     val pagingItems = viewModel.pagedTransactions.collectAsLazyPagingItems()
@@ -143,6 +145,12 @@ fun ExpenseListScreen(
                         )
                     },
                     actions = {
+                        IconButton(onClick = onNavigateToPending) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = stringResource(R.string.add_from_notification)
+                            )
+                        }
                         IconButton(onClick = { isFilterSheetOpen = true }) {
                             Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
                         }
@@ -178,7 +186,9 @@ fun ExpenseListScreen(
             }
         },
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
             // Filter Summary
             MonthlySummaryCard(
                 summary = summary,
@@ -270,7 +280,13 @@ private fun TransactionTimeline(
                 }
                 null -> {
                     // Placeholder row
-                    Box(modifier = Modifier.fillMaxWidth().height(72.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)))
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(12.dp)
+                        ))
                 }
             }
         }
@@ -281,7 +297,9 @@ private fun TransactionTimeline(
 private fun MonthStickyHeader(monthName: String) {
     Surface(
         color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.sm)
     ) {
         Text(
             text = monthName.uppercase(),
@@ -304,7 +322,9 @@ private fun ActiveFiltersRow(
     onRemoveAmount: () -> Unit
 ) {
     androidx.compose.foundation.lazy.LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         // Type filter
@@ -615,7 +635,9 @@ private fun FilterSectionHeader(
     trailingValue: String? = null
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)

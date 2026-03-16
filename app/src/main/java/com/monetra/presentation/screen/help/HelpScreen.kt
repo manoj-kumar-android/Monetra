@@ -139,11 +139,17 @@ private fun helpContent(screenType: String): Pair<String, List<HelpSection>> {
                 HelpSection(stringResource(R.string.help_transactions_step2_title), stringResource(R.string.help_transactions_step2_desc))
             )
         )
-        "SIMULATOR" -> Pair(
-            stringResource(R.string.help_simulator_guide_title),
+        "NOTES" -> Pair(
+            stringResource(R.string.help_notes_guide_title),
             listOf(
-                HelpSection(stringResource(R.string.help_simulator_step1_title), stringResource(R.string.help_simulator_step1_desc)),
-                HelpSection(stringResource(R.string.help_simulator_step2_title), stringResource(R.string.help_simulator_step2_desc))
+                HelpSection(
+                    stringResource(R.string.help_notes_step1_title),
+                    stringResource(R.string.help_notes_step1_desc)
+                ),
+                HelpSection(
+                    stringResource(R.string.help_notes_step2_title),
+                    stringResource(R.string.help_notes_step2_desc)
+                )
             )
         )
         "LOANS" -> Pair(

@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -84,7 +85,7 @@ fun DashboardScreen(
     onManageBudgetsClick: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
     onNavigateToHelp: () -> Unit,
-    onNavigateToSimulator: () -> Unit,
+    onNavigateToNotes: () -> Unit,
     onSeeAllTransactions: () -> Unit,
     onNavigateToWelcome: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
@@ -160,6 +161,12 @@ fun DashboardScreen(
                                 onClick = { viewModel.onSyncClick() }
                             )
                         }
+                    }
+                    IconButton(onClick = onNavigateToNotes) {
+                        Icon(
+                            Icons.Default.Description,
+                            contentDescription = stringResource(R.string.notes_title)
+                        )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))

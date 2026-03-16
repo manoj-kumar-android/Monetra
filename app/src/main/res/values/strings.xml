@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Monetra</string>
 
@@ -93,7 +94,7 @@
     <string name="help_dashboard_guide_title">Dashboard Guide</string>
     <string name="help_assistant_guide_title">Money Coach Guide</string>
     <string name="help_transactions_guide_title">Transactions Guide</string>
-    <string name="help_simulator_guide_title">Wealth Simulator Guide</string>
+    <string name="help_notes_guide_title">Notes Guide</string>
     <string name="help_loans_guide_title">Loans &amp; EMI Guide</string>
     <string name="help_investments_guide_title">Wealth Tracker Guide</string>
     <string name="help_fixed_costs_guide_title">Fixed Bills Guide</string>
@@ -122,11 +123,11 @@
     <string name="help_transactions_step2_title">2. Swipe-to-Delete Timeline</string>
     <string name="help_transactions_step2_desc">Want to delete an accidental entry? Just swipe left on the entry! A massive, premium \"Mark Delete\" UI will emerge. Best part? Monetra offers an immediate \"Undo\" snackbar just in case you swipe by mistake.</string>
 
-    <!-- Simulator Help Content -->
-    <string name="help_simulator_step1_title">1. \'What-If\' Financial Scenarios</string>
-    <string name="help_simulator_step1_desc">Thinking of a new job? Wondering what happens if you take an expensive Car Loan? Enter these \"What If\" values into the simulator to test life decisions digitally before making them.</string>
-    <string name="help_simulator_step2_title">2. 12-Month Reality Projection</string>
-    <string name="help_simulator_step2_desc">Monetra\'s algorithm calculates the exact impact of your \'What-If\' scenario over the next 365 days. It will warn you if taking that loan pushes you into \"CRITICAL\" EMI stress limits.</string>
+    <!-- Notes Help Content -->
+    <string name="help_notes_step1_title">1. Secure Your Thoughts</string>
+    <string name="help_notes_step1_desc">Use the Notes feature to jot down financial plans, investment ideas, or quick reminders. Your notes are stored securely on your device.</string>
+    <string name="help_notes_step2_title">2. Search &amp; Manage</string>
+    <string name="help_notes_step2_desc">Easily find your notes using the powerful search bar. Swipe left to delete a note, and use the undo option if you change your mind.</string>
 
     <!-- Loans Help Content -->
     <string name="help_loans_step1_title">1. Your Unified Debt Tracker</string>
@@ -298,6 +299,21 @@
     <string name="sip_aggressive_title">SIP Amount is Very Aggressive </string>
     <string name="sip_aggressive_msg">Investing more than 50% of income is risky. Make sure you have at least 3 months emergency fund first.</string>
     <string name="reset_all_params">Reset All Parameters</string>
+
+    <!-- Notes -->
+    <string name="notes_title">My Notes</string>
+    <string name="add_note">Add Note</string>
+    <string name="edit_note">Edit Note</string>
+    <string name="note_title_label">Title</string>
+    <string name="note_content_label">Note content...</string>
+    <string name="search_notes">Search notes...</string>
+    <string name="no_notes_found">No notes found matching your search.</string>
+    <string name="no_notes_yet">No notes yet. Tap + to add one!</string>
+    <string name="note_deleted">Note deleted</string>
+    <string name="delete_note_confirm_title">Delete Note?</string>
+    <string name="delete_note_confirm_msg">Are you sure you want to delete this note?</string>
+    <string name="notes_feature_desc">Store your thoughts and financial plans.</string>
+
     <string name="status_healthy">✅ Healthy Budget</string>
     <string name="status_moderate">⚠️ Moderate Risk</string>
     <string name="status_risk">🚨 Budget at Risk!</string>
@@ -446,4 +462,12 @@
     <string name="confirm_delete_refundable">Are you sure you want to delete this entry?</string>
     <string name="phone_instruction">Enter the person\'s phone number to allow manual SMS reminders.</string>
     <string name="invalid_phone">Please enter a valid phone number</string>
+
+    <string name="notification_listener_service_name">Monetra Transaction Detector</string>
+    <string name="add_from_notification">Add from Notification</string>
+    <string name="pending_transactions_title">Suggestions</string>
+    <string name="no_suggestions_msg">No suggestions found yet.</string>
+    <string name="suggestions_desc">Smart suggestions detected from notifications.</string>
+    <string name="grant_notification_access">Grant Access</string>
+    <string name="notification_access_disclosure">Monetra needs access to your notifications to automatically detect bank and UPI transactions. This data stays 100% on your device.</string>
 </resources>

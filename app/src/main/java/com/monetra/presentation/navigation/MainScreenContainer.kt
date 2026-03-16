@@ -115,12 +115,13 @@ fun MainScreenContainer(
     onNavigateToInvestments: () -> Unit,
     onNavigateToFixedExpenses: () -> Unit,
     onNavigateToHelp: (String) -> Unit,
-    onNavigateToSimulator: () -> Unit,
+    onNavigateToNotes: () -> Unit,
     onNavigateToAddRefundable: () -> Unit,
     onNavigateToEditRefundable: (Long) -> Unit,
     onNavigateToRefundableDetails: (Long) -> Unit,
     onNavigateToSavings: () -> Unit,
-    onNavigateToWelcome: () -> Unit
+    onNavigateToWelcome: () -> Unit,
+    onNavigateToPending: () -> Unit
 ) {
 
     var selectedTabStr by rememberSaveable { mutableStateOf(initialTab ?: "Dashboard") }
@@ -194,7 +195,7 @@ fun MainScreenContainer(
                         onNavigateToSettings     = onNavigateToSettings,
                         onManageBudgetsClick     = onManageBudgetsClick,
                         onNavigateToFixedExpenses = onNavigateToFixedExpenses,
-                        onNavigateToSimulator    = onNavigateToSimulator,
+                        onNavigateToNotes = onNavigateToNotes,
                         onNavigateToHelp         = { onNavigateToHelp("DASHBOARD") },
                         onSeeAllTransactions     = { selectedTabStr = "Transactions" },
                         onNavigateToWelcome      = onNavigateToWelcome
@@ -205,7 +206,8 @@ fun MainScreenContainer(
                         snackbarHostState = snackbarHostState,
                         onNavigateToAdd  = { openAddSheet() },
                         onNavigateToEdit = { openEditSheet(it) },
-                        onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") }
+                        onNavigateToHelp = { onNavigateToHelp("TRANSACTIONS") },
+                        onNavigateToPending = onNavigateToPending
                     )
                 }
                 BottomNavScreen.Refundable -> {
@@ -414,7 +416,9 @@ private fun AnimatedNavItem(
             imageVector        = item.icon,
             contentDescription = item.title,
             tint               = iconColor,
-            modifier           = Modifier.size(24.dp).scale(iconScale)
+            modifier           = Modifier
+                .size(24.dp)
+                .scale(iconScale)
         )
 
         Spacer(modifier = Modifier.height(3.dp))
@@ -441,9 +445,9 @@ private fun AnimatedNavItem(
                         val w = dotTargetWidthDp.toPx() * indicatorWidth
                         if (w > 0f) {
                             drawRoundRect(
-                                color       = primary.copy(alpha = indicatorAlpha),
-                                topLeft     = Offset((size.width - w) / 2f, 0f),
-                                size        = Size(w, size.height),
+                                color = primary.copy(alpha = indicatorAlpha),
+                                topLeft = Offset((size.width - w) / 2f, 0f),
+                                size = Size(w, size.height),
                                 cornerRadius = CornerRadius(8f, 8f)
                             )
                         }

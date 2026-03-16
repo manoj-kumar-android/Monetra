@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
+import com.monetra.domain.repository.PendingTransactionRepository
 import com.monetra.domain.usecase.transaction.AddTransactionUseCase
 import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
 import com.monetra.domain.usecase.transaction.UpdateTransactionUseCase
@@ -48,10 +49,13 @@ class AddEditExpenseViewModel @Inject constructor(
     private val addTransaction: AddTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
     private val getTransactionById: GetTransactionByIdUseCase,
-    private val validateTransaction: ValidateTransactionUseCase
+    private val validateTransaction: ValidateTransactionUseCase,
+    private val pendingRepository: PendingTransactionRepository
 ) : ViewModel() {
 
     private var transactionId: Long? = null
+    private var pendingId: Long? = null
+    private var pendingTimestamp: Long? = null
 
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState.asStateFlow()
@@ -59,10 +63,14 @@ class AddEditExpenseViewModel @Inject constructor(
     private val _events = Channel<AddEditEvent>()
     val events = _events.receiveAsFlow()
 
-    fun loadTransaction(id: Long?) {
+    fun loadTransaction(id: Long?, pendingId: Long? = null) {
         if (id == null) {
             this.transactionId = null
-            _uiState.value = AddEditUiState()
+            if (pendingId != null) {
+                loadFromPending(pendingId)
+            } else {
+                _uiState.value = AddEditUiState()
+            }
             return
         }
         
@@ -88,6 +96,32 @@ class AddEditExpenseViewModel @Inject constructor(
             } ?: run {
                 _uiState.update { it.copy(isLoading = false, isEditing = false) }
                 _events.send(AddEditEvent.ShowError("Transaction not found"))
+            }
+        }
+    }
+
+    private fun loadFromPending(id: Long) {
+        this.pendingId = id
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            pendingRepository.getPendingById(id)?.let { pending ->
+                this@AddEditExpenseViewModel.pendingTimestamp = pending.timestamp
+                val txDate = java.time.Instant.ofEpochMilli(pending.timestamp)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+
+                _uiState.update {
+                    it.copy(
+                        title = pending.senderReceiver,
+                        amount = pending.amount.toString(),
+                        isIncome = pending.type == TransactionType.INCOME,
+                        note = "Ref: ${pending.referenceId ?: "N/A"}",
+                        date = txDate,
+                        isLoading = false
+                    )
+                }
+            } ?: run {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -171,13 +205,16 @@ class AddEditExpenseViewModel @Inject constructor(
                     type = if (currentState.isIncome) TransactionType.INCOME else TransactionType.EXPENSE,
                     category = currentState.category,
                     date = currentState.date,
-                    note = currentState.note
+                    note = currentState.note,
+                    updatedAt = pendingTimestamp ?: System.currentTimeMillis()
                 )
 
                 if (transactionId != null) {
                     updateTransaction(transaction)
                 } else {
                     addTransaction(transaction)
+                    // If this was from a suggestion, clear it
+                    pendingId?.let { pendingRepository.deletePending(it) }
                 }
                 _events.send(AddEditEvent.SaveSuccess)
             } catch (e: Exception) {

@@ -77,12 +77,13 @@ import java.time.ZoneId
 @Composable
 fun AddEditExpenseScreen(
     transactionId: Long? = null,
+    pendingId: Long? = null,
     onNavigateBack: () -> Unit,
     isSheet: Boolean = false,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(transactionId) {
-        viewModel.loadTransaction(transactionId)
+    LaunchedEffect(transactionId, pendingId) {
+        viewModel.loadTransaction(transactionId, pendingId)
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
@@ -270,7 +271,9 @@ private fun AddEditExpenseContent(
 
     // ── Full-screen mode (non-sheet) — keep the original Scaffold layout ──
     Scaffold(
-        modifier = Modifier.fillMaxSize().imePadding(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -492,12 +495,16 @@ private fun SheetFormBody(
     )
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onDateClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onDateClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(stringResource(R.string.date_label), modifier = Modifier.weight(1f))
@@ -565,7 +572,9 @@ private fun EmojiCategoryGrid(
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = Modifier.fillMaxWidth().height(if (isIncome) 100.dp else 240.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (isIncome) 100.dp else 240.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
@@ -573,7 +582,9 @@ private fun EmojiCategoryGrid(
             val (resId, emoji) = data
             val isSelected = id == selected
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { onSelect(id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelect(id) },
                 colors = CardDefaults.cardColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else cardContainerColor
                 ),

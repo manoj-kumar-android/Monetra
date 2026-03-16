@@ -25,7 +25,6 @@ import com.monetra.MainViewModel
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
 import com.monetra.presentation.screen.budgets.BudgetsScreen
 import com.monetra.presentation.screen.settings.SettingsScreen
-import com.monetra.presentation.screen.simulator.WhatIfSimulatorScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -35,13 +34,22 @@ sealed interface Route : NavKey {
     @Serializable
     data class TransactionList(val initialTab: String? = null) : Route
     @Serializable
-    data class AddEditTransaction(val transactionId: Long? = null) : Route
+    data class AddEditTransaction(
+        val transactionId: Long? = null,
+        val pendingId: Long? = null
+    ) : Route
+
+    @Serializable
+    data object PendingTransactions : Route
     @Serializable
     data object Settings : Route
     @Serializable
     data object Budgets : Route
     @Serializable
-    data object WhatIfSimulator : Route
+    data object NotesList : Route
+
+    @Serializable
+    data class AddEditNote(val noteId: Long? = null) : Route
     @Serializable
     data object Loans : Route
     @Serializable
@@ -164,8 +172,8 @@ fun MonetraNavGraph(
                             onNavigateToHelp = { screenType ->
                                 backStack.navigateTo(Route.Help(screenType))
                             },
-                            onNavigateToSimulator = {
-                                backStack.navigateTo(Route.WhatIfSimulator)
+                            onNavigateToNotes = {
+                                backStack.navigateTo(Route.NotesList)
                             },
                             onNavigateToAddRefundable = {
                                 backStack.navigateTo(Route.AddEditRefundable(null))
@@ -182,7 +190,8 @@ fun MonetraNavGraph(
                             onNavigateToWelcome = {
                                 backStack.clear()
                                 backStack.add(Route.Welcome)
-                            }
+                            },
+                            onNavigateToPending = { backStack.navigateTo(Route.PendingTransactions) }
                         )
                     }
                 }
@@ -211,8 +220,13 @@ fun MonetraNavGraph(
                         SettingsScreen(
                             onNavigateBack = { backStack.safePop() },
                             onNavigateToCategories = { backStack.navigateTo(Route.Budgets) },
-                            onNavigateToHelp = { screenType -> backStack.navigateTo(Route.Help(screenType)) },
-                            onNavigateToSimulator = { backStack.navigateTo(Route.WhatIfSimulator) }
+                            onNavigateToHelp = { screenType ->
+                                backStack.navigateTo(
+                                    Route.Help(
+                                        screenType
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -230,6 +244,7 @@ fun MonetraNavGraph(
                     NavEntry(key) {
                         AddEditExpenseScreen(
                             transactionId = key.transactionId,
+                            pendingId = key.pendingId,
                             onNavigateBack = {
                                 keyboardController?.hide()
                                 backStack.safePop()
@@ -238,11 +253,32 @@ fun MonetraNavGraph(
                     }
                 }
 
-                is Route.WhatIfSimulator -> {
+                is Route.PendingTransactions -> {
                     NavEntry(key) {
-                        WhatIfSimulatorScreen(
+                        com.monetra.presentation.screen.pending.PendingTransactionsScreen(
                             onNavigateBack = { backStack.safePop() },
-                            onNavigateToHelp = { backStack.navigateTo(Route.Help("SIMULATOR")) }
+                            onSelectPending = { id ->
+                                backStack.navigateTo(Route.AddEditTransaction(pendingId = id))
+                            }
+                        )
+                    }
+                }
+
+                is Route.NotesList -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.notes.NotesScreen(
+                            onNavigateBack = { backStack.safePop() },
+                            onAddNoteClick = { backStack.navigateTo(Route.AddEditNote(null)) },
+                            onNoteClick = { id -> backStack.navigateTo(Route.AddEditNote(id)) }
+                        )
+                    }
+                }
+
+                is Route.AddEditNote -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.notes.AddEditNoteScreen(
+                            noteId = key.noteId,
+                            onNavigateBack = { backStack.safePop() }
                         )
                     }
                 }

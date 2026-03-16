@@ -86,5 +86,14 @@ abstract class BackupDataModule {
         @Provides
         @Singleton
         fun provideDeletedEntityDao(db: MonetraDatabase): DeletedEntityDao = db.deletedEntityDao
+
+        @Provides
+        @Singleton
+        fun provideNoteDao(db: MonetraDatabase): NoteDao = db.noteDao
+
+        @Provides
+        @Singleton
+        fun providePendingTransactionDao(db: MonetraDatabase): PendingTransactionDao =
+            db.pendingTransactionDao
     }
 }
