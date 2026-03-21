@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -46,6 +47,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,12 +62,30 @@ import kotlin.math.abs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageAccountsScreen(
+    initialAccountName: String? = null,
     onNavigateBack: () -> Unit,
     viewModel: ManageAccountsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(initialAccountName) {
+        viewModel.clearState()
+        viewModel.setActiveAccount(initialAccountName)
+        focusRequester.requestFocus()
+    }
+
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ManageAccountsEvent.NavigateBack -> {
+                    onNavigateBack()
+                }
+            }
+        }
+    }
 
     LaunchedEffect(uiState.deletedAccountName) {
         if (uiState.deletedAccountName != null) {
@@ -129,7 +150,9 @@ fun ManageAccountsScreen(
                     OutlinedTextField(
                         value = uiState.inputText,
                         onValueChange = viewModel::onInputTextChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
                         placeholder = { Text("Account Name (e.g., SBI MAINS)") },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -148,10 +171,7 @@ fun ManageAccountsScreen(
                     ) {
                         if (uiState.editingAccountName != null) {
                             TextButton(
-                                onClick = {
-                                    viewModel.onInputTextChange("")
-                                    viewModel.onSelectAccountForEdit("")
-                                }
+                                onClick = viewModel::clearState
                             ) {
                                 Text("Cancel")
                             }
@@ -196,14 +216,30 @@ fun ManageAccountsScreen(
                         ) {
                             AccountItem(
                                 accountName = accountName,
-                                onClick = { viewModel.onSelectAccountForEdit(accountName) },
+                                isSelected = accountName.equals(
+                                    uiState.activeAccountName,
+                                    ignoreCase = true
+                                ),
+                                onClick = {
+                                    viewModel.setActiveAccount(accountName)
+                                    onNavigateBack()
+                                },
+                                onEditClick = { viewModel.onSelectAccountForEdit(accountName) },
                                 showDeleteHint = true
                             )
                         }
                     } else {
                         AccountItem(
                             accountName = accountName,
-                            onClick = { viewModel.onSelectAccountForEdit(accountName) },
+                            isSelected = accountName.equals(
+                                uiState.activeAccountName,
+                                ignoreCase = true
+                            ),
+                            onClick = {
+                                viewModel.setActiveAccount(accountName)
+                                onNavigateBack()
+                            },
+                            onEditClick = { viewModel.onSelectAccountForEdit(accountName) },
                             showDeleteHint = false
                         )
                     }
@@ -216,7 +252,9 @@ fun ManageAccountsScreen(
 @Composable
 private fun AccountItem(
     accountName: String,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     showDeleteHint: Boolean
 ) {
     val initials = accountName.take(2).uppercase()
@@ -228,10 +266,15 @@ private fun AccountItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            if (isSelected) 2.dp else 1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(
+                alpha = 0.5f
+            )
         )
     ) {
         Row(
@@ -283,12 +326,23 @@ private fun AccountItem(
                     }
                 }
             }
-            Icon(
-                Icons.Default.Edit,
-                contentDescription = "Edit Account",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                modifier = Modifier.size(20.dp)
-            )
+            if (isSelected) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(Spacing.md))
+            }
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit Account",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

@@ -34,7 +34,9 @@ sealed interface Route : NavKey {
 
     @Serializable
     data class AddEditTransaction(
-        val transactionId: Long? = null, val pendingId: Long? = null
+        val transactionId: Long? = null,
+        val pendingId: Long? = null,
+        val sessionId: Long = 0L
     ) : Route
 
     @Serializable
@@ -44,7 +46,7 @@ sealed interface Route : NavKey {
     data object Settings : Route
 
     @Serializable
-    data object ManageAccounts : Route
+    data class ManageAccounts(val initialAccountName: String? = null) : Route
 
     @Serializable
     data object Budgets : Route
@@ -151,11 +153,16 @@ fun MonetraNavGraph(
                             initialTab = key.initialTab,
                             onNavigateToAdd = {
                                 keyboardController?.hide()
-                                backStack.navigateTo(Route.AddEditTransaction(null))
+                                backStack.navigateTo(Route.AddEditTransaction(sessionId = System.currentTimeMillis()))
                             },
                             onNavigateToEdit = { transactionId ->
                                 keyboardController?.hide()
-                                backStack.navigateTo(Route.AddEditTransaction(transactionId))
+                                backStack.navigateTo(
+                                    Route.AddEditTransaction(
+                                        transactionId = transactionId,
+                                        sessionId = System.currentTimeMillis()
+                                    )
+                                )
                             },
                             onNavigateToSettings = {
                                 backStack.navigateTo(Route.Settings)
@@ -233,6 +240,7 @@ fun MonetraNavGraph(
                 is Route.ManageAccounts -> {
                     NavEntry(key) {
                         com.monetra.presentation.screen.accounts.ManageAccountsScreen(
+                            initialAccountName = key.initialAccountName,
                             onNavigateBack = { backStack.safePop() }
                         )
                     }
@@ -255,9 +263,9 @@ fun MonetraNavGraph(
                                 keyboardController?.hide()
                                 backStack.safePop()
                             },
-                            onNavigateToManageAccounts = {
+                            onNavigateToManageAccounts = { accountName ->
                                 keyboardController?.hide()
-                                backStack.navigateTo(Route.ManageAccounts)
+                                backStack.navigateTo(Route.ManageAccounts(accountName))
                             }
                         )
                     }
@@ -268,7 +276,12 @@ fun MonetraNavGraph(
                         com.monetra.presentation.screen.pending.PendingTransactionsScreen(
                             onNavigateBack = { backStack.safePop() },
                             onSelectPending = { id ->
-                                backStack.navigateTo(Route.AddEditTransaction(pendingId = id))
+                                backStack.navigateTo(
+                                    Route.AddEditTransaction(
+                                        pendingId = id,
+                                        sessionId = System.currentTimeMillis()
+                                    )
+                                )
                             })
                     }
                 }

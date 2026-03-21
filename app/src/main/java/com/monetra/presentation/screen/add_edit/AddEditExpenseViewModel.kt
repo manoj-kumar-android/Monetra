@@ -1,18 +1,19 @@
 package com.monetra.presentation.screen.add_edit
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
+import com.monetra.domain.repository.AccountSelectionState
 import com.monetra.domain.repository.PendingTransactionRepository
+import com.monetra.domain.usecase.transaction.AddAccountUseCase
 import com.monetra.domain.usecase.transaction.AddTransactionUseCase
 import com.monetra.domain.usecase.transaction.GetAccountsUseCase
-import com.monetra.domain.usecase.transaction.AddAccountUseCase
 import com.monetra.domain.usecase.transaction.GetLastBalanceUseCase
 import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
 import com.monetra.domain.usecase.transaction.UpdateTransactionUseCase
 import com.monetra.domain.usecase.transaction.ValidateTransactionUseCase
-import com.monetra.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import androidx.compose.runtime.Immutable
 import javax.inject.Inject
 
 @Immutable
@@ -60,24 +60,15 @@ class AddEditExpenseViewModel @Inject constructor(
     private val pendingRepository: PendingTransactionRepository,
     private val getAccounts: GetAccountsUseCase,
     private val addAccount: AddAccountUseCase,
-    private val getLastBalance: GetLastBalanceUseCase
+    private val getLastBalance: GetLastBalanceUseCase,
+    private val accountSelectionState: AccountSelectionState
 ) : ViewModel() {
-
-    init {
-        loadAccounts()
-    }
-
-    private fun loadAccounts() {
-        viewModelScope.launch {
-            getAccounts().collect { accounts ->
-                _uiState.update { it.copy(availableAccounts = accounts) }
-            }
-        }
-    }
 
     private var transactionId: Long? = null
     private var pendingId: Long? = null
     private var pendingTimestamp: Long? = null
+    private var isLoaded = false
+    private var currentSessionId: Long? = null
 
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState.asStateFlow()
@@ -85,11 +76,50 @@ class AddEditExpenseViewModel @Inject constructor(
     private val _events = Channel<AddEditEvent>()
     val events = _events.receiveAsFlow()
 
-    fun loadTransaction(id: Long?, pendingId: Long? = null) {
+    init {
+        loadAccounts()
+        viewModelScope.launch {
+            accountSelectionState.selectedAccount.collect { account ->
+                if (account != null) {
+                    _uiState.update { it.copy(accountName = account) }
+                    accountSelectionState.clear()
+                }
+            }
+        }
+    }
+
+    private fun loadAccounts() {
+        viewModelScope.launch {
+            getAccounts().collect { accounts ->
+                _uiState.update { state ->
+                    val isBaseAccount = state.accountName.uppercase() in listOf("CASH", "OTHER")
+                    val currentExists = isBaseAccount || accounts.any {
+                        it.equals(
+                            state.accountName,
+                            ignoreCase = true
+                        )
+                    }
+
+                    state.copy(
+                        availableAccounts = accounts,
+                        accountName = if (currentExists) state.accountName else "Cash"
+                    )
+                }
+            }
+        }
+    }
+
+
+    fun loadTransaction(id: Long?, pendingId: Long? = null, sessionId: Long = 0L) {
+        if (this.transactionId == id && this.pendingId == pendingId && this.currentSessionId == sessionId && isLoaded) return
+        isLoaded = true
+        this.currentSessionId = sessionId
+        this.transactionId = id
+        this.pendingId = pendingId
+        
         _uiState.update { it.copy(titleError = null, amountError = null) }
 
         if (id == null) {
-            this.transactionId = null
             if (pendingId != null) {
                 loadFromPending(pendingId)
             } else {

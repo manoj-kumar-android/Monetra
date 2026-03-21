@@ -83,12 +83,13 @@ import java.time.ZoneId
 fun AddEditExpenseScreen(
     transactionId: Long? = null,
     pendingId: Long? = null,
+    sessionId: Long = 0L,
     onNavigateBack: () -> Unit,
-    onNavigateToManageAccounts: () -> Unit,
+    onNavigateToManageAccounts: (String) -> Unit,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(transactionId, pendingId) {
-        viewModel.loadTransaction(transactionId, pendingId)
+    LaunchedEffect(sessionId, transactionId, pendingId) {
+        viewModel.loadTransaction(transactionId, pendingId, sessionId)
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
@@ -133,7 +134,9 @@ fun AddEditExpenseScreen(
         onSaveClick = {
             viewModel.onSaveClick()
         },
-        onNavigateToManageAccounts = onNavigateToManageAccounts
+        onNavigateToManageAccounts = {
+            onNavigateToManageAccounts(uiState.accountName)
+        }
     )
 
     if (showDatePicker) {

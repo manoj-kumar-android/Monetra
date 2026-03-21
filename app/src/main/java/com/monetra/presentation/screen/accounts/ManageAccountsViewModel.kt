@@ -2,14 +2,17 @@ package com.monetra.presentation.screen.accounts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.monetra.domain.repository.AccountSelectionState
 import com.monetra.domain.usecase.transaction.AddAccountUseCase
 import com.monetra.domain.usecase.transaction.DeleteAccountUseCase
 import com.monetra.domain.usecase.transaction.GetAccountsUseCase
 import com.monetra.domain.usecase.transaction.UpdateAccountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,19 +23,28 @@ data class ManageAccountsUiState(
     val editingAccountName: String? = null,
     val isLoading: Boolean = false,
     val deletedAccountName: String? = null, // For undo
-    val inputError: String? = null
+    val inputError: String? = null,
+    val activeAccountName: String? = null
 )
+
+sealed interface ManageAccountsEvent {
+    data object NavigateBack : ManageAccountsEvent
+}
 
 @HiltViewModel
 class ManageAccountsViewModel @Inject constructor(
     private val getAccounts: GetAccountsUseCase,
     private val addAccount: AddAccountUseCase,
     private val updateAccount: UpdateAccountUseCase,
-    private val deleteAccount: DeleteAccountUseCase
+    private val deleteAccount: DeleteAccountUseCase,
+    private val accountSelectionState: AccountSelectionState
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ManageAccountsUiState())
     val uiState: StateFlow<ManageAccountsUiState> = _uiState.asStateFlow()
+
+    private val _events = Channel<ManageAccountsEvent>()
+    val events = _events.receiveAsFlow()
 
     init {
         loadAccounts()
@@ -51,8 +63,12 @@ class ManageAccountsViewModel @Inject constructor(
         _uiState.update { it.copy(inputText = text.uppercase(), inputError = null) }
     }
 
-    fun onSelectAccountForEdit(name: String) {
-        _uiState.update { it.copy(editingAccountName = name, inputText = name) }
+    fun onSelectAccountForEdit(name: String?) {
+        _uiState.update { it.copy(editingAccountName = name, inputText = name ?: "") }
+    }
+
+    fun clearState() {
+        _uiState.update { it.copy(editingAccountName = null, inputText = "", inputError = null) }
     }
 
     fun onSaveClicked() {
@@ -78,6 +94,8 @@ class ManageAccountsViewModel @Inject constructor(
                 } else {
                     // Create new
                     addAccount(newName)
+                    setActiveAccount(newName)
+                    _events.send(ManageAccountsEvent.NavigateBack)
                 }
             } finally {
                 _uiState.update {
@@ -99,6 +117,11 @@ class ManageAccountsViewModel @Inject constructor(
             deleteAccount(name)
             _uiState.update { it.copy(deletedAccountName = name) }
         }
+    }
+
+    fun setActiveAccount(name: String?) {
+        _uiState.update { it.copy(activeAccountName = name) }
+        name?.let { accountSelectionState.selectAccount(it) }
     }
 
     fun onRestoreDeletedAccount() {
