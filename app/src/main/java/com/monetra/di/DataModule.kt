@@ -1,7 +1,27 @@
 package com.monetra.di
 
-import com.monetra.data.repository.*
-import com.monetra.domain.repository.*
+import com.monetra.data.repository.BudgetRepositoryImpl
+import com.monetra.data.repository.InvestmentRepositoryImpl
+import com.monetra.data.repository.LoanRepositoryImpl
+import com.monetra.data.repository.MonthlyExpenseRepositoryImpl
+import com.monetra.data.repository.NoteRepositoryImpl
+import com.monetra.data.repository.PendingTransactionRepositoryImpl
+import com.monetra.data.repository.RefundableRepositoryImpl
+import com.monetra.data.repository.SavingRepositoryImpl
+import com.monetra.data.repository.SubscriptionRepositoryImpl
+import com.monetra.data.repository.TransactionRepositoryImpl
+import com.monetra.data.repository.UserPreferenceRepositoryImpl
+import com.monetra.domain.repository.BudgetRepository
+import com.monetra.domain.repository.InvestmentRepository
+import com.monetra.domain.repository.LoanRepository
+import com.monetra.domain.repository.MonthlyExpenseRepository
+import com.monetra.domain.repository.NoteRepository
+import com.monetra.domain.repository.PendingTransactionRepository
+import com.monetra.domain.repository.RefundableRepository
+import com.monetra.domain.repository.SavingRepository
+import com.monetra.domain.repository.SubscriptionRepository
+import com.monetra.domain.repository.TransactionRepository
+import com.monetra.domain.repository.UserPreferenceRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -24,17 +44,10 @@ abstract class DataModule {
     @Singleton
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
 
-    @Binds
-    @Singleton
-    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
 
     @Binds
     @Singleton
     abstract fun bindInvestmentRepository(impl: InvestmentRepositoryImpl): InvestmentRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindReportRepository(impl: ReportRepositoryImpl): ReportRepository
 
     @Binds
     @Singleton

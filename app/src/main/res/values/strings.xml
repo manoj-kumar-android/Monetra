@@ -20,7 +20,6 @@
 
     <!-- Dashboard -->
     <string name="dashboard_title">Dashboard</string>
-    <string name="monthly_report">Monthly Report</string>
     <string name="settings_title">Settings</string>
     <string name="welcome_to_monetra">Welcome to Monetra!</string>
     <string name="set_salary_instruction">Set your monthly salary in Settings to unlock your personalised financial dashboard.</string>
@@ -34,7 +33,6 @@
     <string name="daily_budget_format">Daily Budget: ₹%s</string>
     <string name="fixed_bills">Fixed Bills</string>
     <string name="monthly_commit">Monthly commit</string>
-    <string name="monthly_health">Monthly Health</string>
     <string name="recent_activity">Recent Activity</string>
     <string name="see_all">See All</string>
 
@@ -188,31 +186,6 @@
     <string name="cat_mobile_recharge">Mobile Recharge</string>
 
     <!-- Report / Analysis -->
-    <string name="monthly_analysis_title">Monthly Analysis</string>
-    <string name="financial_performance">Financial Performance</string>
-    <string name="total_income">Total Income</string>
-    <string name="total_outlays">Total Outlays</string>
-    <string name="versus_last_month">Versus Last Month</string>
-    <string name="monthly_income_label">Monthly Income</string>
-    <string name="total_expenses_label">Total Expenses</string>
-    <string name="actual_savings_label">Actual Savings</string>
-    <string name="investments_label">Investments</string>
-    <string name="top_spending_categories">Top Spending Categories</string>
-    <string name="emi_stress_level_label">EMI Stress Level</string>
-    <string name="personalized_improvements">Personalized Improvements</string>
-    <!-- <string name="what_if_simulator">What-If Simulator</string>
-    <string name="what_if_simulator_desc">Test life decisions and see their impact on your financial health score.</string> -->
-
-    <string name="stress_critical">CRITICAL</string>
-    <string name="stress_high">HIGH</string>
-    <string name="stress_moderate">MODERATE</string>
-    <string name="stress_healthy">HEALTHY</string>
-
-    <string name="stress_critical_desc" formatted="false">EMIs exceed 50% of income — this is financially dangerous. Reduce debt immediately.</string>
-    <string name="stress_high_desc" formatted="false">EMIs are between 35–50% of income — above the safe limit. Avoid new loans.</string>
-    <string name="stress_moderate_desc" formatted="false">EMIs are 20–35% of income — manageable, but keep an eye on new commitments.</string>
-    <string name="stress_healthy_desc" formatted="false">EMIs are under 20% of income — excellent! You have a healthy debt load.</string>
-
     <string name="refresh">Refresh</string>
 
     <string name="profile_financial_goals">PROFILE &amp; FINANCIAL GOALS</string>

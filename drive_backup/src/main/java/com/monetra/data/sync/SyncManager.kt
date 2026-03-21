@@ -56,15 +56,12 @@ class SyncManager @Inject constructor(
         _internalSyncState.value = SyncState.Syncing("Syncing...", 1, 10)
 
         try {
-            // 0. Check if backup is enabled
-            // Note: We use the DAO directly here for verification, although syncState flow already reacts to it.
             val prefs = db.userPreferencesDao.getAllUserPreferences().firstOrNull()
             if (prefs?.isBackupEnabled != true) {
                 _internalSyncState.value = SyncState.Idle
                 return
             }
 
-            // 0. Account Mismatch Check
             val currentEmail = driveManager.accountName.first()
             val lastSyncedEmail = syncRepository.getLastSyncedEmail().first()
 
@@ -128,7 +125,6 @@ class SyncManager @Inject constructor(
         return BackupData(
             transactions = mergeEntities(remote.transactions, localDirty.transactions, allDeletedIds),
             savings = mergeEntities(remote.savings, localDirty.savings, allDeletedIds),
-            goals = mergeEntities(remote.goals, localDirty.goals, allDeletedIds),
             categoryBudgets = mergeEntities(remote.categoryBudgets, localDirty.categoryBudgets, allDeletedIds),
             investments = mergeEntities(remote.investments, localDirty.investments, allDeletedIds),
             loans = mergeEntities(remote.loans, localDirty.loans, allDeletedIds),
@@ -178,14 +174,12 @@ class SyncManager @Inject constructor(
     private fun isEmpty(data: BackupData): Boolean {
         return data.transactions.isEmpty() && 
                data.savings.isEmpty() && 
-               data.goals.isEmpty() && 
                data.categoryBudgets.isEmpty() &&
                data.investments.isEmpty() && 
                data.loans.isEmpty() && 
                data.monthlyExpenses.isEmpty() &&
                data.billInstances.isEmpty() &&
                data.refundables.isEmpty() &&
-               data.monthlyReports.isEmpty() &&
                data.userPreferences.isEmpty() &&
                data.deletedEntities.isEmpty()
     }

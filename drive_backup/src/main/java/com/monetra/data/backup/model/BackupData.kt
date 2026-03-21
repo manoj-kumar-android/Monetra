@@ -1,14 +1,21 @@
 package com.monetra.data.backup.model
 
-import com.monetra.data.local.entity.*
+import com.monetra.data.local.entity.BillInstanceEntity
+import com.monetra.data.local.entity.CategoryBudgetEntity
+import com.monetra.data.local.entity.DeletedEntity
+import com.monetra.data.local.entity.InvestmentEntity
+import com.monetra.data.local.entity.LoanEntity
+import com.monetra.data.local.entity.MonthlyExpenseEntity
+import com.monetra.data.local.entity.RefundableEntity
+import com.monetra.data.local.entity.SavingEntity
+import com.monetra.data.local.entity.TransactionEntity
+import com.monetra.data.local.entity.UserPreferencesEntity
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class BackupData(
     val transactions: List<TransactionEntity> = emptyList(),
     val savings: List<SavingEntity> = emptyList(),
-    val goals: List<GoalEntity> = emptyList(),
-    val monthlyReports: List<MonthlyReportEntity> = emptyList(),
     val categoryBudgets: List<CategoryBudgetEntity> = emptyList(),
     val investments: List<InvestmentEntity> = emptyList(),
     val loans: List<LoanEntity> = emptyList(),

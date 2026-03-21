@@ -9,7 +9,6 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.monetra.data.local.dao.PendingDeleteDao
 import com.monetra.data.local.entity.PendingDeleteEntity
-import com.monetra.domain.repository.GoalRepository
 import com.monetra.domain.repository.InvestmentRepository
 import com.monetra.domain.repository.LoanRepository
 import com.monetra.domain.repository.MonthlyExpenseRepository
@@ -28,7 +27,6 @@ class PendingDeleteWorker @AssistedInject constructor(
     private val transactionRepository: TransactionRepository,
     private val monthlyExpenseRepository: MonthlyExpenseRepository,
     private val loanRepository: LoanRepository,
-    private val goalRepository: GoalRepository,
     private val investmentRepository: InvestmentRepository,
     private val refundableRepository: RefundableRepository,
     private val savingRepository: SavingRepository
@@ -52,7 +50,7 @@ class PendingDeleteWorker @AssistedInject constructor(
             }
 
             Result.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
@@ -66,7 +64,6 @@ class PendingDeleteWorker @AssistedInject constructor(
                 }
             }
             "LOAN" -> loanRepository.deleteLoan(entry.entityId)
-            "GOAL" -> goalRepository.deleteGoal(entry.entityId)
             "INVESTMENT" -> investmentRepository.deleteInvestment(entry.entityId)
             "REFUNDABLE" -> {
                 refundableRepository.getRefundableById(entry.entityId)?.let {

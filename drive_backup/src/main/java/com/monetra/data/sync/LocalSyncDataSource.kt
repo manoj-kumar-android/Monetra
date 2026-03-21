@@ -14,8 +14,6 @@ class LocalSyncDataSource @Inject constructor(
         return BackupData(
             transactions = db.transactionDao.getUnsyncedTransactions(),
             savings = db.savingDao.getUnsyncedSavings(),
-            goals = db.goalDao.getUnsyncedGoals(),
-            monthlyReports = db.monthlyReportDao.getUnsyncedReports(),
             categoryBudgets = db.categoryBudgetDao.getUnsyncedBudgets(),
             investments = db.investmentDao.getUnsyncedInvestments(),
             loans = db.loanDao.getUnsyncedLoans(),
@@ -30,8 +28,6 @@ class LocalSyncDataSource @Inject constructor(
     suspend fun markAsSynced(bundle: BackupData) {
         db.transactionDao.markAsSynced(bundle.transactions.map { it.remoteId })
         db.savingDao.markAsSynced(bundle.savings.map { it.remoteId })
-        db.goalDao.markAsSynced(bundle.goals.map { it.remoteId })
-        db.monthlyReportDao.markAsSynced(bundle.monthlyReports.map { it.remoteId })
         db.categoryBudgetDao.markAsSynced(bundle.categoryBudgets.map { it.remoteId })
         db.investmentDao.markAsSynced(bundle.investments.map { it.remoteId })
         db.loanDao.markAsSynced(bundle.loans.map { it.remoteId })
@@ -49,7 +45,6 @@ class LocalSyncDataSource @Inject constructor(
                 when (deleted.entityType) {
                     "TRANSACTION" -> db.transactionDao.getTransactionByRemoteId(deleted.remoteId)?.let { db.transactionDao.deleteTransactionById(it.id) }
                     "SAVING" -> db.savingDao.getSavingByRemoteId(deleted.remoteId)?.let { db.savingDao.deleteSaving(it) }
-                    "GOAL" -> db.goalDao.getGoalByRemoteId(deleted.remoteId)?.let { db.goalDao.deleteGoal(it.id) }
                     "INVESTMENT" -> db.investmentDao.getInvestmentByRemoteId(deleted.remoteId)?.let { db.investmentDao.deleteInvestment(it.id) }
                     "LOAN" -> db.loanDao.getLoanByRemoteId(deleted.remoteId)?.let { db.loanDao.deleteLoan(it.id) }
                     "REFUNDABLE" -> db.refundableDao.getRefundableByRemoteId(deleted.remoteId)?.let { db.refundableDao.deleteRefundable(it) }
@@ -67,8 +62,6 @@ class LocalSyncDataSource @Inject constructor(
 
             remoteData.transactions.filterNot { it.remoteId in allDeletes }.forEach { db.transactionDao.upsertSync(it) }
             remoteData.savings.filterNot { it.remoteId in allDeletes }.forEach { db.savingDao.upsertSync(it) }
-            remoteData.goals.filterNot { it.remoteId in allDeletes }.forEach { db.goalDao.upsertSync(it) }
-            remoteData.monthlyReports.filterNot { it.remoteId in allDeletes }.forEach { db.monthlyReportDao.upsertSync(it) }
             remoteData.categoryBudgets.filterNot { it.remoteId in allDeletes }.forEach { db.categoryBudgetDao.upsertSync(it) }
             remoteData.investments.filterNot { it.remoteId in allDeletes }.forEach { db.investmentDao.upsertSync(it) }
             remoteData.loans.filterNot { it.remoteId in allDeletes }.forEach { db.loanDao.upsertSync(it) }

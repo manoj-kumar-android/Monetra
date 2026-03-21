@@ -3,17 +3,40 @@ package com.monetra.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.monetra.data.local.dao.*
-import com.monetra.data.local.entity.*
+import com.monetra.data.local.dao.AccountDao
+import com.monetra.data.local.dao.CategoryBudgetDao
+import com.monetra.data.local.dao.DeletedEntityDao
+import com.monetra.data.local.dao.InvestmentDao
+import com.monetra.data.local.dao.LoanDao
+import com.monetra.data.local.dao.MonthlyExpenseDao
+import com.monetra.data.local.dao.NoteDao
+import com.monetra.data.local.dao.PendingDeleteDao
+import com.monetra.data.local.dao.PendingTransactionDao
+import com.monetra.data.local.dao.RefundableDao
+import com.monetra.data.local.dao.SavingDao
+import com.monetra.data.local.dao.TransactionDao
+import com.monetra.data.local.dao.UserPreferencesDao
+import com.monetra.data.local.entity.AccountEntity
+import com.monetra.data.local.entity.BillInstanceEntity
+import com.monetra.data.local.entity.CategoryBudgetEntity
+import com.monetra.data.local.entity.DeletedEntity
+import com.monetra.data.local.entity.InvestmentEntity
+import com.monetra.data.local.entity.LoanEntity
+import com.monetra.data.local.entity.MonthlyExpenseEntity
+import com.monetra.data.local.entity.NoteEntity
+import com.monetra.data.local.entity.PendingDeleteEntity
+import com.monetra.data.local.entity.PendingTransactionEntity
+import com.monetra.data.local.entity.RefundableEntity
+import com.monetra.data.local.entity.SavingEntity
+import com.monetra.data.local.entity.TransactionEntity
+import com.monetra.data.local.entity.UserPreferencesEntity
 
 @Database(
     entities = [
         TransactionEntity::class, 
         UserPreferencesEntity::class, 
         CategoryBudgetEntity::class,
-        GoalEntity::class,
         InvestmentEntity::class,
-        MonthlyReportEntity::class,
         LoanEntity::class,
         MonthlyExpenseEntity::class,
         BillInstanceEntity::class,
@@ -34,9 +57,7 @@ abstract class MonetraDatabase : RoomDatabase() {
     abstract val transactionDao: TransactionDao
     abstract val userPreferencesDao: UserPreferencesDao
     abstract val categoryBudgetDao: CategoryBudgetDao
-    abstract val goalDao: GoalDao
     abstract val investmentDao: InvestmentDao
-    abstract val monthlyReportDao: MonthlyReportDao
     abstract val loanDao: LoanDao
     abstract val monthlyExpenseDao: MonthlyExpenseDao
     abstract val refundableDao: RefundableDao

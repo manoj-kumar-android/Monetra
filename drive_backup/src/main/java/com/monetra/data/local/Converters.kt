@@ -1,11 +1,8 @@
 package com.monetra.data.local
 
 import androidx.room.TypeConverter
-import com.monetra.domain.model.TransactionType
-import com.monetra.domain.model.GoalCategory
 import com.monetra.domain.model.InvestmentType
-import com.monetra.domain.model.ContributionFrequency
-import com.monetra.domain.model.BillStatus
+import com.monetra.domain.model.TransactionType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,16 +36,6 @@ class Converters {
     @TypeConverter
     fun fromTransactionType(type: TransactionType): String {
         return type.name
-    }
-
-    @TypeConverter
-    fun toGoalCategory(value: String): GoalCategory {
-        return enumValueOf<GoalCategory>(value)
-    }
-
-    @TypeConverter
-    fun fromGoalCategory(category: GoalCategory): String {
-        return category.name
     }
 
     @TypeConverter

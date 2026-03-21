@@ -73,8 +73,6 @@ class CloudBackupRepositoryImpl @Inject constructor(
             val backupData = BackupData(
                 transactions = db.transactionDao.getAllTransactionsList(),
                 savings = db.savingDao.getAllSavingsList(),
-                goals = db.goalDao.getAllGoals(),
-                monthlyReports = db.monthlyReportDao.getAllMonthlyReportsList(),
                 categoryBudgets = db.categoryBudgetDao.getAllCategoryBudgets(),
                 investments = db.investmentDao.getAllInvestments(),
                 loans = db.loanDao.getAllLoansForBackUp(),
@@ -190,8 +188,6 @@ class CloudBackupRepositoryImpl @Inject constructor(
             // Clear existing data
             db.transactionDao.deleteAllTransactions()
             db.savingDao.deleteAllSavings()
-            db.goalDao.deleteAllGoals()
-            db.monthlyReportDao.deleteAllMonthlyReports()
             db.categoryBudgetDao.deleteAllCategoryBudgets()
             db.investmentDao.deleteAllInvestments()
             db.loanDao.deleteAllLoans()
@@ -203,8 +199,6 @@ class CloudBackupRepositoryImpl @Inject constructor(
             // Restore from backup (Ensuring all are marked as synced)
             db.transactionDao.insertAllTransactions(backupData.transactions.map { it.copy(isSynced = true) })
             db.savingDao.insertAllSavings(backupData.savings.map { it.copy(isSynced = true) })
-            db.goalDao.insertAllGoals(backupData.goals.map { it.copy(isSynced = true) })
-            db.monthlyReportDao.insertAllMonthlyReports(backupData.monthlyReports.map { it.copy(isSynced = true) })
             db.categoryBudgetDao.insertAllCategoryBudgets(backupData.categoryBudgets.map { it.copy(isSynced = true) })
             db.investmentDao.insertAllInvestments(backupData.investments.map { it.copy(isSynced = true) })
             db.loanDao.insertAllLoans(backupData.loans.map { it.copy(isSynced = true) })
