@@ -44,6 +44,9 @@ sealed interface Route : NavKey {
     data object Settings : Route
 
     @Serializable
+    data object ManageAccounts : Route
+
+    @Serializable
     data object Budgets : Route
 
     @Serializable
@@ -227,6 +230,14 @@ fun MonetraNavGraph(
                     }
                 }
 
+                is Route.ManageAccounts -> {
+                    NavEntry(key) {
+                        com.monetra.presentation.screen.accounts.ManageAccountsScreen(
+                            onNavigateBack = { backStack.safePop() }
+                        )
+                    }
+                }
+
                 is Route.Budgets -> {
                     NavEntry(key) {
                         BudgetsScreen(
@@ -243,7 +254,12 @@ fun MonetraNavGraph(
                             onNavigateBack = {
                                 keyboardController?.hide()
                                 backStack.safePop()
-                            })
+                            },
+                            onNavigateToManageAccounts = {
+                                keyboardController?.hide()
+                                backStack.navigateTo(Route.ManageAccounts)
+                            }
+                        )
                     }
                 }
 

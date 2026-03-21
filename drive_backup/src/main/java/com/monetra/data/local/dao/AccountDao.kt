@@ -15,6 +15,9 @@ interface AccountDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAccount(account: AccountEntity)
 
+    @Query("UPDATE accounts SET name = :newName WHERE name = :oldName")
+    suspend fun updateAccount(oldName: String, newName: String)
+
     @Query("DELETE FROM accounts WHERE name = :name")
     suspend fun deleteAccount(name: String)
 }

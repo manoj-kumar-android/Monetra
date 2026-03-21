@@ -16,17 +16,21 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,8 +47,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -52,7 +56,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -81,6 +84,7 @@ fun AddEditExpenseScreen(
     transactionId: Long? = null,
     pendingId: Long? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToManageAccounts: () -> Unit,
     viewModel: AddEditExpenseViewModel = hiltViewModel()
 ) {
     LaunchedEffect(transactionId, pendingId) {
@@ -128,7 +132,9 @@ fun AddEditExpenseScreen(
         isEditing = uiState.isEditing,
         onSaveClick = {
             viewModel.onSaveClick()
-        })
+        },
+        onNavigateToManageAccounts = onNavigateToManageAccounts
+    )
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -184,7 +190,8 @@ private fun AddEditExpenseContent(
     amountError: String?,
     isLoading: Boolean,
     isEditing: Boolean,
-    onSaveClick: () -> Unit
+    onSaveClick: () -> Unit,
+    onNavigateToManageAccounts: () -> Unit
 ) {
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
@@ -285,7 +292,8 @@ private fun AddEditExpenseContent(
                 availableAccounts = availableAccounts,
                 titleError = titleError,
                 amountError = amountError,
-                cardContainerColor = MaterialTheme.colorScheme.surface
+                cardContainerColor = MaterialTheme.colorScheme.surface,
+                onNavigateToManageAccounts = onNavigateToManageAccounts
             )
             Spacer(modifier = Modifier.height(Spacing.xxxl))
         }
@@ -315,7 +323,8 @@ private fun SheetFormBody(
     availableAccounts: List<String>,
     titleError: String?,
     amountError: String?,
-    cardContainerColor: Color
+    cardContainerColor: Color,
+    onNavigateToManageAccounts: () -> Unit
 ) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         SegmentedButton(
@@ -397,66 +406,55 @@ private fun SheetFormBody(
     )
 
     Card(
-        modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                alpha = 0.5f
-            )
-        ), shape = RoundedCornerShape(16.dp)
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(
+            1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
-            val baseAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
+            val baseAccounts = listOf("CASH", "OTHER")
             val allAccounts = (baseAccounts + availableAccounts).distinct()
 
-            androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(allAccounts, key = { it }, contentType = { "account" }) { acc ->
-                    val isSelected = acc.equals(accountName, ignoreCase = true)
-                    androidx.compose.material3.InputChip(
-                        selected = isSelected,
-                        onClick = { onAccountChange(acc) },
-                        label = { Text(acc, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = {
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalance,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        })
-                }
-                item {
-                    var showAddAccountDialog by remember { mutableStateOf(false) }
-                    if (showAddAccountDialog) {
-                        var newAccountName by remember { mutableStateOf("") }
-                        androidx.compose.material3.AlertDialog(
-                            onDismissRequest = {
-                                showAddAccountDialog = false
-                            },
-                            title = { Text(stringResource(R.string.add_account_title)) },
-                            text = {
-                                TextField(
-                                    value = newAccountName,
-                                    onValueChange = { newAccountName = it },
-                                    placeholder = { Text(stringResource(R.string.account_name_placeholder)) },
-                                    singleLine = true
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    if (newAccountName.isNotBlank()) {
-                                        onAccountChange(newAccountName.trim().uppercase())
-                                    }
-                                    showAddAccountDialog = false
-                                }) {
-                                    Text(stringResource(R.string.add_entry))
+                LazyRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    items(allAccounts, key = { it }, contentType = { "account" }) { acc ->
+                        val isSelected = acc.equals(accountName, ignoreCase = true)
+                        androidx.compose.material3.InputChip(
+                            selected = isSelected,
+                            onClick = { onAccountChange(acc) },
+                            label = { Text(acc, style = MaterialTheme.typography.labelSmall) },
+                            leadingIcon = {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalance,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                             })
                     }
-                    SuggestionChip(
-                        onClick = { showAddAccountDialog = true },
-                        label = { Text("+", style = MaterialTheme.typography.labelLarge) })
+                }
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                IconButton(
+                    onClick = onNavigateToManageAccounts,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Manage Accounts",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 

@@ -1,18 +1,18 @@
 package com.monetra.data.repository
 
-import com.monetra.data.local.dao.TransactionDao
+import android.content.Context
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.monetra.data.local.dao.AccountDao
+import com.monetra.data.local.dao.TransactionDao
 import com.monetra.data.local.entity.toDomainModel
 import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionFilters
 import com.monetra.domain.model.TransactionSummary
 import com.monetra.domain.repository.TransactionRepository
-import android.content.Context
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.map
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -190,5 +190,14 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertAccount(accountName: String) {
         accountDao.insertAccount(com.monetra.data.local.entity.AccountEntity(name = accountName))
+    }
+
+    override suspend fun updateAccount(oldName: String, newName: String) {
+        accountDao.updateAccount(oldName, newName)
+        dao.updateAccountName(oldName, newName)
+    }
+
+    override suspend fun deleteAccount(accountName: String) {
+        accountDao.deleteAccount(accountName)
     }
 }

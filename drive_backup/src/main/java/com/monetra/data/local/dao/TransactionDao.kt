@@ -1,5 +1,6 @@
 package com.monetra.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -7,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.monetra.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
-import androidx.paging.PagingSource
 
 @Dao
 interface TransactionDao {
@@ -208,6 +208,9 @@ interface TransactionDao {
             insertTransaction(entity.copy(id = id, isSynced = true))
         }
     }
+
+    @Query("UPDATE transactions SET accountName = :newName WHERE accountName = :oldName")
+    suspend fun updateAccountName(oldName: String, newName: String)
 }
 
 data class CategorySum(

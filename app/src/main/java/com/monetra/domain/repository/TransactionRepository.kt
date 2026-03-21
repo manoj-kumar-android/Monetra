@@ -1,9 +1,9 @@
 package com.monetra.domain.repository
 
+import androidx.paging.PagingData
 import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionFilters
 import com.monetra.domain.model.TransactionSummary
-import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.YearMonth
@@ -33,4 +33,6 @@ interface TransactionRepository {
     
     fun getAccounts(): kotlinx.coroutines.flow.Flow<List<String>>
     suspend fun insertAccount(accountName: String)
+    suspend fun updateAccount(oldName: String, newName: String)
+    suspend fun deleteAccount(accountName: String)
 }
