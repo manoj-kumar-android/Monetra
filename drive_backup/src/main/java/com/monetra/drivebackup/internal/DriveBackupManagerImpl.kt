@@ -28,6 +28,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -42,7 +43,8 @@ private val Context.dataStore by preferencesDataStore(name = "drive_backup_prefs
 class DriveBackupManagerImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val driveService: DriveService,
-    private val encryptionManager: EncryptionManager
+    private val encryptionManager: EncryptionManager,
+    private val database: com.monetra.data.local.MonetraDatabase
 ) : DriveBackupManager {
 
     private val credentialManager = CredentialManager.create(context)
@@ -56,6 +58,14 @@ class DriveBackupManagerImpl @Inject constructor(
 
     private val _recoveryIntent = MutableStateFlow<Intent?>(null)
     override fun getDrivePermissionIntent(): Flow<Intent?> = _recoveryIntent.asStateFlow()
+
+    override val isPremium: Flow<Boolean> = combine(
+        database.userPreferencesDao.getUserPreferences(),
+        accountName
+    ) { prefs, email ->
+        val isVip = com.monetra.drivebackup.api.VipConfig.isVip(email)
+        (prefs?.isPremiumUnlocked == true) || isVip
+    }
 
     override suspend fun authenticate(activity: Activity): Boolean {
         val googleIdOption = GetGoogleIdOption.Builder()

@@ -24,6 +24,11 @@ interface DriveBackupManager {
 
 
     /**
+     * A flow indicating if the user has premium access (via purchase or VIP status).
+     */
+    val isPremium: Flow<Boolean>
+
+    /**
      * A flow of the last successful backup timestamp (epoch milliseconds).
      * Returns null if no backup has been performed yet.
      */

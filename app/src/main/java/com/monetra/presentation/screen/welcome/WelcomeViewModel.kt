@@ -77,8 +77,7 @@ class WelcomeViewModel @Inject constructor(
         
         userPreferenceRepository.saveUserPreferences(
             prefs.copy(
-                isOnboardingCompleted = true,
-                isBackupEnabled = isGoogleUser // Auto-enable if Google logged in
+                isOnboardingCompleted = true
             )
         )
 

@@ -2,13 +2,12 @@ package com.monetra.domain.model
 
 enum class SubscriptionPlan {
     FREE,
-    PREMIUM
+    PREMIUM_ONETIME
 }
 
 data class UserSubscription(
-    val plan: SubscriptionPlan,
-    val expiryTimestamp: Long? = null,
-    val isAutoRenewEnabled: Boolean = false
+    val plan: SubscriptionPlan = SubscriptionPlan.FREE,
+    val purchaseTimestamp: Long? = null
 ) {
-    val isPremium: Boolean get() = plan == SubscriptionPlan.PREMIUM
+    val isPremium: Boolean get() = plan == SubscriptionPlan.PREMIUM_ONETIME
 }

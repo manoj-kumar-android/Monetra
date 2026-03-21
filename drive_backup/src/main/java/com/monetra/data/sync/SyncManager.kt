@@ -56,10 +56,10 @@ class SyncManager @Inject constructor(
         _internalSyncState.value = SyncState.Syncing("Syncing...", 1, 10)
 
         try {
-            // 0. Check if backup is enabled
-            // Note: We use the DAO directly here for verification, although syncState flow already reacts to it.
+            // 0. Check if backup is enabled and premium is unlocked
             val prefs = db.userPreferencesDao.getAllUserPreferences().firstOrNull()
-            if (prefs?.isBackupEnabled != true) {
+            val isPremium = driveManager.isPremium.first()
+            if (prefs?.isBackupEnabled != true || !isPremium) {
                 _internalSyncState.value = SyncState.Idle
                 return
             }

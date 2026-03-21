@@ -1,7 +1,32 @@
 package com.monetra.di
 
-import com.monetra.data.repository.*
-import com.monetra.domain.repository.*
+import com.monetra.data.repository.BudgetRepositoryImpl
+import com.monetra.data.repository.GoalRepositoryImpl
+import com.monetra.data.repository.InvestmentRepositoryImpl
+import com.monetra.data.repository.LoanRepositoryImpl
+import com.monetra.data.repository.MonthlyExpenseRepositoryImpl
+import com.monetra.data.repository.NoteRepositoryImpl
+import com.monetra.data.repository.PendingTransactionRepositoryImpl
+import com.monetra.data.repository.RefundableRepositoryImpl
+import com.monetra.data.repository.ReportRepositoryImpl
+import com.monetra.data.repository.SavingRepositoryImpl
+import com.monetra.data.repository.SubscriptionRepositoryImpl
+import com.monetra.data.repository.TransactionRepositoryImpl
+import com.monetra.data.repository.UserPreferenceRepositoryImpl
+import com.monetra.domain.repository.BillingRepository
+import com.monetra.domain.repository.BudgetRepository
+import com.monetra.domain.repository.GoalRepository
+import com.monetra.domain.repository.InvestmentRepository
+import com.monetra.domain.repository.LoanRepository
+import com.monetra.domain.repository.MonthlyExpenseRepository
+import com.monetra.domain.repository.NoteRepository
+import com.monetra.domain.repository.PendingTransactionRepository
+import com.monetra.domain.repository.RefundableRepository
+import com.monetra.domain.repository.ReportRepository
+import com.monetra.domain.repository.SavingRepository
+import com.monetra.domain.repository.SubscriptionRepository
+import com.monetra.domain.repository.TransactionRepository
+import com.monetra.domain.repository.UserPreferenceRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -63,4 +88,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindPendingTransactionRepository(impl: PendingTransactionRepositoryImpl): PendingTransactionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBillingRepository(impl: com.monetra.data.billing.BillingRepositoryImpl): BillingRepository
 }

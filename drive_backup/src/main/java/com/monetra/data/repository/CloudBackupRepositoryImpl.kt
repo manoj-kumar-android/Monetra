@@ -213,9 +213,14 @@ class CloudBackupRepositoryImpl @Inject constructor(
             db.refundableDao.insertAllRefundables(backupData.refundables.map { it.copy(isSynced = true) })
             
             val prefs = if (backupData.userPreferences.isNotEmpty()) {
-                backupData.userPreferences.first().copy(id = 0, isSynced = true, isBackupEnabled = true)
+                backupData.userPreferences.first()
+                    .copy(id = 0, isSynced = true, isBackupEnabled = false)
             } else {
-                com.monetra.data.local.entity.UserPreferencesEntity(id = 0, isSynced = true, isBackupEnabled = true)
+                com.monetra.data.local.entity.UserPreferencesEntity(
+                    id = 0,
+                    isSynced = true,
+                    isBackupEnabled = false
+                )
             }
             db.userPreferencesDao.upsertUserPreferences(prefs)
         }

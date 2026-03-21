@@ -30,6 +30,9 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
     @Inject
     lateinit var userPreferenceRepo: com.monetra.domain.repository.UserPreferenceRepository
 
+    @Inject
+    lateinit var subscriptionRepository: com.monetra.domain.repository.SubscriptionRepository
+
     private val applicationScope = CoroutineScope(Dispatchers.Default)
 
     override fun onCreate() {
@@ -52,7 +55,8 @@ class MontraApplication : Application(), Configuration.Provider, LifecycleEventO
                 // App coming to foreground
                 applicationScope.launch {
                     val preferences = userPreferenceRepo.getUserPreferences().first()
-                    if (preferences.isOnboardingCompleted) {
+                    val isPremium = subscriptionRepository.getSubscriptionStatus().first().isPremium
+                    if (preferences.isOnboardingCompleted && preferences.isBiometricEnabled && isPremium) {
                         val intent = Intent(this@MontraApplication, LockActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         }

@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.monetra.domain.repository.CloudBackupRepository
+import com.monetra.domain.repository.SubscriptionRepository
 import com.monetra.domain.repository.UserPreferenceRepository
 import com.monetra.domain.usecase.BackupValidationResult
 import com.monetra.domain.usecase.ValidateBackupUseCase
@@ -35,6 +36,11 @@ data class SettingsUiState(
     val isAuthenticating: Boolean = false,
     val accountName: String? = null,
     val lastBackupTime: Long? = null,
+    val isPremiumUnlocked: Boolean = false,
+    val isSmartSuggestionEnabled: Boolean = false,
+    val isBiometricEnabled: Boolean = false,
+    val isLoggedIn: Boolean = false,
+    val isNotificationListenerEnabled: Boolean = false,
     val syncStatus: com.monetra.domain.model.SyncState = com.monetra.domain.model.SyncState.Idle
 )
 
@@ -53,16 +59,19 @@ sealed interface SettingsEvent {
         SettingsEvent
 
     data class ShowBackupConfirmation(val email: String) : SettingsEvent
+    data class ShowPremiumDialog(val featureName: String) : SettingsEvent
+    data object ShowNotificationPermissionDialog : SettingsEvent
 }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: UserPreferenceRepository,
-    private val updatePreferences: UpdateUserPreferencesUseCase,
-    private val driveBackupManager: DriveBackupManager,
     private val cloudBackupRepository: CloudBackupRepository,
-    private val syncUseCase: com.monetra.domain.usecase.SyncUseCase,
+    private val driveBackupManager: DriveBackupManager,
     private val validateBackupUseCase: ValidateBackupUseCase,
+    private val updatePreferences: UpdateUserPreferencesUseCase,
+    private val subscriptionRepository: SubscriptionRepository,
+    private val billingRepository: com.monetra.domain.repository.BillingRepository,
     @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     private var toggleJob: kotlinx.coroutines.Job? = null
@@ -76,14 +85,18 @@ class SettingsViewModel @Inject constructor(
     init {
         loadPreferences()
         observeCloudStatus()
+        observePremiumStatus()
         validateBackupOnOpen()
     }
 
     private fun validateBackupOnOpen() {
         viewModelScope.launch {
-            // Check validation in background to update sync status, 
-            // but NEVER flip the isBackupEnabled switch to false automatically based on result.
-            validateBackupUseCase()
+            val prefs = repository.getUserPreferences().first()
+            if (prefs.isBackupEnabled && prefs.isPremiumUnlocked) {
+                // Check validation in background to update sync status, 
+                // but NEVER flip the isBackupEnabled switch to false automatically based on result.
+                validateBackupUseCase()
+            }
         }
     }
 
@@ -115,6 +128,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val available = cloudBackupRepository.isBackupAvailable()
             _uiState.update { it.copy(isBackupAvailable = available) }
+        }
+    }
+
+    private fun observePremiumStatus() {
+        viewModelScope.launch {
+            subscriptionRepository.getSubscriptionStatus().collectLatest { subscription ->
+                _uiState.update { it.copy(isPremiumUnlocked = subscription.isPremium) }
+            }
+        }
+        viewModelScope.launch {
+            driveBackupManager.googleUserId.collectLatest { userId ->
+                _uiState.update { it.copy(isLoggedIn = !userId.isNullOrBlank()) }
+            }
         }
     }
 
@@ -205,16 +231,38 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onBackupToggle(enabled: Boolean, activity: Activity, confirmed: Boolean = false) {
+        if (enabled && !_uiState.value.isPremiumUnlocked) {
+            viewModelScope.launch { _events.send(SettingsEvent.ShowPremiumDialog("Cloud Backup")) }
+            return
+        }
+
         toggleJob?.cancel()
         toggleJob = viewModelScope.launch {
-            _uiState.update { it.copy(isBackupEnabled = enabled) }
-            val currentPrefs = repository.getUserPreferences().first()
-            repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = enabled))
-            if (enabled) {
-                _uiState.update { it.copy(isLoading = true) }
-                val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
+            if (!enabled) {
+                // If disabling, save immediately
+                _uiState.update { it.copy(isBackupEnabled = false) }
+                val currentPrefs = repository.getUserPreferences().first()
+                repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = false))
+                return@launch
+            }
+
+            // If enabling, show loading but DONT save to repository yet.
+            // Screen handles Switch snap-back based on uiState.isBackupEnabled if needed,
+            // but while isLoading=true, the switch should probably be disabled.
+            _uiState.update { it.copy(isLoading = true) }
+
+            val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
+
+            // Only save if it's a "success" or "ready to go" state
+            if (result is BackupValidationResult.Success || result is BackupValidationResult.NoBackupFound) {
+                handleValidationResult(result, activity, isManual = true, confirmed = confirmed)
+            } else {
+                // Not success (e.g. PermissionMissing, NotSignedIn, AccountMismatch)
+                // We should NOT save. UI switch will snap back to OFF when isLoading becomes false
+                // because it collects from repository (which is still false).
                 handleValidationResult(result, activity, isManual = true, confirmed = confirmed)
             }
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
@@ -305,10 +353,99 @@ class SettingsViewModel @Inject constructor(
                         monthlyIncome = if (prefs.monthlyIncome > 0) prefs.monthlyIncome.toString() else "",
                         monthlySavingsGoal = if (prefs.monthlySavingsGoal > 0) prefs.monthlySavingsGoal.toString() else "",
                         isBackupEnabled = prefs.isBackupEnabled,
+                        isSmartSuggestionEnabled = prefs.isSmartSuggestionEnabled,
+                        isBiometricEnabled = prefs.isBiometricEnabled,
                         isLoading = false
                     )
                 }
             }
+        }
+    }
+
+    fun onSmartSuggestionToggle(enabled: Boolean) {
+        if (!_uiState.value.isPremiumUnlocked) {
+            viewModelScope.launch { _events.send(SettingsEvent.ShowPremiumDialog("Smart Suggestion")) }
+            return
+        }
+
+        if (enabled && !isNotificationServiceEnabled()) {
+            viewModelScope.launch { _events.send(SettingsEvent.ShowNotificationPermissionDialog) }
+            return
+        }
+
+        viewModelScope.launch {
+            val currentPrefs = repository.getUserPreferences().first()
+            repository.saveUserPreferences(currentPrefs.copy(isSmartSuggestionEnabled = enabled))
+        }
+    }
+
+    private fun isNotificationServiceEnabled(): Boolean {
+        val listeners = android.provider.Settings.Secure.getString(
+            context.contentResolver,
+            "enabled_notification_listeners"
+        )
+        return listeners != null && listeners.contains(context.packageName)
+    }
+
+    fun onNotificationPermissionResult(granted: Boolean) {
+        if (granted) {
+            onSmartSuggestionToggle(true)
+        }
+    }
+
+    fun onBiometricToggle(enabled: Boolean) {
+        if (!_uiState.value.isPremiumUnlocked) {
+            viewModelScope.launch { _events.send(SettingsEvent.ShowPremiumDialog("Fingerprint Lock")) }
+            return
+        }
+        viewModelScope.launch {
+            val currentPrefs = repository.getUserPreferences().first()
+            repository.saveUserPreferences(currentPrefs.copy(isBiometricEnabled = enabled))
+        }
+    }
+
+    fun onPurchasePremiumClick(activity: Activity) {
+        viewModelScope.launch {
+            if (!_uiState.value.isLoggedIn) {
+                val success = driveBackupManager.authenticate(activity)
+                if (!success) {
+                    _events.send(SettingsEvent.AuthError("Sign-in required to purchase premium"))
+                    return@launch
+                }
+            }
+
+            _uiState.update { it.copy(isLoading = true) }
+            val result = billingRepository.startPurchase(activity)
+            if (result.isFailure) {
+                _events.send(
+                    SettingsEvent.SyncError(
+                        result.exceptionOrNull()?.message ?: "Purchase failed"
+                    )
+                )
+            }
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun onBackupManual(activity: Activity) {
+        if (!_uiState.value.isPremiumUnlocked) {
+            viewModelScope.launch { _events.send(SettingsEvent.ShowPremiumDialog("Cloud Backup")) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val dbFile = context.getDatabasePath("monetra_db")
+            val result = driveBackupManager.performManualBackup(dbFile)
+            if (result.isSuccess) {
+                _events.send(SettingsEvent.BackupSuccess)
+            } else {
+                _events.send(
+                    SettingsEvent.BackupError(
+                        result.exceptionOrNull()?.message ?: "Backup failed"
+                    )
+                )
+            }
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

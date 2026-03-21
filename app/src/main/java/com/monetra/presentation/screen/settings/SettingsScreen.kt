@@ -1,6 +1,8 @@
 package com.monetra.presentation.screen.settings
 
 import android.app.Activity
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,8 +44,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,14 +56,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.ui.theme.Spacing
@@ -78,6 +87,28 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showMismatchDialog by remember { mutableStateOf<SettingsEvent.ShowAccountMismatch?>(null) }
     var showBackupConfirmationEmail by remember { mutableStateOf<String?>(null) }
+    var showPremiumDialogFor by remember { mutableStateOf<String?>(null) }
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val listeners = Settings.Secure.getString(
+                    context.contentResolver,
+                    "enabled_notification_listeners"
+                )
+                val granted = listeners != null && listeners.contains(context.packageName)
+                viewModel.onNotificationPermissionResult(granted)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val activity = LocalActivity.current
 
@@ -110,6 +141,13 @@ fun SettingsScreen(
                 }
                 is SettingsEvent.ShowAccountMismatch -> showMismatchDialog = event
                 is SettingsEvent.ShowBackupConfirmation -> showBackupConfirmationEmail = event.email
+                is SettingsEvent.ShowPremiumDialog -> {
+                    showPremiumDialogFor = event.featureName
+                }
+
+                SettingsEvent.ShowNotificationPermissionDialog -> {
+                    showNotificationPermissionDialog = true
+                }
                 is SettingsEvent.SyncSuccess -> {
                     snackbarHostState.showSnackbar("Sync completed successfully!")
                 }
@@ -117,6 +155,7 @@ fun SettingsScreen(
                 is SettingsEvent.SyncError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+                else -> {}
             }
         }
     }
@@ -248,90 +287,41 @@ fun SettingsScreen(
                     Text(stringResource(R.string.save_settings))
                 }
             }
-            
-            // ── Cloud Backup Section ──────────────────────────────────────────
+
+                // ── Premium Features Section ─────────────────────────────────────
             Text(
-                text = "Backup & Sync",
+                text = "Premium Features",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = androidx.compose.foundation.BorderStroke(
-                    1.dp, 
-                    if (uiState.isBackupEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) 
+                    1.dp,
+                    if (uiState.isPremiumUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     else MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Column(modifier = Modifier.padding(Spacing.lg)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(
-                                        if (uiState.isBackupEnabled) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = when (uiState.syncStatus) {
-                                        is com.monetra.domain.model.SyncState.Synced -> Icons.Default.CloudDone
-                                        is com.monetra.domain.model.SyncState.Pending -> Icons.Default.CloudUpload
-                                        is com.monetra.domain.model.SyncState.Syncing -> Icons.Default.CloudDone
-                                        else -> Icons.Default.CloudUpload
-                                    },
-                                    contentDescription = null,
-                                    tint = when (uiState.syncStatus) {
-                                        is com.monetra.domain.model.SyncState.Synced -> Color(0xFF34C759)
-                                        is com.monetra.domain.model.SyncState.Pending -> MaterialTheme.colorScheme.onSurfaceVariant
-                                        is com.monetra.domain.model.SyncState.Syncing -> MaterialTheme.colorScheme.primary
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(Spacing.md))
-                            Column {
-                                Text(
-                                    "Automatic Backup",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = uiState.accountName ?: "Secure your data on Drive",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        
-                        Switch(
-                            checked = uiState.isBackupEnabled,
-                            onCheckedChange = { viewModel.onBackupToggle(it, activity as Activity) },
-                            enabled = !uiState.isLoading
-                        )
-                    }
+                    // Automatic Backup Toggle (Premium)
+                    PremiumToggleRow(
+                        title = "Automatic Backup",
+                        subtitle = uiState.accountName ?: "Secure your data on Drive",
+                        icon = Icons.Default.CloudUpload,
+                        isEnabled = uiState.isBackupEnabled,
+                        isUnlocked = uiState.isPremiumUnlocked,
+                        onToggle = { viewModel.onBackupToggle(it, activity as Activity) }
+                    )
 
-                    if (uiState.isBackupEnabled) {
-                        Spacer(modifier = Modifier.height(Spacing.lg))
-                        androidx.compose.foundation.Canvas(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)) {
-                            drawRect(color = Color.LightGray.copy(alpha = 0.3f))
-                        }
+                    if (uiState.isBackupEnabled && uiState.isPremiumUnlocked) {
                         Spacer(modifier = Modifier.height(Spacing.md))
-                        
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 56.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -352,13 +342,52 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-
                             com.monetra.presentation.components.SyncStatusAction(
                                 state = uiState.syncStatus,
                                 onClick = { viewModel.onSyncClick(activity as Activity) }
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                    ) {
+                        drawRect(color = Color.LightGray.copy(alpha = 0.1f))
+                    }
+                    Spacer(modifier = Modifier.height(Spacing.md))
+
+                    // Smart Suggestions Toggle
+                    PremiumToggleRow(
+                        title = "Smart Suggestions",
+                        subtitle = "Auto-fill transactions from SMS",
+                        icon = Icons.Default.CloudDone,
+                        isEnabled = uiState.isSmartSuggestionEnabled,
+                        isUnlocked = uiState.isPremiumUnlocked,
+                        onToggle = viewModel::onSmartSuggestionToggle
+                    )
+
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                    ) {
+                        drawRect(color = Color.LightGray.copy(alpha = 0.1f))
+                    }
+                    Spacer(modifier = Modifier.height(Spacing.md))
+
+                    // Biometric Lock Toggle
+                    PremiumToggleRow(
+                        title = "Fingerprint Lock",
+                        subtitle = "Secure your app with biometrics",
+                        icon = Icons.Default.Check,
+                        isEnabled = uiState.isBiometricEnabled,
+                        isUnlocked = uiState.isPremiumUnlocked,
+                        onToggle = viewModel::onBiometricToggle
+                    )
                 }
             }
 
@@ -427,13 +456,126 @@ fun SettingsScreen(
                     showBackupConfirmationEmail = null
                     viewModel.onBackupToggle(true, activity as Activity, confirmed = true)
                 },
-                onCancel = {
-                    showBackupConfirmationEmail = null
-                    viewModel.onSignOutClick()
+                onCancel = { showBackupConfirmationEmail = null }
+            )
+        }
+
+        if (showNotificationPermissionDialog) {
+            NotificationPermissionDialog(
+                onConfirm = {
+                    showNotificationPermissionDialog = false
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                },
+                onDismiss = { showNotificationPermissionDialog = false }
+            )
+        }
+
+        showPremiumDialogFor?.let { feature ->
+            GetPremiumDialog(
+                featureName = feature,
+                onDismiss = { showPremiumDialogFor = null },
+                onPurchase = {
+                    showPremiumDialogFor = null
+                    viewModel.onPurchasePremiumClick(activity as Activity)
                 }
             )
+        }
     }
 }
+
+@Composable
+fun PremiumToggleRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isEnabled: Boolean,
+    isUnlocked: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (isEnabled && isUnlocked) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isEnabled && isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(Spacing.md))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (!isUnlocked) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "PRO",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Switch(
+            checked = isEnabled,
+            onCheckedChange = onToggle
+        )
+    }
+}
+
+@Composable
+fun GetPremiumDialog(
+    featureName: String,
+    onDismiss: () -> Unit,
+    onPurchase: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Unlock $featureName") },
+        text = { Text("Monetra Premium includes Smart Suggestions, Fingerprint Lock, and Cloud Backup. Get it now with a one-time purchase!") },
+        confirmButton = {
+            Button(onClick = onPurchase) {
+                Text("Get Premium")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Maybe Later")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 
@@ -481,4 +623,44 @@ private fun SupportCard(onClick: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+fun NotificationPermissionDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Text("Enable Smart Suggestions")
+            }
+        },
+        text = {
+            Text(
+                "To automatically detect transactions from your notifications, Monetra needs Notification Listener access. This allows the app to read payment notifications and suggest them for you."
+            )
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Grant Access")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }

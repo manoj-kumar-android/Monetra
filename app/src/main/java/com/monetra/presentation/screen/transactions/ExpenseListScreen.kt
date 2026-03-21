@@ -104,6 +104,7 @@ fun ExpenseListScreen(
     val activeFilters by viewModel.activeFilters.collectAsStateWithLifecycle()
     val availableCategories by viewModel.availableCategories.collectAsStateWithLifecycle()
     val amountRange by viewModel.databaseAmountRange.collectAsStateWithLifecycle()
+    val isPremiumUnlocked by viewModel.isPremiumUnlocked.collectAsStateWithLifecycle()
     
     val coroutineScope = rememberCoroutineScope()
     var isFilterSheetOpen by remember { mutableStateOf(false) }
@@ -143,11 +144,13 @@ fun ExpenseListScreen(
                         )
                     },
                     actions = {
-                        IconButton(onClick = onNavigateToPending) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                contentDescription = stringResource(R.string.add_from_notification)
-                            )
+                        if (isPremiumUnlocked) {
+                            IconButton(onClick = onNavigateToPending) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = stringResource(R.string.add_from_notification)
+                                )
+                            }
                         }
                         IconButton(onClick = { isFilterSheetOpen = true }) {
                             Icon(Icons.Default.FilterAlt, contentDescription = "Filter")

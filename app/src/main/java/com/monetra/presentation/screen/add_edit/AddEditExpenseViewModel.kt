@@ -7,6 +7,7 @@ import com.monetra.domain.model.Transaction
 import com.monetra.domain.model.TransactionType
 import com.monetra.domain.repository.AccountSelectionState
 import com.monetra.domain.repository.PendingTransactionRepository
+import com.monetra.domain.repository.UserPreferenceRepository
 import com.monetra.domain.usecase.transaction.AddAccountUseCase
 import com.monetra.domain.usecase.transaction.AddTransactionUseCase
 import com.monetra.domain.usecase.transaction.GetAccountsUseCase
@@ -19,6 +20,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -61,7 +63,9 @@ class AddEditExpenseViewModel @Inject constructor(
     private val getAccounts: GetAccountsUseCase,
     private val addAccount: AddAccountUseCase,
     private val getLastBalance: GetLastBalanceUseCase,
-    private val accountSelectionState: AccountSelectionState
+    private val accountSelectionState: AccountSelectionState,
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val subscriptionRepository: com.monetra.domain.repository.SubscriptionRepository
 ) : ViewModel() {
 
     private var transactionId: Long? = null
@@ -159,6 +163,12 @@ class AddEditExpenseViewModel @Inject constructor(
         this.pendingId = id
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
+            val prefs = userPreferenceRepository.getUserPreferences().first()
+            val subscription = subscriptionRepository.getSubscriptionStatus().first()
+            if (!prefs.isSmartSuggestionEnabled || !subscription.isPremium) {
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
             pendingRepository.getPendingById(id)?.let { pending ->
                 this@AddEditExpenseViewModel.pendingTimestamp = pending.timestamp
                 val txDate = java.time.Instant.ofEpochMilli(pending.timestamp)
