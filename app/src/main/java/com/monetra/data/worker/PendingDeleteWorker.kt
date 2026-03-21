@@ -2,16 +2,20 @@ package com.monetra.data.worker
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
-import androidx.work.*
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
 import com.monetra.data.local.dao.PendingDeleteDao
 import com.monetra.data.local.entity.PendingDeleteEntity
-import com.monetra.domain.repository.TransactionRepository
-import com.monetra.domain.repository.MonthlyExpenseRepository
-import com.monetra.domain.repository.LoanRepository
 import com.monetra.domain.repository.GoalRepository
 import com.monetra.domain.repository.InvestmentRepository
+import com.monetra.domain.repository.LoanRepository
+import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.RefundableRepository
 import com.monetra.domain.repository.SavingRepository
+import com.monetra.domain.repository.TransactionRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
@@ -39,11 +43,13 @@ class PendingDeleteWorker @AssistedInject constructor(
             if (staleDeletes.isEmpty()) return Result.success()
 
             for (entry in staleDeletes) {
-                commitDelete(entry)
+                val stillPending =
+                    pendingDeleteDao.getPendingEntry(entry.entityId, entry.entityType)
+                if (stillPending != null) {
+                    commitDelete(entry)
+                    pendingDeleteDao.cancelDelete(entry.entityId, entry.entityType)
+                }
             }
-
-            // Clean up processed entries
-            pendingDeleteDao.deleteByIds(staleDeletes.map { it.id })
 
             Result.success()
         } catch (e: Exception) {
