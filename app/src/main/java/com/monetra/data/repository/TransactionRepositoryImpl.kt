@@ -125,7 +125,7 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun getTransactionsPaged(filters: TransactionFilters): Flow<PagingData<Transaction>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 2,
+                pageSize = 20,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {

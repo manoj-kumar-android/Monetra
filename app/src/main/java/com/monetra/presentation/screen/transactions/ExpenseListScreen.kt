@@ -14,51 +14,51 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.CompareArrows
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,18 +75,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.monetra.R
 import com.monetra.domain.model.TransactionType
+import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.presentation.components.HelpIconButton
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.rememberDatePickerState
-import java.time.Instant
-import java.time.ZoneId
 import com.monetra.presentation.screen.transactions.components.MonthlySummaryCard
 import com.monetra.presentation.screen.transactions.components.TransactionRow
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
@@ -121,9 +118,10 @@ fun ExpenseListScreen(
                         snackbarHostState.currentSnackbarData?.dismiss()
                         val result = snackbarHostState.showSnackbar(
                             message = event.message,
-                            actionLabel = "Undo"
+                            actionLabel = "Undo",
+                            duration = androidx.compose.material3.SnackbarDuration.Short
                         )
-                        if (result == SnackbarResult.ActionPerformed) {
+                        if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
                             viewModel.undoDelete()
                         }
                     }
@@ -237,6 +235,16 @@ private fun TransactionTimeline(
     onDeleteClick: (Long) -> Unit
 ) {
     val listState = rememberLazyListState()
+    var previousCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(pagingItems.itemCount) {
+        if (previousCount > 0 && pagingItems.itemCount > previousCount) {
+            if (listState.firstVisibleItemIndex < 10) {
+                listState.animateScrollToItem(0)
+            }
+        }
+        previousCount = pagingItems.itemCount
+    }
 
     LazyColumn(
         state = listState,
@@ -261,12 +269,13 @@ private fun TransactionTimeline(
                 }
             }
         ) { index ->
+            val itemModifier = Modifier.animateItem()
             when (val item = pagingItems[index]) {
                 is TransactionHistoryItem.Transaction -> {
-                    com.monetra.presentation.component.SwipeToDeleteContainer(
+                    SwipeToDeleteContainer(
                         onDelete = { onDeleteClick(item.uiItem.id) },
                         title = stringResource(R.string.delete_transaction_title),
-                        message = stringResource(R.string.delete_transaction_msg)
+                        message = stringResource(R.string.delete_transaction_msg),
                     ) {
                         TransactionRow(
                             item = item.uiItem,
@@ -276,17 +285,18 @@ private fun TransactionTimeline(
                     }
                 }
                 is TransactionHistoryItem.MonthHeader -> {
-                    MonthStickyHeader(monthName = item.monthName)
+                    MonthStickyHeader(monthName = item.monthName, modifier = itemModifier)
                 }
                 null -> {
                     // Placeholder row
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            RoundedCornerShape(12.dp)
-                        ))
+                    Box(
+                        modifier = itemModifier
+                            .fillMaxWidth()
+                            .height(72.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(12.dp)
+                            ))
                 }
             }
         }
@@ -294,10 +304,10 @@ private fun TransactionTimeline(
 }
 
 @Composable
-private fun MonthStickyHeader(monthName: String) {
+private fun MonthStickyHeader(monthName: String, modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.background,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.sm)
     ) {
