@@ -125,7 +125,7 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun getTransactionsPaged(filters: TransactionFilters): Flow<PagingData<Transaction>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 20,
+                pageSize = 2,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
@@ -184,7 +184,7 @@ class TransactionRepositoryImpl @Inject constructor(
         return dao.getLastBalanceForAccount(accountName)
     }
 
-    override fun getAccounts(): kotlinx.coroutines.flow.Flow<List<String>> {
+    override fun getAccounts(): Flow<List<String>> {
         return accountDao.getAllAccounts().map { it.map { account -> account.name } }
     }
 

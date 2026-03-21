@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId         = "com.monetra"
+        applicationId         = "com.manu.spendsense"
         minSdk                = 30
         targetSdk             = 36
         versionCode           = 1

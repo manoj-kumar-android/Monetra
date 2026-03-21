@@ -86,17 +86,18 @@ class AddEditExpenseViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     fun loadTransaction(id: Long?, pendingId: Long? = null) {
+        _uiState.update { it.copy(titleError = null, amountError = null) }
+
         if (id == null) {
             this.transactionId = null
             if (pendingId != null) {
                 loadFromPending(pendingId)
             } else {
-                _uiState.value = AddEditUiState()
+                _uiState.update { AddEditUiState(availableAccounts = it.availableAccounts) }
             }
             return
         }
         
-        if (this.transactionId == id) return
         this.transactionId = id
         
         _uiState.update { it.copy(isLoading = true, isEditing = true) }

@@ -128,9 +128,6 @@ fun MainScreenContainer(
         }
     }
 
-    fun openAddSheet() { onNavigateToAdd() }
-    fun openEditSheet(id: Long) { onNavigateToEdit(id) }
-
     BackHandler(enabled = isTopLevel && selectedTab != BottomNavScreen.Dashboard) {
         selectedTabStr = "Dashboard"
     }
@@ -155,7 +152,7 @@ fun MainScreenContainer(
                 rightItems = rightItems,
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTabStr = it.route.javaClass.simpleName },
-                onFabClick = { 
+                onFabClick = {
                     if (selectedTab == BottomNavScreen.Refundable) {
                         onNavigateToAddRefundable()
                     } else {
@@ -428,38 +425,4 @@ private fun AnimatedNavItem(
                 .fillMaxWidth(0.5f)
         )
     }
-}
-
-// ── Canvas: notched bar background shape ─────────────────────────────────────
-private fun DrawScope.drawCutoutBar(
-    color: Color,
-    width: Float,
-    notchWidth: Float,
-    notchDepth: Float
-) {
-    val height  = size.height
-    val cx      = width / 2f
-    val half    = notchWidth / 2f
-    val ctrl    = notchWidth * 0.38f
-
-    val path = Path().apply {
-        moveTo(0f, 0f)
-        lineTo(cx - half - ctrl, 0f)
-        cubicTo(
-            cx - half + ctrl * 0.15f, 0f,
-            cx - half * 0.45f,        notchDepth,
-            cx,                        notchDepth
-        )
-        cubicTo(
-            cx + half * 0.45f,                   notchDepth,
-            cx + half - ctrl * 0.15f, 0f,
-            cx + half + ctrl,          0f
-        )
-        lineTo(width, 0f)
-        lineTo(width, height)
-        lineTo(0f,   height)
-        close()
-    }
-
-    drawPath(path = path, color = color)
 }

@@ -1,6 +1,7 @@
 package com.monetra.presentation.screen.add_edit
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -92,7 +93,8 @@ fun AddEditExpenseScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is AddEditEvent.SaveSuccess -> onNavigateBack()
-                is AddEditEvent.ShowError -> { /* Handle Error UI */ }
+                is AddEditEvent.ShowError -> { /* Handle Error UI */
+                }
             }
         }
     }
@@ -126,37 +128,32 @@ fun AddEditExpenseScreen(
         isEditing = uiState.isEditing,
         onSaveClick = {
             viewModel.onSaveClick()
-        }
-    )
+        })
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-            selectableDates = object : SelectableDates {
+            initialSelectedDateMillis = uiState.date.atStartOfDay(ZoneId.systemDefault())
+                .toInstant().toEpochMilli(), selectableDates = object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     return utcTimeMillis <= System.currentTimeMillis()
                 }
-            }
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                        viewModel.onDateChange(date)
-                    }
-                    showDatePicker = false
-                }) {
-                    Text(stringResource(R.string.ok))
+            })
+        DatePickerDialog(onDismissRequest = { showDatePicker = false }, confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { millis ->
+                    val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                    viewModel.onDateChange(date)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+                showDatePicker = false
+            }) {
+                Text(stringResource(R.string.ok))
             }
-        ) {
+        }, dismissButton = {
+            TextButton(onClick = { showDatePicker = false }) {
+                Text(stringResource(R.string.cancel))
+            }
+        }) {
             DatePicker(state = datePickerState)
         }
     }
@@ -206,8 +203,7 @@ private fun AddEditExpenseContent(
                             fontWeight = FontWeight.SemiBold
                         )
                     )
-                },
-                navigationIcon = {
+                }, navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -215,8 +211,7 @@ private fun AddEditExpenseContent(
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
+                }, colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
@@ -261,8 +256,7 @@ private fun AddEditExpenseContent(
                     }
                 }
             }
-        }
-    ) { paddingValues ->
+        }) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -340,120 +334,16 @@ private fun SheetFormBody(
         }
     }
 
-    Spacer(modifier = Modifier.height(Spacing.md))
-
-    val suggestions = if (!isIncome) {
-        listOf("Groceries", "Coffee", "Dinner", "Fuel", "Rent", "WiFi")
-    } else {
-        listOf("Salary", "Gift", "Refund", "Freelance")
-    }
-
-    androidx.compose.foundation.lazy.LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-    ) {
-        items(suggestions, key = { it }, contentType = { "suggestion" }) { suggestion ->
-            SuggestionChip(
-                onClick = { onTitleChange(suggestion) },
-                label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
-            )
-        }
-    }
-
     Spacer(modifier = Modifier.height(Spacing.lg))
 
     Text(
-        text = stringResource(R.string.account_label),
+        text = stringResource(R.string.category_label),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
     )
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            val baseAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
-            val allAccounts = (baseAccounts + availableAccounts).distinct()
-
-            androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
-                items(allAccounts, key = { it }, contentType = { "account" }) { acc ->
-                    val isSelected = acc.equals(accountName, ignoreCase = true)
-                    androidx.compose.material3.InputChip(
-                        selected = isSelected,
-                        onClick = { onAccountChange(acc) },
-                        label = { Text(acc, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = {
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalance,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    )
-                }
-                item {
-                    var showAddAccountDialog by remember { mutableStateOf(false) }
-                    if (showAddAccountDialog) {
-                        var newAccountName by remember { mutableStateOf("") }
-                        androidx.compose.material3.AlertDialog(
-                            onDismissRequest = { showAddAccountDialog = false },
-                            title = { Text(stringResource(R.string.add_account_title)) },
-                            text = {
-                                TextField(
-                                    value = newAccountName,
-                                    onValueChange = { newAccountName = it },
-                                    placeholder = { Text(stringResource(R.string.account_name_placeholder)) },
-                                    singleLine = true
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    if (newAccountName.isNotBlank()) {
-                                        onAccountChange(newAccountName.trim().uppercase())
-                                    }
-                                    showAddAccountDialog = false
-                                }) {
-                                    Text(stringResource(R.string.add_entry))
-                                }
-                            }
-                        )
-                    }
-                    SuggestionChip(
-                        onClick = { showAddAccountDialog = true },
-                        label = { Text("+", style = MaterialTheme.typography.labelLarge) }
-                    )
-                }
-            }
-
-            val isBank = accountName.uppercase() !in listOf("CASH", "OTHER")
-            androidx.compose.animation.AnimatedVisibility(visible = isBank) {
-                Column {
-                    Spacer(modifier = Modifier.height(Spacing.md))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    GroupedTextField(
-                        value = balanceAfter,
-                        onValueChange = onBalanceChange,
-                        placeholder = stringResource(R.string.balance_after_placeholder),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        singleLine = true
-                    )
-                }
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(Spacing.lg))
+    EmojiCategoryGrid(isIncome, category, onCategoryChange, cardContainerColor)
 
     Text(
         text = stringResource(R.string.details_label),
@@ -496,21 +386,101 @@ private fun SheetFormBody(
             )
         }
     }
-
+    if (amountError != null) ErrorText(amountError)
+    if (titleError != null) ErrorText(titleError)
     Spacer(modifier = Modifier.height(Spacing.xl))
-
     Text(
-        text = stringResource(R.string.category_label),
+        text = stringResource(R.string.account_label),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)
     )
 
-    EmojiCategoryGrid(isIncome, category, onCategoryChange, cardContainerColor)
+    Card(
+        modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.5f
+            )
+        ), shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            val baseAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
+            val allAccounts = (baseAccounts + availableAccounts).distinct()
 
-    if (amountError != null) ErrorText(amountError)
-    if (titleError != null) ErrorText(titleError)
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                items(allAccounts, key = { it }, contentType = { "account" }) { acc ->
+                    val isSelected = acc.equals(accountName, ignoreCase = true)
+                    androidx.compose.material3.InputChip(
+                        selected = isSelected,
+                        onClick = { onAccountChange(acc) },
+                        label = { Text(acc, style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        })
+                }
+                item {
+                    var showAddAccountDialog by remember { mutableStateOf(false) }
+                    if (showAddAccountDialog) {
+                        var newAccountName by remember { mutableStateOf("") }
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = {
+                                showAddAccountDialog = false
+                            },
+                            title = { Text(stringResource(R.string.add_account_title)) },
+                            text = {
+                                TextField(
+                                    value = newAccountName,
+                                    onValueChange = { newAccountName = it },
+                                    placeholder = { Text(stringResource(R.string.account_name_placeholder)) },
+                                    singleLine = true
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    if (newAccountName.isNotBlank()) {
+                                        onAccountChange(newAccountName.trim().uppercase())
+                                    }
+                                    showAddAccountDialog = false
+                                }) {
+                                    Text(stringResource(R.string.add_entry))
+                                }
+                            })
+                    }
+                    SuggestionChip(
+                        onClick = { showAddAccountDialog = true },
+                        label = { Text("+", style = MaterialTheme.typography.labelLarge) })
+                }
+            }
 
+            val isBank = accountName.uppercase() !in listOf("CASH", "OTHER")
+            androidx.compose.animation.AnimatedVisibility(visible = isBank) {
+                Column {
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    GroupedTextField(
+                        value = balanceAfter,
+                        onValueChange = onBalanceChange,
+                        placeholder = stringResource(R.string.balance_after_placeholder),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                        ),
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        singleLine = true
+                    )
+                }
+            }
+        }
+    }
     Spacer(modifier = Modifier.height(Spacing.xl))
 
     Text(
@@ -572,7 +542,7 @@ private fun EmojiCategoryGrid(
     isIncome: Boolean,
     selected: String,
     onSelect: (String) -> Unit,
-    cardContainerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surface
+    cardContainerColor: Color = MaterialTheme.colorScheme.surface
 ) {
     val expenseCategories = listOf(
         "General" to (R.string.cat_general to "💰"),
@@ -614,11 +584,25 @@ private fun EmojiCategoryGrid(
                 colors = CardDefaults.cardColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else cardContainerColor
                 ),
-                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                border = if (isSelected) BorderStroke(
+                    2.dp, MaterialTheme.colorScheme.primary
+                ) else null
             ) {
-                Column(modifier = Modifier.padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.md),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(emoji, fontSize = 24.sp)
-                    Text(stringResource(resId), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Text(
+                        stringResource(resId),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -627,9 +611,21 @@ private fun EmojiCategoryGrid(
 
 @Composable
 private fun ErrorText(error: String) {
-    Row(modifier = Modifier.padding(start = Spacing.sm, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
+    Row(
+        modifier = Modifier.padding(start = Spacing.sm, top = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(14.dp)
+        )
         Spacer(modifier = Modifier.size(4.dp))
-        Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        Text(
+            error,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error
+        )
     }
 }
