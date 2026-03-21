@@ -69,6 +69,8 @@ class AddEditExpenseViewModel @Inject constructor(
     private var pendingTimestamp: Long? = null
     private var isLoaded = false
     private var currentSessionId: Long? = null
+    private var originalAmount: Double = 0.0
+    private var originalAccount: String = ""
 
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState.asStateFlow()
@@ -83,7 +85,7 @@ class AddEditExpenseViewModel @Inject constructor(
                 if (account != null) {
                     _uiState.update { it.copy(accountName = account) }
                     accountSelectionState.clear()
-                    calculateBalance()
+                    calculateBalance(account = account)
                 }
             }
         }
@@ -135,6 +137,8 @@ class AddEditExpenseViewModel @Inject constructor(
         viewModelScope.launch {
             val transaction = getTransactionById(id)
             transaction?.let { tx ->
+                originalAmount = tx.amount
+                originalAccount = tx.accountName
                 _uiState.update {
                     it.copy(
                         title = tx.title,
@@ -210,7 +214,7 @@ class AddEditExpenseViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(amount = sanitized, amountError = null) }
-        calculateBalance()
+        calculateBalance(amountStr = sanitized)
     }
 
     fun onNoteChange(note: String) {
@@ -219,7 +223,7 @@ class AddEditExpenseViewModel @Inject constructor(
 
     fun onTypeChange(isIncome: Boolean) {
         _uiState.update { it.copy(isIncome = isIncome) }
-        calculateBalance()
+        calculateBalance(isIncomeOverride = isIncome)
     }
 
     fun onAccountChange(accountName: String) {
@@ -228,35 +232,49 @@ class AddEditExpenseViewModel @Inject constructor(
             if (!_uiState.value.availableAccounts.contains(accountName)) {
                 addAccount(accountName)
             }
-            calculateBalance()
+            calculateBalance(account = accountName)
         }
     }
 
     fun onBalanceChange(balance: String) {
-        val sanitized = balance.filter { it.isDigit() || it == '.' || it == '-' }
+        val sanitized = balance.filter { it.isDigit() || it == '.' }
         _uiState.update { it.copy(balanceAfter = sanitized) }
     }
 
-    private fun calculateBalance() {
-        if (_uiState.value.isEditing) return
-        
+    private fun calculateBalance(
+        account: String? = null,
+        amountStr: String? = null,
+        isIncomeOverride: Boolean? = null
+    ) {
         viewModelScope.launch {
-            val lastBalance = getLastBalance(_uiState.value.accountName) ?: 0.0
-            val amount = _uiState.value.amount.toDoubleOrNull() ?: 0.0
-            val isIncome = _uiState.value.isIncome
+            val currentAccount = account ?: _uiState.value.accountName
+            val currentAmount = (amountStr ?: _uiState.value.amount).toDoubleOrNull() ?: 0.0
+            val isIncome = isIncomeOverride ?: _uiState.value.isIncome
+
+            val lastBalance = getLastBalance(currentAccount) ?: 0.0
+            val isEditing = _uiState.value.isEditing
             
             val suggestedBalance = if (isIncome) {
-                lastBalance + amount
-            } else {
-                // User Rule: If it was already 0, don't go negative. If it was >0, it can go negative.
-                if (lastBalance <= 0.0) {
-                    0.0
+                if (isEditing && currentAccount.equals(originalAccount, ignoreCase = true)) {
+                    lastBalance - originalAmount + currentAmount
                 } else {
-                    lastBalance - amount
+                    lastBalance + currentAmount
+                }
+            } else {
+                if (isEditing && currentAccount.equals(originalAccount, ignoreCase = true)) {
+                    lastBalance + originalAmount - currentAmount
+                } else {
+                    lastBalance - currentAmount
                 }
             }
-            _uiState.update { 
-                it.copy(balanceAfter = if (suggestedBalance > 0) suggestedBalance.toString() else "") 
+
+            _uiState.update {
+                it.copy(
+                    balanceAfter = if (suggestedBalance > 0) String.format(
+                        "%.2f",
+                        suggestedBalance
+                    ) else ""
+                )
             }
         }
     }
