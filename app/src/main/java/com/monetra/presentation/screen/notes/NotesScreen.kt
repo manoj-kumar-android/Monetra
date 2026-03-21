@@ -1,27 +1,52 @@
 package com.monetra.presentation.screen.notes
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.domain.model.Note
@@ -29,7 +54,8 @@ import com.monetra.presentation.component.SwipeToDeleteContainer
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,27 +71,47 @@ fun NotesScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
                 com.monetra.presentation.component.MonetraSnackbar(snackbarData = data)
             }
         },
         topBar = {
-            TopAppBar(
-                title = { Text("My Notes", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "My Notes",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+                // Divider line for Cupertino feel
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    thickness = 0.5.dp
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddNoteClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
+                shape = com.monetra.ui.theme.ComponentDefaults.fabShape,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = com.monetra.ui.theme.Elevation.raisedCard
+                )
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Note")
             }
@@ -79,42 +125,51 @@ fun NotesScreen(
             SearchBar(
                 query = searchQuery,
                 onQueryChange = viewModel::onSearchQueryChange,
-                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                modifier = Modifier.padding(
+                    horizontal = Spacing.screenHorizontal,
+                    vertical = Spacing.md
+                )
             )
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md)
-            ) {
-                if (notes.isEmpty()) {
-                    item {
-                        EmptyNotesView(isSearching = searchQuery.isNotEmpty())
-                    }
-                } else {
+            if (notes.isEmpty()) {
+                EmptyNotesView(isSearching = searchQuery.isNotEmpty())
+            } else {
+                LazyVerticalStaggeredGrid(
+                    columns = StaggeredGridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        horizontal = Spacing.screenHorizontal,
+                        vertical = Spacing.md
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    verticalItemSpacing = Spacing.md
+                ) {
                     items(notes, key = { it.id }) { note ->
-                        SwipeToDeleteContainer(
-                            onDelete = {
-                                viewModel.deleteNote(note)
-                                scope.launch {
-                                    snackbarHostState.currentSnackbarData?.dismiss()
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = "Note deleted",
-                                        actionLabel = "Undo",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.restoreNote(note)
+                        val index = notes.indexOf(note)
+                        StaggeredListItem(index = index) {
+                            SwipeToDeleteContainer(
+                                onDelete = {
+                                    viewModel.deleteNote(note)
+                                    scope.launch {
+                                        snackbarHostState.currentSnackbarData?.dismiss()
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Note deleted",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.restoreNote(note)
+                                        }
                                     }
-                                }
-                            },
-                            title = "Delete Note?",
-                            message = "Are you sure you want to delete this note?"
-                        ) {
-                            NoteItem(
-                                note = note,
-                                onClick = { onNoteClick(note.id) }
-                            )
+                                },
+                                title = "Delete Note?",
+                                message = "Are you sure you want to delete this note?"
+                            ) {
+                                NoteItem(
+                                    note = note,
+                                    onClick = { onNoteClick(note.id) }
+                                )
+                            }
                         }
                     }
                 }
@@ -129,18 +184,34 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
+    TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text("Search notes...") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-        shape = RoundedCornerShape(16.dp),
+        placeholder = {
+            Text(
+                "Search notes...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
         singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-        )
+        shape = com.monetra.ui.theme.ComponentDefaults.textFieldShape,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        textStyle = MaterialTheme.typography.bodyLarge
     )
 }
 
@@ -149,28 +220,32 @@ fun NoteItem(
     note: Note,
     onClick: () -> Unit
 ) {
-    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val formattedDate = dateFormatter.format(Date(note.updatedAt))
 
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        shape = com.monetra.ui.theme.ComponentDefaults.cardShape,
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = com.monetra.ui.theme.Elevation.card
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
     ) {
         Column(
-            modifier = Modifier.padding(Spacing.lg)
+            modifier = Modifier.padding(Spacing.cardPadding)
         ) {
             if (note.title.isNotEmpty()) {
                 Text(
                     text = note.title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -179,14 +254,14 @@ fun NoteItem(
                 text = note.content,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
+                maxLines = 10,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(Spacing.md))
             Text(
                 text = formattedDate,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
             )
         }
     }
@@ -197,13 +272,28 @@ fun EmptyNotesView(isSearching: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 64.dp),
+            .padding(vertical = 100.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = if (isSearching) "No notes found matching your search." else "No notes yet. Tap + to add one!",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            Text(
+                text = if (isSearching) "No matches found" else "No notes yet",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            Text(
+                text = if (isSearching) "Try a different search term" else "Tap + to capture your thoughts",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
     }
 }
