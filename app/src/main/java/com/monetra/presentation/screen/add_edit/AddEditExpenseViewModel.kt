@@ -83,6 +83,7 @@ class AddEditExpenseViewModel @Inject constructor(
                 if (account != null) {
                     _uiState.update { it.copy(accountName = account) }
                     accountSelectionState.clear()
+                    calculateBalance()
                 }
             }
         }

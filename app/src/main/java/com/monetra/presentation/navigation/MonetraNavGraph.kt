@@ -259,6 +259,7 @@ fun MonetraNavGraph(
                         AddEditExpenseScreen(
                             transactionId = key.transactionId,
                             pendingId = key.pendingId,
+                            sessionId = key.sessionId,
                             onNavigateBack = {
                                 keyboardController?.hide()
                                 backStack.safePop()
