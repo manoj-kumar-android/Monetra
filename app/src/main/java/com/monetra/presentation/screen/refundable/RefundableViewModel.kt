@@ -4,12 +4,16 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
-import com.monetra.domain.model.Refundable
-import com.monetra.domain.model.RefundableStatus
-import com.monetra.domain.repository.RefundableRepository
 import com.monetra.data.worker.PendingDeleteManager
+import com.monetra.domain.model.Refundable
+import com.monetra.domain.repository.RefundableRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,7 +24,7 @@ class RefundableViewModel @Inject constructor(
     private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
-    private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.ALL)
+    private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.PENDING)
     val filter: StateFlow<RefundableFilter> = _filter.asStateFlow()
 
     private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE").stateIn(
@@ -29,19 +33,12 @@ class RefundableViewModel @Inject constructor(
         initialValue = emptyList()
     )
 
-    val refundables: StateFlow<List<Refundable>> = combine(
+    val refundables: StateFlow<List<Refundable>?> = combine(
         repository.getAllRefundables(),
-        _filter,
         _pendingDeleteIds
-    ) { list, filter, pendingIds ->
-        val filteredList = list.filter { it.id !in pendingIds }
-        when (filter) {
-            RefundableFilter.ALL -> filteredList
-            RefundableFilter.PENDING -> filteredList.filter { it.status == RefundableStatus.PENDING }
-            RefundableFilter.OVERDUE -> filteredList.filter { it.status == RefundableStatus.OVERDUE }
-            RefundableFilter.PAID -> filteredList.filter { it.status == RefundableStatus.PAID }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    ) { list, pendingIds ->
+        list.filter { it.id !in pendingIds }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun setFilter(filter: RefundableFilter) {
         _filter.value = filter
@@ -74,5 +71,5 @@ class RefundableViewModel @Inject constructor(
 }
 
 enum class RefundableFilter {
-    ALL, PENDING, OVERDUE, PAID
+    PENDING, OVERDUE, PAID
 }

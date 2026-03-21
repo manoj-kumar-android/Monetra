@@ -8,7 +8,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,21 +34,13 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.NorthEast
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.SouthWest
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -61,10 +52,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import com.monetra.domain.model.RefundableStatus
-import com.monetra.domain.model.RefundableType
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,17 +67,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.monetra.R
 import com.monetra.domain.model.Refundable
-import com.monetra.presentation.components.HelpIconButton
+import com.monetra.domain.model.RefundableStatus
+import com.monetra.domain.model.RefundableType
 import com.monetra.presentation.component.SwipeToDeleteContainer
+import com.monetra.presentation.components.HelpIconButton
 import com.monetra.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
@@ -161,10 +148,15 @@ fun RefundableScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Filters
-            RefundableFilterBar(
+            // Tabs
+            RefundableTabRow(
                 selectedFilter = currentFilter,
-                onFilterSelected = viewModel::setFilter
+                pagerState = pagerState,
+                onFilterSelected = { filter ->
+                    scope.launch {
+                        pagerState.animateScrollToPage(RefundableFilter.entries.indexOf(filter))
+                    }
+                }
             )
 
             HorizontalPager(
@@ -173,16 +165,21 @@ fun RefundableScreen(
                 verticalAlignment = Alignment.Top
             ) { page ->
                 val filter = RefundableFilter.entries[page]
-                val pageRefundables = allRefundables.filter {
+                val pageRefundables = allRefundables?.filter {
                     when (filter) {
-                        RefundableFilter.ALL -> true
                         RefundableFilter.PENDING -> it.status == RefundableStatus.PENDING
                         RefundableFilter.OVERDUE -> it.status == RefundableStatus.OVERDUE
                         RefundableFilter.PAID -> it.status == RefundableStatus.PAID
                     }
                 }
 
-                if (pageRefundables.isEmpty()) {
+                if (pageRefundables == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (pageRefundables.isEmpty()) {
                     RefundableEmptyState(
                         filter = filter,
                         onAddClick = onAddEntryClick
@@ -241,34 +238,35 @@ fun RefundableScreen(
 
 
 @Composable
-private fun RefundableFilterBar(
+private fun RefundableTabRow(
     selectedFilter: RefundableFilter,
+    pagerState: androidx.compose.foundation.pager.PagerState,
     onFilterSelected: (RefundableFilter) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    androidx.compose.material3.PrimaryTabRow(
+        selectedTabIndex = pagerState.currentPage,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.primary
     ) {
-        RefundableFilter.entries.forEach { filter ->
-            FilterChip(
-                selected = selectedFilter == filter,
+        RefundableFilter.entries.forEachIndexed { index, filter ->
+            val isSelected = pagerState.currentPage == index
+            androidx.compose.material3.Tab(
+                selected = isSelected,
                 onClick = { onFilterSelected(filter) },
-                label = { 
+                text = {
                     Text(
                         text = when(filter) {
-                            RefundableFilter.ALL -> stringResource(R.string.all)
                             RefundableFilter.PENDING -> stringResource(R.string.pending)
                             RefundableFilter.OVERDUE -> stringResource(R.string.overdue)
                             RefundableFilter.PAID -> stringResource(R.string.paid)
-                        }
-                    ) 
+                        },
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        )
+                    )
                 },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -462,7 +460,6 @@ private fun RefundableEmptyState(
             ) {
                 Icon(
                     imageVector = when(filter) {
-                        RefundableFilter.ALL -> Icons.Default.ReceiptLong
                         RefundableFilter.PENDING -> Icons.Default.Handshake
                         RefundableFilter.OVERDUE -> Icons.Default.Alarm
                         RefundableFilter.PAID -> Icons.Default.TaskAlt
@@ -478,7 +475,6 @@ private fun RefundableEmptyState(
 
         Text(
             text = when(filter) {
-                RefundableFilter.ALL -> "No Money Lent or Borrowed"
                 RefundableFilter.PENDING -> "All Settled Up!"
                 RefundableFilter.OVERDUE -> "No Overdue Payments"
                 RefundableFilter.PAID -> "No Paid Records"
@@ -494,7 +490,6 @@ private fun RefundableEmptyState(
 
         Text(
             text = when(filter) {
-                RefundableFilter.ALL -> "You haven't lent or borrowed any money yet. Track them here."
                 RefundableFilter.PENDING -> "You have no pending dues to receive or pay back."
                 RefundableFilter.OVERDUE -> "Great! No one is running late on their payments."
                 RefundableFilter.PAID -> "Settled entries will appear here for your records."
@@ -505,7 +500,7 @@ private fun RefundableEmptyState(
             modifier = Modifier.padding(horizontal = Spacing.lg)
         )
 
-        if (filter == RefundableFilter.ALL || filter == RefundableFilter.PENDING) {
+        if (filter == RefundableFilter.PENDING) {
             Spacer(modifier = Modifier.height(Spacing.lg))
             
             Row(
@@ -521,7 +516,10 @@ private fun RefundableEmptyState(
                 Icon(
                     Icons.Default.Add,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp).background(MaterialTheme.colorScheme.primary, CircleShape).padding(2.dp),
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .padding(2.dp),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
                 Text(
