@@ -23,8 +23,9 @@ An immediate, powerful overview of your financial health.
 
 ### 2. Comprehensive Ledger & Smart Tracking
 
-<img src="graphics/transactions_screen.png" width="250">
-&nbsp;&nbsp;<img src="graphics/smart_sms_tracking.png" width="250">
+|                                                          |                                                         |
+|:--------------------------------------------------------:|:-------------------------------------------------------:|
+| <img src="graphics/transactions_screen.png" width="250"> | <img src="graphics/smart_sms_tracking.png" width="250"> |
 
 A chronological timeline of every spent or earned penny.
 
@@ -36,8 +37,9 @@ A chronological timeline of every spent or earned penny.
 
 ### 3. Rapid Data Entry
 
-<img src="graphics/add_expense.png" width="250">
-&nbsp;&nbsp;<img src="graphics/add_income.png" width="250">
+|                                                  |                                                 |
+|:------------------------------------------------:|:-----------------------------------------------:|
+| <img src="graphics/add_expense.png" width="250"> | <img src="graphics/add_income.png" width="250"> |
 
 Log every financial movement smoothly without friction.
 
@@ -46,8 +48,9 @@ Log every financial movement smoothly without friction.
 
 ### 4. Wealth & Portfolio Management
 
-<img src="graphics/portfolio_screen.png" width="250">
-&nbsp;&nbsp;<img src="graphics/investment_screen.png" width="250">
+|                                                       |                                                        |
+|:-----------------------------------------------------:|:------------------------------------------------------:|
+| <img src="graphics/portfolio_screen.png" width="250"> | <img src="graphics/investment_screen.png" width="250"> |
 
 Watch your net worth grow efficiently.
 
@@ -58,8 +61,9 @@ Watch your net worth grow efficiently.
 
 ### 5. Mandatory Commitments
 
-<img src="graphics/monthly_fixed_bills.png" width="250">
-&nbsp;&nbsp;<img src="graphics/budget_guard.png" width="250">
+|                                                          |                                                   |
+|:--------------------------------------------------------:|:-------------------------------------------------:|
+| <img src="graphics/monthly_fixed_bills.png" width="250"> | <img src="graphics/budget_guard.png" width="250"> |
 
 Ensure stability through strict enforcement.
 
@@ -70,8 +74,9 @@ Ensure stability through strict enforcement.
 
 ### 6. Refundables (Lent / Borrowed Money)
 
-<img src="graphics/refundable_listing_screen.png" width="250">
-&nbsp;&nbsp;<img src="graphics/paid_refund_screen.png" width="250">
+|                                                                |                                                         |
+|:--------------------------------------------------------------:|:-------------------------------------------------------:|
+| <img src="graphics/refundable_listing_screen.png" width="250"> | <img src="graphics/paid_refund_screen.png" width="250"> |
 
 Isolate temporary expenses.
 
@@ -81,8 +86,9 @@ Isolate temporary expenses.
 
 ### 7. Security & Cloud Backup
 
-<img src="graphics/lock_screen.png" width="250">
-&nbsp;&nbsp;<img src="graphics/google_login_sheet.png" width="250">
+|                                                  |                                                         |
+|:------------------------------------------------:|:-------------------------------------------------------:|
+| <img src="graphics/lock_screen.png" width="250"> | <img src="graphics/google_login_sheet.png" width="250"> |
 
 Your data remains entirely yours.
 
