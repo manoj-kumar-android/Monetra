@@ -8,66 +8,93 @@ finances through comprehensive tracking, logical insights, and secure data manag
 
 Here is a detailed, screen-by-screen breakdown of **Spend Sense**.
 
-### 1. Dashboard (The Command Center)
+### 1. The Command Center
 
-![Dashboard](graphics/welcome_screen.png)
+![Dashboard](graphics/dashboard_screen.png)
 
-Provides an immediate overview of your financial health.
+An immediate, powerful overview of your financial health.
 
-- **Safe to Spend Today**: Dynamically calculated based on your monthly income, fixed bills, and
-  savings goals.
-- **Liquid Bar**: Visually indicates how close you are to your daily spending limit.
-- **Monthly Insights**: Displays your remaining free cash after all commitments.
+- **Safe to Spend**: Dynamically calculates your daily spending limit by subtracting fixed bills and
+  savings from your income.
+- **Liquid Bar**: A visual progress bar detailing how close you are to exhausting today's spending
+  rhythm.
+- **Monthly Waterfall**: A clear breakdown of how your income is distributed across EMIs, fixed
+  bills, and free cash.
 
-### 2. Transactions & Analytics
+### 2. Comprehensive Ledger & Smart Tracking
 
-![Transactions](graphics/google_login_sheet.png)
+<img src="graphics/transactions_screen.png" width="250">
+<br>
+<img src="graphics/smart_sms_tracking.png" width="250">
 
-Log every spend with ease and precision.
+A chronological timeline of every spent or earned penny.
 
-- **Fast Entry**: Categorize income and expenses securely in seconds.
-- **Swipe Actions**: Fluidly swipe to delete or modify records.
-- **Trends & Waterfall**: Analyze exactly where your money leaked this month.
+- **Fluid Gestures**: Swipe to delete or modify records with immediate undo support.
+- **Automated Detection**: Parses bank notifications and SMS to suggest pending transactions,
+  awaiting your approval.
+- **Advanced Filtering**: Instantly filter your timeline by specific dates, categories, or
+  transaction types.
 
-### 3. Financial Assistant (Impact Checker)
+### 3. Rapid Data Entry
 
-![Assistant](graphics/Screenshot_20260322_125539.png)
+<img src="graphics/add_expense.png" width="250">
+<br>
+<img src="graphics/add_income.png" width="250">
 
-Your personal, on-device money coach.
+Log every financial movement smoothly without friction.
 
-- **Impact Checker**: Enter an item's price, and the app mathematically simulates how it damages
-  your savings.
-- **Financial Runway**: Calculates how many months you can survive without income based on your
-  current liquid wealth.
+- **Frictionless Form**: Minimal inputs required to save an entry securely in seconds.
+- **Contextual Notes**: Attach specific descriptions to remember exactly why you spent the money.
 
-### 4. Loans, Debt & Fixed Costs
+### 4. Wealth & Portfolio Management
 
-![Loans](graphics/Screenshot_20260322_125553.png)
+<img src="graphics/portfolio_screen.png" width="250">
+<br>
+<img src="graphics/investment_screen.png" width="250">
 
-Strictly manage mandatory commitments so they are automatically removed from your dashboard.
+Watch your net worth grow efficiently.
 
-- **EMIs**: Track your progress on home, car, or personal loans.
-- **Fixed Bills**: Ensure rent and internet bills are automatically deducted from your daily buffer.
+- **Diversified Tracking**: Monitor Mutual Funds, Equity, Fixed Deposits, and Crypto from a single
+  screen.
+- **Compound Growth Simulation**: Calculate and project how your wealth will scale over 10+ years.
+- **Account Management**: Seamlessly add new asset blocks securely.
 
-### 5. Investments & Wealth Tracker
+### 5. Mandatory Commitments
 
-![Investments](graphics/add_expense.png)
+<img src="graphics/monthly_fixed_bills.png" width="250">
+<br>
+<img src="graphics/budget_guard.png" width="250">
 
-Grow your net worth efficiently.
+Ensure stability through strict enforcement.
 
-- **Portfolio Overview**: Combine FDs, SIPs, stocks, and crypto securely.
-- **Wealth Projection**: Simulate how compound interest grows your investments over 10+ years.
-- **Health Nudges**: Get alerted if your cash balance is too high compared to your invested wealth.
+- **Recurring Subscriptions**: Track rent, internet, and Netflix so they are safely subtracted
+  before calculating your disposable income.
+- **Category Guard**: Assign explicit spending caps to "Food" or "Shopping" to receive warnings
+  before you overspend.
 
-### 6. Refundables & More
+### 6. Refundables (Lent / Borrowed Money)
 
-![Refundables](graphics/add_income.png)
+<img src="graphics/refundable_listing_screen.png" width="250">
+<br>
+<img src="graphics/paid_refund_screen.png" width="250">
 
-Never lose track of money owed.
+Isolate temporary expenses.
 
-- **Lent/Borrowed**: Keep business expenses or lent money isolated from your core budget.
-- **Secure Notes**: Save financial ideas safely behind device biometrics.
-- **Cloud Sync**: Encrypted, hidden backups to your personal Google Drive.
+- **Contact Integration**: Link debts directly to people in your phonebook.
+- **Separate Pool**: Money lent doesn't corrupt your daily budget math.
+- **1-Tap Settlement**: Reintegrate funds the second your friend pays you back.
+
+### 7. Security & Cloud Backup
+
+<img src="graphics/lock_screen.png" width="250">
+<br>
+<img src="graphics/google_login_sheet.png" width="250">
+
+Your data remains entirely yours.
+
+- **Biometric Enforcement**: Secure the app using device fingerprint or Face ID.
+- **Private Cloud Sync**: Encrypted, hidden daily backups securely pushed to the App Data folder in
+  your Google Drive. We never touch your data.
 
 ## Features
 
