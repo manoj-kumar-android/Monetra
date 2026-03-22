@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -60,6 +61,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -123,6 +126,7 @@ fun WelcomeScreen(
     var card2 by remember { mutableStateOf(false) }
     var card3 by remember { mutableStateOf(false) }
     var ctaVisible by remember { mutableStateOf(false) }
+    var isTermsAccepted by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(300)
@@ -280,15 +284,67 @@ fun WelcomeScreen(
                 )
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().scale(ctaScale),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(ctaScale),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        androidx.compose.material3.Checkbox(
+                            checked = isTermsAccepted,
+                            onCheckedChange = { isTermsAccepted = it },
+                            colors = androidx.compose.material3.CheckboxDefaults.colors(
+                                checkedColor = Brand
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                        val annotatedText = androidx.compose.ui.text.buildAnnotatedString {
+                            append("I accept the ")
+                            pushStringAnnotation(
+                                tag = "URL",
+                                annotation = "https://sites.google.com/view/spendsense?usp=sharing"
+                            )
+                            withStyle(
+                                style = androidx.compose.ui.text.SpanStyle(
+                                    color = Brand,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            ) {
+                                append("Privacy Policy & Terms")
+                            }
+                            pop()
+                        }
+
+                        ClickableText(
+                            text = annotatedText,
+                            style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                            onClick = { offset ->
+                                annotatedText.getStringAnnotations(
+                                    tag = "URL",
+                                    start = offset,
+                                    end = offset
+                                )
+                                    .firstOrNull()?.let { annotation ->
+                                        uriHandler.openUri(annotation.item)
+                                    }
+                            }
+                        )
+                    }
+
                     Button(
                         onClick   = { viewModel.onContinueWithGoogle(activity) },
-                        modifier  = Modifier.fillMaxWidth().height(60.dp),
+                        modifier  = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
                         shape     = RoundedCornerShape(16.dp),
-                        enabled   = !uiState.isRestoring && !uiState.isAuthenticating,
+                        enabled = isTermsAccepted && !uiState.isRestoring && !uiState.isAuthenticating,
                         colors    = ButtonDefaults.buttonColors(
                             containerColor = Brand,
                             contentColor = Color.White
@@ -309,9 +365,11 @@ fun WelcomeScreen(
                     
                     OutlinedButton(
                         onClick   = { viewModel.onSkipForNow() },
-                        modifier  = Modifier.fillMaxWidth().height(56.dp),
+                        modifier  = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
                         shape     = RoundedCornerShape(16.dp),
-                        enabled   = !uiState.isRestoring && !uiState.isAuthenticating,
+                        enabled = isTermsAccepted && !uiState.isRestoring && !uiState.isAuthenticating,
                         border    = androidx.compose.foundation.BorderStroke(1.dp, Brand.copy(alpha = 0.4f)),
                         colors    = ButtonDefaults.outlinedButtonColors(contentColor = Brand)
                     ) {

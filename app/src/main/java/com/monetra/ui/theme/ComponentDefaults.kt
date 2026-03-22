@@ -4,9 +4,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import com.monetra.ui.theme.ComponentDefaults.cardElevation
 
 /**
- * Per-component styling rules for the Monetra design system.
+ * Per-component styling rules for the Spend Sense design system.
  *
  * These values are passed explicitly to M3 component parameters when the
  * shape/padding deviates from what [AppShapes] provides automatically.

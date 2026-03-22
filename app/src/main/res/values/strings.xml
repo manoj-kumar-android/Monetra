@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Monetra</string>
+    <string name="app_name">Spend Sense</string>
 
     <!-- Common -->
     <string name="save">Save</string>
@@ -21,7 +21,7 @@
     <!-- Dashboard -->
     <string name="dashboard_title">Dashboard</string>
     <string name="settings_title">Settings</string>
-    <string name="welcome_to_monetra">Welcome to Monetra!</string>
+    <string name="welcome_to_monetra">Welcome to Spend Sense!</string>
     <string name="set_salary_instruction">Set your monthly salary in Settings to unlock your personalised financial dashboard.</string>
     <string name="go_to_settings">⚙️  Go to Settings</string>
     <string name="good_morning">Good Morning,</string>
@@ -58,7 +58,7 @@
     <string name="survival_months_format">You can survive %.1f months without income.</string>
     <string name="survival_target">Survival target: 6 months</string>
     <string name="impact_checker_title">Impact Checker</string>
-    <string name="impact_checker_instruction">Thinking of buying something? Monetra will check the health impact.</string>
+    <string name="impact_checker_instruction">Thinking of buying something? Spend Sense will check the health impact.</string>
     <string name="how_much_is_it">How much is it?</string>
     <string name="verdict_big_purchase">Big Purchase!</string>
     <string name="verdict_savings_risk">Savings Risk</string>
@@ -104,11 +104,11 @@
 
     <!-- Dashboard Help Content -->
     <string name="help_dashboard_step1_title">1. Your \'Safe to Spend\' Limit</string>
-    <string name="help_dashboard_step1_desc">This is your daily financial compass. Monetra calculates exactly how much cash you can spend TODAY to survive the month successfully while hitting your savings goal. It dynamically subtracts Fixed Bills, Loans, and Categories. Just stay below this number!</string>
+    <string name="help_dashboard_step1_desc">This is your daily financial compass. Spend Sense calculates exactly how much cash you can spend TODAY to survive the month successfully while hitting your savings goal. It dynamically subtracts Fixed Bills, Loans, and Categories. Just stay below this number!</string>
     <string name="help_dashboard_step2_title">2. Liquid Bar &amp; Overspending</string>
-    <string name="help_dashboard_step2_desc">The Progress Bar visually shows your spending threshold. If you overspend today, Monetra instantly borrows money from your TOMORROW\'S daily limit. It enforces discipline by strictly locking your remaining spending rhythm.</string>
+    <string name="help_dashboard_step2_desc">The Progress Bar visually shows your spending threshold. If you overspend today, Spend Sense instantly borrows money from your TOMORROW\'S daily limit. It enforces discipline by strictly locking your remaining spending rhythm.</string>
     <string name="help_dashboard_step3_title">3. Monthly Health &amp; Insights</string>
-    <string name="help_dashboard_step3_desc">Observe the \'Waterfall\' breakdown below the Safe to Spend card. Monetra automatically takes your monthly income, strips away Debt EMIs, strips away your Fixed Bills, locks your Savings Goal, and gives you real visibility over your Free Cash.</string>
+    <string name="help_dashboard_step3_desc">Observe the \'Waterfall\' breakdown below the Safe to Spend card. Spend Sense automatically takes your monthly income, strips away Debt EMIs, strips away your Fixed Bills, locks your Savings Goal, and gives you real visibility over your Free Cash.</string>
 
     <!-- Assistant Help Content -->
     <string name="help_assistant_step1_title">1. Impact Checker</string>
@@ -124,7 +124,7 @@
     <string name="help_transactions_step1_title">1. Log Spends Quickly</string>
     <string name="help_transactions_step1_desc">Tap the floating \'+\' button to record new transactions instantly. Ensure you categorize them correctly (e.g., Food, Travel) so the Dashboard and Monthly Report can generate accurate spending patterns.</string>
     <string name="help_transactions_step2_title">2. Swipe-to-Delete Timeline</string>
-    <string name="help_transactions_step2_desc">Want to delete an accidental entry? Just swipe left on the entry! A massive, premium \"Mark Delete\" UI will emerge. Best part? Monetra offers an immediate \"Undo\" snackbar just in case you swipe by mistake.</string>
+    <string name="help_transactions_step2_desc">Want to delete an accidental entry? Just swipe left on the entry! A massive, premium \"Mark Delete\" UI will emerge. Best part? Spend Sense offers an immediate \"Undo\" snackbar just in case you swipe by mistake.</string>
 
     <!-- Notes Help Content -->
     <string name="help_notes_step1_title">1. Secure Your Thoughts</string>
@@ -134,13 +134,13 @@
 
     <!-- Loans Help Content -->
     <string name="help_loans_step1_title">1. Your Unified Debt Tracker</string>
-    <string name="help_loans_step1_desc">Add all active EMIs, Personal, and Home Loans here. Monetra prioritizes these as \"Committed Expenditures\" and removes them directly from your Salary before calculating anything else.</string>
+    <string name="help_loans_step1_desc">Add all active EMIs, Personal, and Home Loans here. Spend Sense prioritizes these as \"Committed Expenditures\" and removes them directly from your Salary before calculating anything else.</string>
 
     <!-- Investments Help Content -->
     <string name="help_investments_step1_title">1. Setup Your Portfolio</string>
     <string name="help_investments_step1_desc">Navigate to the Portfolio Screen to set up your current financial reality. Add your total Savings, total Investment Value, and total Loan Debts to calculate your true Net Worth instantly.</string>
     <string name="help_investments_step2_title">2. Financial Score Nudges</string>
-    <string name="help_investments_step2_desc">Monetra reviews your Portfolio to give you a Financial Health Score (Poor to Excellent). Nudges will warn you if too much money is sitting idly in cash or if your loan obligations represent a dangerous percentage.</string>
+    <string name="help_investments_step2_desc">Spend Sense reviews your Portfolio to give you a Financial Health Score (Poor to Excellent). Nudges will warn you if too much money is sitting idly in cash or if your loan obligations represent a dangerous percentage.</string>
     <string name="help_investments_step3_title">3. Track Free Money</string>
     <string name="help_investments_step3_desc">The \"Free Money\" card is your liquidity indicator. It calculates what extra cash is comfortably available AFTER clearing off all loans, budgets, and investments limits. Positive means you are thriving.</string>
     <string name="help_investments_step4_title">4. Manage Portfolios Faster</string>
@@ -162,12 +162,12 @@
     <!-- Budgets Help Content -->
     <string name="help_budgets_guide_title">Budgets Guide</string>
     <string name="help_budgets_step1_title">1. Granular Spend Caps</string>
-    <string name="help_budgets_step1_desc">Allocate explicit spending ceilings for Food, Fun, Transport, and Shopping. Monetra dynamically enforces these caps throughout your app, throwing warnings if you approach the specified boundary.</string>
+    <string name="help_budgets_step1_desc">Allocate explicit spending ceilings for Food, Fun, Transport, and Shopping. Spend Sense dynamically enforces these caps throughout your app, throwing warnings if you approach the specified boundary.</string>
     <string name="help_budgets_step2_title">2. Category Isolation</string>
     <string name="help_budgets_step2_desc">Instead of guessing where your money goes, Budgets gives you progress bars specifically for those high-leakage categories. Easily distinguish if your \"Food\" limit is failing while your \"Shopping\" is safe.</string>
 
     <string name="help_general_title">General Help</string>
-    <string name="help_general_desc">Explore categories to master your money with Monetra.</string>
+    <string name="help_general_desc">Explore categories to master your money with Spend Sense.</string>
 
     <!-- Categories -->
     <string name="cat_general">General</string>
@@ -328,7 +328,7 @@
     <string name="verdict_safe">✅ This scenario looks financially safe!</string>
     <string name="premium_feature">💎 Premium Feature</string>
     <string name="premium_simulator_desc">The What-If Simulator helps you plan life decisions by projecting financial impacts before you make them.</string>
-    <string name="upgrade_premium">Upgrade to Monetra Premium</string>
+    <string name="upgrade_premium">Upgrade to Spend Sense Premium</string>
     <string name="savings_projection_12m">12-Month Savings Projection</string>
     <string name="simulated">Simulated</string>
     <string name="current_pace">Current pace</string>
@@ -358,7 +358,7 @@
     <string name="health_risk_desc">Immediate adjustments are recommended.</string>
 
     <!-- Welcome -->
-    <string name="meet_monetra">Meet Monetra</string>
+    <string name="meet_monetra">Meet Spend Sense</string>
     <string name="hero_subtitle">Your personal finance OS — built to guide every rupee you earn.</string>
     <string name="feature1_title">Complete Money Clarity</string>
     <string name="feature1_subtitle">Track every expense, EMI and fixed cost — all in one beautiful place.</string>
@@ -380,7 +380,7 @@
     <string name="data_backup">DATA &amp; BACKUP</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_welcome_title">Welcome to Monetra 🚀</string>
+    <string name="onboarding_welcome_title">Welcome to Spend Sense 🚀</string>
     <string name="onboarding_subtitle">Let\'s set up your financial baseline to calculate your safe-to-spend allowance.</string>
     <string name="onboarding_step1_title">Mandatory Commitments</string>
     <string name="onboarding_step1_subtitle">Manage your utility bills, subscriptions, and recurring costs seamlessly.</string>
@@ -392,10 +392,10 @@
     <string name="loan_name_hint">Loan Name (e.g., Car, Home)</string>
     <string name="monthly_emi_label_onboarding">Monthly EMI Amount</string>
     <string name="add_emi_onboarding">Add EMI</string>
-    <string name="onboarding_step3_title">The Monetra Magic ✨</string>
+    <string name="onboarding_step3_title">The Spend Sense Magic ✨</string>
     <string name="onboarding_step3_subtitle">Here is how we calculate your true Safe-to-Spend limit.</string>
     <string name="safe_to_spend_label">Safe-to-Spend</string>
-    <string name="spend_freely_instruction">Spend freely from this allowance! Monetra will guide you daily to keep you on track.</string>
+    <string name="spend_freely_instruction">Spend freely from this allowance! Spend Sense will guide you daily to keep you on track.</string>
 
     <!-- Fixed Costs (Monthly Expense Screen) -->
     <string name="fixed_monthly_costs_title">Fixed Monthly Costs</string>
@@ -441,11 +441,11 @@
     <string name="phone_instruction">Enter the person\'s phone number to allow manual SMS reminders.</string>
     <string name="invalid_phone">Please enter a valid phone number</string>
 
-    <string name="notification_listener_service_name">Monetra Transaction Detector</string>
+    <string name="notification_listener_service_name">Spend Sense Transaction Detector</string>
     <string name="add_from_notification">Add from Notification</string>
     <string name="pending_transactions_title">Suggestions</string>
     <string name="no_suggestions_msg">No suggestions found yet.</string>
     <string name="suggestions_desc">Smart suggestions detected from notifications.</string>
     <string name="grant_notification_access">Grant Access</string>
-    <string name="notification_access_disclosure">Monetra needs access to your notifications to automatically detect bank and UPI transactions. This data stays 100% on your device.</string>
+    <string name="notification_access_disclosure">Spend Sense needs access to your notifications to automatically detect bank and UPI transactions. This data stays 100% on your device.</string>
 </resources>

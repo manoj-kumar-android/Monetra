@@ -60,7 +60,7 @@ androidComponents.onVariants { variant ->
     variant.outputs.forEach { output ->
         if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
             val vName = output.versionName.get() ?: "1.0"
-            output.outputFileName.set("Monetra-v$vName-${variant.name}.apk")
+            output.outputFileName.set("Spend Sense-v$vName-${variant.name}.apk")
         }
     }
 }

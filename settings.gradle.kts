@@ -20,7 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Monetra"
+rootProject.name = "Spend Sense"
 include(":app")
 include(":drive_backup")
  

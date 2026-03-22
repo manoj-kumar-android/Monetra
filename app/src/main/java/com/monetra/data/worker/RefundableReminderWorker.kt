@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -13,7 +14,6 @@ import com.monetra.domain.model.RefundableType
 import com.monetra.domain.repository.RefundableRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import androidx.core.net.toUri
 
 @HiltWorker
 class RefundableReminderWorker @AssistedInject constructor(
@@ -41,7 +41,7 @@ class RefundableReminderWorker @AssistedInject constructor(
 
         val smsBody = when (item.entryType) {
             RefundableType.LENT ->
-                "Hi ${item.personName}, this is a friendly reminder that you have ₹${item.amount} due. Kindly settle it at your earliest. - Sent via Monetra"
+                "Hi ${item.personName}, this is a friendly reminder that you have ₹${item.amount} due. Kindly settle it at your earliest. - Sent via Spend Sense"
             else -> null // No SMS button for BORROWED or others
         }
 

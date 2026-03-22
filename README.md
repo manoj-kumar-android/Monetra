@@ -1,6 +1,8 @@
-# Monetra
+# Spend Sense
 
-**Monetra** is a sophisticated, privacy-focused financial management application built with modern Android development practices. It empowers users to take full control of their personal finances through comprehensive tracking, logical insights, and secure data management.
+**Spend Sense** is a sophisticated, privacy-focused financial management application built with
+modern Android development practices. It empowers users to take full control of their personal
+finances through comprehensive tracking, logical insights, and secure data management.
 
 ## Screenshots
 
@@ -65,17 +67,20 @@ drive_backup/       # Independent library module for Google Drive sync logic
 
 ## Key Components
 
-*   **`MonetraNavGraph`**: The central navigation engine managing transitions between 17+ different screens using the latest Navigation3 API.
-*   **`MonetraNotificationListenerService`**: A background service that monitors bank notifications and extracts transaction data using regex patterns.
+* **`Spend SenseNavGraph`**: The central navigation engine managing transitions between 17+
+  different screens using the latest Navigation3 API.
+* **`Spend SenseNotificationListenerService`**: A background service that monitors bank
+  notifications and extracts transaction data using regex patterns.
 *   **`TransactionRepository`**: The primary data hub that coordinates all financial entry operations across local and remote sources.
 *   **`DriveBackupWorker`**: A robust background task that ensures user data is safely backed up to the cloud without manual intervention.
-*   **`MonetraTheme`**: A customized Material 3 design implementation ensuring a premium and consistent aesthetic throughout the app.
+* **`Spend SenseTheme`**: A customized Material 3 design implementation ensuring a premium and
+  consistent aesthetic throughout the app.
 
 ## Setup & Installation
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/Monetra.git
+    git clone https://github.com/your-username/Spend Sense.git
     ```
 2.  **Open in Android Studio:**
     Use Android Studio Ladybug (2024.2.1) or newer.
@@ -101,4 +106,5 @@ drive_backup/       # Independent library module for Google Drive sync logic
 *   **Receipt Scanning:** Integrate OCR to automatically extract data from physical receipts.
 *   **Enhanced SMS Parsing:** Expand detection patterns for a wider range of international banks and fintech apps.
 *   **Paging 3 Integration:** Enhance transaction lists with Paging 3 for smoother scrolling in large datasets.
-*   **Desktop/Web Version:** Explore Kotlin Multiplatform (KMP) to bring Monetra to more platforms while sharing the domain and data logic.
+* **Desktop/Web Version:** Explore Kotlin Multiplatform (KMP) to bring Spend Sense to more platforms
+  while sharing the domain and data logic.

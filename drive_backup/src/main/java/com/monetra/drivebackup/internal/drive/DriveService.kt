@@ -72,7 +72,7 @@ class DriveService @Inject constructor(
 
             driveService = Drive.Builder(
                 transport, jsonFactory, credential
-            ).setApplicationName("Monetra").build()
+            ).setApplicationName("Spend Sense").build()
 
             currentAccount = sanitizedAccount
             android.util.Log.d("DriveBackup", "DriveService successfully re-initialized.")
