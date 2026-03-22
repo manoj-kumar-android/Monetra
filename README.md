@@ -4,11 +4,70 @@
 modern Android development practices. It empowers users to take full control of their personal
 finances through comprehensive tracking, logical insights, and secure data management.
 
-## Screenshots
+## App Tour & Graphic Previews
 
-| Dashboard | Transactions | Analytics |
-| :---: | :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/280x560?text=Dashboard) | ![Transactions Placeholder](https://via.placeholder.com/280x560?text=Transactions) | ![Analytics Placeholder](https://via.placeholder.com/280x560?text=Analytics) |
+Here is a detailed, screen-by-screen breakdown of **Spend Sense**.
+
+### 1. Dashboard (The Command Center)
+
+![Dashboard](graphics/welcome_screen.png)
+
+Provides an immediate overview of your financial health.
+
+- **Safe to Spend Today**: Dynamically calculated based on your monthly income, fixed bills, and
+  savings goals.
+- **Liquid Bar**: Visually indicates how close you are to your daily spending limit.
+- **Monthly Insights**: Displays your remaining free cash after all commitments.
+
+### 2. Transactions & Analytics
+
+![Transactions](graphics/google_login_sheet.png)
+
+Log every spend with ease and precision.
+
+- **Fast Entry**: Categorize income and expenses securely in seconds.
+- **Swipe Actions**: Fluidly swipe to delete or modify records.
+- **Trends & Waterfall**: Analyze exactly where your money leaked this month.
+
+### 3. Financial Assistant (Impact Checker)
+
+![Assistant](graphics/Screenshot_20260322_125539.png)
+
+Your personal, on-device money coach.
+
+- **Impact Checker**: Enter an item's price, and the app mathematically simulates how it damages
+  your savings.
+- **Financial Runway**: Calculates how many months you can survive without income based on your
+  current liquid wealth.
+
+### 4. Loans, Debt & Fixed Costs
+
+![Loans](graphics/Screenshot_20260322_125553.png)
+
+Strictly manage mandatory commitments so they are automatically removed from your dashboard.
+
+- **EMIs**: Track your progress on home, car, or personal loans.
+- **Fixed Bills**: Ensure rent and internet bills are automatically deducted from your daily buffer.
+
+### 5. Investments & Wealth Tracker
+
+![Investments](graphics/add_expense.png)
+
+Grow your net worth efficiently.
+
+- **Portfolio Overview**: Combine FDs, SIPs, stocks, and crypto securely.
+- **Wealth Projection**: Simulate how compound interest grows your investments over 10+ years.
+- **Health Nudges**: Get alerted if your cash balance is too high compared to your invested wealth.
+
+### 6. Refundables & More
+
+![Refundables](graphics/add_income.png)
+
+Never lose track of money owed.
+
+- **Lent/Borrowed**: Keep business expenses or lent money isolated from your core budget.
+- **Secure Notes**: Save financial ideas safely behind device biometrics.
+- **Cloud Sync**: Encrypted, hidden backups to your personal Google Drive.
 
 ## Features
 
