@@ -23,9 +23,10 @@ An immediate, powerful overview of your financial health.
 
 ### 2. Comprehensive Ledger & Smart Tracking
 
-|                                                          |                                                         |
-|:--------------------------------------------------------:|:-------------------------------------------------------:|
-| <img src="graphics/transactions_screen.png" width="250"> | <img src="graphics/smart_sms_tracking.png" width="250"> |
+|                                                              |                                                         |
+|:------------------------------------------------------------:|:-------------------------------------------------------:|
+|   <img src="graphics/transactions_screen.png" width="250">   | <img src="graphics/smart_sms_tracking.png" width="250"> |
+| <img src="graphics/filter_for_transactions.png" width="250"> |                                                         |
 
 A chronological timeline of every spent or earned penny.
 
@@ -51,6 +52,7 @@ Log every financial movement smoothly without friction.
 |                                                       |                                                        |
 |:-----------------------------------------------------:|:------------------------------------------------------:|
 | <img src="graphics/portfolio_screen.png" width="250"> | <img src="graphics/investment_screen.png" width="250"> |
+|  <img src="graphics/add_investment.png" width="250">  |  <img src="graphics/manage_account.png" width="250">   |
 
 Watch your net worth grow efficiently.
 
@@ -77,6 +79,7 @@ Ensure stability through strict enforcement.
 |                                                                |                                                         |
 |:--------------------------------------------------------------:|:-------------------------------------------------------:|
 | <img src="graphics/refundable_listing_screen.png" width="250"> | <img src="graphics/paid_refund_screen.png" width="250"> |
+|     <img src="graphics/refundable_detail.png" width="250">     |     <img src="graphics/add_refund.png" width="250">     |
 
 Isolate temporary expenses.
 
@@ -86,15 +89,26 @@ Isolate temporary expenses.
 
 ### 7. Security & Cloud Backup
 
-|                                                  |                                                         |
-|:------------------------------------------------:|:-------------------------------------------------------:|
-| <img src="graphics/lock_screen.png" width="250"> | <img src="graphics/google_login_sheet.png" width="250"> |
+|                                                         |                                                  |
+|:-------------------------------------------------------:|:------------------------------------------------:|
+|   <img src="graphics/welcome_screen.png" width="250">   | <img src="graphics/lock_screen.png" width="250"> |
+| <img src="graphics/google_login_sheet.png" width="250"> |                                                  |
 
 Your data remains entirely yours.
 
 - **Biometric Enforcement**: Secure the app using device fingerprint or Face ID.
 - **Private Cloud Sync**: Encrypted, hidden daily backups securely pushed to the App Data folder in
   your Google Drive. We never touch your data.
+
+### 8. Personalization & Settings
+
+<img src="graphics/setting_screen.png" width="250">
+
+Your app, your rules.
+
+- **Currency Selection**: Customize your base currency globally.
+- **Salary Cycle Management**: Define the exact day your tracking month begins.
+- **Backup Controls**: Manually trigger Google Drive synchronizations or wipe local data instantly.
 
 ## Features
 
