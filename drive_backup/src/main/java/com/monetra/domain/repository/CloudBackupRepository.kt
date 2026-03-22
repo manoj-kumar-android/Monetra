@@ -10,6 +10,8 @@ interface CloudBackupRepository {
     fun scheduleBackup()
     suspend fun checkDrivePermission(): Boolean
     suspend fun signOut()
+    suspend fun deleteBackup(): Result<Unit>
+    suspend fun clearLocalData()
     
     val events: Flow<BackupEvent>
     val isRestoring: Flow<Boolean>

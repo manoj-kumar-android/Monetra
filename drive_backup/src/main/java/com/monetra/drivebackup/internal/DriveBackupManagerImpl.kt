@@ -327,4 +327,22 @@ class DriveBackupManagerImpl @Inject constructor(
             return false
         }
     }
+
+    override suspend fun deleteBackup(): Result<Unit> {
+        val email = accountName.first()
+        if (email.isNullOrBlank()) return Result.failure(Exception("Not signed in"))
+
+        return try {
+            driveService.initialize(email)
+            val deleted = driveService.deleteBackup()
+            if (deleted) {
+                context.dataStore.edit { it.remove(lastBackupTimeKey) }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to delete backup file from Drive"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

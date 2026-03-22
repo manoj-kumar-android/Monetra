@@ -248,4 +248,14 @@ class CloudBackupRepositoryImpl @Inject constructor(
     override suspend fun signOut() {
         driveBackupManager.signOut()
     }
+
+    override suspend fun deleteBackup(): Result<Unit> {
+        return driveBackupManager.deleteBackup()
+    }
+
+    override suspend fun clearLocalData() {
+        withContext(Dispatchers.IO) {
+            db.clearAllTables()
+        }
+    }
 }

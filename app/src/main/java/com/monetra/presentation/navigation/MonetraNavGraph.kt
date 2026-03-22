@@ -233,6 +233,10 @@ fun MonetraNavGraph(
                                         screenType
                                     )
                                 )
+                            },
+                            onNavigateToWelcome = {
+                                backStack.clear()
+                                backStack.add(Route.Welcome)
                             })
                     }
                 }

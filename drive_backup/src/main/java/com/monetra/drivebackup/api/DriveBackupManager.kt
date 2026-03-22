@@ -87,4 +87,9 @@ interface DriveBackupManager {
      * Returns null if no permission resolution is required.
      */
     fun getDrivePermissionIntent(): Flow<android.content.Intent?>
+
+    /**
+     * Deletes the backup file from Google Drive.
+     */
+    suspend fun deleteBackup(): Result<Unit>
 }

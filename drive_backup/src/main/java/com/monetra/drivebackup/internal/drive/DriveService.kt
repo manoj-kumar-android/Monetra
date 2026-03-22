@@ -161,4 +161,20 @@ class DriveService @Inject constructor(
         driveService = null
         currentAccount = null
     }
+
+    /**
+     * Deletes the backup file from the AppData folder.
+     */
+    suspend fun deleteBackup(): Boolean = withContext(Dispatchers.IO) {
+        val service = driveService ?: return@withContext false
+        val fileId = getBackupFileId() ?: return@withContext false
+
+        try {
+            service.files().delete(fileId).execute()
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("DriveBackup", "Failed to delete backup file", e)
+            false
+        }
+    }
 }

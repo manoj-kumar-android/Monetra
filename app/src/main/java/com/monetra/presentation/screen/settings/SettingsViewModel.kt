@@ -53,6 +53,8 @@ sealed interface SettingsEvent {
         SettingsEvent
 
     data class ShowBackupConfirmation(val email: String) : SettingsEvent
+
+    data object DeleteSuccess : SettingsEvent
 }
 
 @HiltViewModel
@@ -376,5 +378,29 @@ class SettingsViewModel @Inject constructor(
 
     fun onSignOutClick() {
         viewModelScope.launch { driveBackupManager.signOut() }
+    }
+
+    fun onDeleteAllData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                cloudBackupRepository.deleteBackup()
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "SettingsVM",
+                    "Failed to delete from Drive, proceeding with local deletion",
+                    e
+                )
+            }
+            try {
+                cloudBackupRepository.clearLocalData()
+                cloudBackupRepository.signOut()
+                _uiState.update { it.copy(isLoading = false) }
+                _events.send(SettingsEvent.DeleteSuccess)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
+                _events.send(SettingsEvent.AuthError("Deletion failed partially: ${e.message}"))
+            }
+        }
     }
 }
