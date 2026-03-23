@@ -7,7 +7,6 @@ import com.monetra.domain.model.CategoryBudget
 import com.monetra.domain.repository.BudgetRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -44,20 +43,27 @@ class BudgetRepositoryImpl @Inject constructor(
     override suspend fun saveCategoryBudget(budget: CategoryBudget) {
         val deviceId = syncRepository.getDeviceId()
         val existing = budgetDao.getBudgetByName(budget.categoryName)
-        val nextVersion = if (existing == null) 1L else existing.version + 1L
-        
+
+        val syncBudget = budget.copy(
+            remoteId = existing?.remoteId ?: budget.remoteId,
+            version = if (existing == null) 1L else existing.version + 1L,
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+
         budgetDao.upsertBudget(
             CategoryBudgetEntity(
-                remoteId = budget.remoteId,
-                categoryName = budget.categoryName,
-                limit = budget.limit,
-                version = nextVersion,
-                updatedAt = System.currentTimeMillis(),
-                deviceId = deviceId,
-                isSynced = false
+                remoteId = syncBudget.remoteId,
+                categoryName = syncBudget.categoryName,
+                limit = syncBudget.limit,
+                version = syncBudget.version,
+                updatedAt = syncBudget.updatedAt,
+                deviceId = syncBudget.deviceId,
+                isSynced = syncBudget.isSynced
             )
         )
-        syncRepository.clearTombstone(budget.remoteId)
+        syncRepository.clearTombstone(syncBudget.remoteId)
         syncRepository.setDirty(true)
     }
 
