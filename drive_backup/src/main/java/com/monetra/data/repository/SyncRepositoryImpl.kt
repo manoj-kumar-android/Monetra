@@ -99,4 +99,8 @@ class SyncRepositoryImpl @Inject constructor(
             else prefs[lastSyncedEmailKey] = email
         }
     }
+
+    override suspend fun clearAllPreferences() {
+        context.syncDataStore.edit { it.clear() }
+    }
 }

@@ -256,6 +256,7 @@ class CloudBackupRepositoryImpl @Inject constructor(
     override suspend fun clearLocalData() {
         withContext(Dispatchers.IO) {
             db.clearAllTables()
+            syncRepository.clearAllPreferences()
         }
     }
 }

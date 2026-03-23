@@ -296,9 +296,7 @@ class DriveBackupManagerImpl @Inject constructor(
 
     override suspend fun signOut() {
         context.dataStore.edit { prefs ->
-            prefs.remove(googleUserIdKey)
-            prefs.remove(accountNameKey)
-            prefs.remove(lastBackupTimeKey)
+            prefs.clear()
         }
 
         // Latest Credential Manager way to clear state

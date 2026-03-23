@@ -14,4 +14,5 @@ interface SyncRepository {
 
     fun getLastSyncedEmail(): Flow<String?>
     suspend fun setLastSyncedEmail(email: String?)
+    suspend fun clearAllPreferences()
 }
