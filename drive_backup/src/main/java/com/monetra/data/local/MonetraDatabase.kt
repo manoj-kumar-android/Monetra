@@ -72,7 +72,7 @@ abstract class MonetraDatabase : RoomDatabase() {
         val CALLBACK = object : RoomDatabase.Callback() {
             override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 super.onCreate(db)
-                val defaultAccounts = listOf("CASH", "HDFC", "ICICI", "SBI", "OTHER")
+                val defaultAccounts = listOf("CASH", "OTHER")
                 defaultAccounts.forEach { name ->
                     db.execSQL("INSERT INTO accounts (name) VALUES ('$name')")
                 }

@@ -30,8 +30,8 @@ interface TransactionRepository {
     fun getAmountRange(): Flow<Pair<Double, Double>>
     fun getAccountNames(): Flow<List<String>>
     suspend fun getLastBalanceForAccount(accountName: String): Double?
-    
-    fun getAccounts(): kotlinx.coroutines.flow.Flow<List<String>>
+
+    fun getAccounts(): Flow<List<String>>
     suspend fun insertAccount(accountName: String)
     suspend fun updateAccount(oldName: String, newName: String)
     suspend fun deleteAccount(accountName: String)

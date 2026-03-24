@@ -9,6 +9,7 @@ import com.monetra.domain.repository.AccountSelectionState
 import com.monetra.domain.repository.PendingTransactionRepository
 import com.monetra.domain.usecase.transaction.AddAccountUseCase
 import com.monetra.domain.usecase.transaction.AddTransactionUseCase
+import com.monetra.domain.usecase.transaction.GetAccountNamesUseCase
 import com.monetra.domain.usecase.transaction.GetAccountsUseCase
 import com.monetra.domain.usecase.transaction.GetLastBalanceUseCase
 import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
@@ -16,6 +17,7 @@ import com.monetra.domain.usecase.transaction.UpdateTransactionUseCase
 import com.monetra.domain.usecase.transaction.ValidateTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +40,7 @@ data class AddEditUiState(
     val amountError: String? = null,
     val isLoading: Boolean = false,
     val isEditing: Boolean = false,
-    val accountName: String = "Cash",
+    val accountName: String = "CASH",
     val balanceAfter: String = "",
     val availableAccounts: List<String> = emptyList()
 ) {
@@ -59,6 +61,7 @@ class AddEditExpenseViewModel @Inject constructor(
     private val validateTransaction: ValidateTransactionUseCase,
     private val pendingRepository: PendingTransactionRepository,
     private val getAccounts: GetAccountsUseCase,
+    private val getAccountNamesUseCase: GetAccountNamesUseCase,
     private val addAccount: AddAccountUseCase,
     private val getLastBalance: GetLastBalanceUseCase,
     private val accountSelectionState: AccountSelectionState
@@ -79,6 +82,7 @@ class AddEditExpenseViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     init {
+        syncAccountNames()
         loadAccounts()
         viewModelScope.launch {
             accountSelectionState.selectedAccount.collect { account ->
@@ -91,8 +95,22 @@ class AddEditExpenseViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Focuses on business logic/side effects.
+     * Processes the raw names and ensures they are added to the system.
+     */
+    private fun syncAccountNames() {
+        viewModelScope.launch {
+            getAccountNamesUseCase().collect { accountNames ->
+                accountNames.forEach { name ->
+                    addAccount(name.trim().uppercase())
+                }
+            }
+        }
+    }
     private fun loadAccounts() {
         viewModelScope.launch {
+            delay(500)
             getAccounts().collect { accounts ->
                 _uiState.update { state ->
                     val isBaseAccount = state.accountName.uppercase() in listOf("CASH", "OTHER")
@@ -176,7 +194,7 @@ class AddEditExpenseViewModel @Inject constructor(
                         amount = pending.amount.toString(),
                         isIncome = pending.type == TransactionType.INCOME,
                         note = "Ref: ${pending.referenceId ?: "N/A"}",
-                        accountName = pending.accountPart ?: "Cash",
+                        accountName = pending.accountPart ?: "CASH",
                         balanceAfter = if ((pending.balanceAfter ?: 0.0) > 0.0) pending.balanceAfter.toString() else "",
                         date = txDate,
                         isLoading = false
