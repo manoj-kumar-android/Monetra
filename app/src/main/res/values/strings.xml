@@ -455,4 +455,9 @@
     <string name="notification_access_disclosure_title">Prominent Disclosure: Automated Expense Tracking</string>
     <string name="notification_access_disclosure">Spend Sense reads your bank, credit card, and UPI SMS/Notifications to automatically track your expenses and incomes. This allows you to stay on top of your budget without manual entry.\n\n<b>Important:</b> This data stays 100% locally on your phone and your personal Google Drive (if backup is enabled). We do not collect or share your financial data.</string>
     <string name="deny">Not Now</string>
+
+    <!-- Logout -->
+    <string name="logout_title">Logout</string>
+    <string name="logout_confirmation_msg">Are you sure you want to logout? This will clear all your local data from this device. You can restore your data later if you have a cloud backup.</string>
+    <string name="confirm_logout">Confirm Logout</string>
 </resources>

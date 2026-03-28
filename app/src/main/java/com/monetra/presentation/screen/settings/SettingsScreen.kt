@@ -81,6 +81,7 @@ fun SettingsScreen(
     var showMismatchDialog by remember { mutableStateOf<SettingsEvent.ShowAccountMismatch?>(null) }
     var showBackupConfirmationEmail by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showLogoutConfirmation by remember { mutableStateOf(false) }
 
     val activity = LocalActivity.current
 
@@ -131,6 +132,7 @@ fun SettingsScreen(
 
                 is SettingsEvent.DeleteSuccess -> {
                     showDeleteConfirmation = false
+                    showLogoutConfirmation = false
                     onNavigateToWelcome()
                 }
             }
@@ -447,7 +449,9 @@ fun SettingsScreen(
 
                 SupportCard(onClick = { onNavigateToHelp("DASHBOARD") })
 
-                Spacer(modifier = Modifier.height(Spacing.md))
+                if (uiState.isBackupEnabled && (uiState.syncStatus is com.monetra.domain.model.SyncState.Synced || uiState.syncStatus is com.monetra.domain.model.SyncState.Success)) {
+                    LogoutCard(onClick = { showLogoutConfirmation = true })
+                }
 
                 DeleteDataCard(onClick = { showDeleteConfirmation = true })
 
@@ -487,6 +491,16 @@ fun SettingsScreen(
                     viewModel.onDeleteAllData()
                 },
                 onDismiss = { if (!uiState.isLoading) showDeleteConfirmation = false }
+            )
+        }
+
+        if (showLogoutConfirmation) {
+            LogoutDialog(
+                isLoading = uiState.isLoading,
+                onConfirm = {
+                    viewModel.onLogoutClick()
+                },
+                onDismiss = { if (!uiState.isLoading) showLogoutConfirmation = false }
             )
         }
     }
@@ -698,6 +712,110 @@ private fun DeleteAllDataDialog(
                 enabled = !isLoading
             ) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun LogoutCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                alpha = 0.2f
+            )
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🚪", fontSize = 22.sp)
+            }
+            Spacer(modifier = Modifier.width(Spacing.md))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.logout_title),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    "Sign out and clear local data",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun LogoutDialog(
+    isLoading: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.logout_title),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.logout_confirmation_msg),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onError
+                    )
+                } else {
+                    Text(stringResource(R.string.confirm_logout))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text(stringResource(R.string.cancel))
             }
         }
     )

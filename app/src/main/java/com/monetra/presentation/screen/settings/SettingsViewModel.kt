@@ -380,6 +380,21 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { driveBackupManager.signOut() }
     }
 
+    fun onLogoutClick() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                cloudBackupRepository.clearLocalData()
+                cloudBackupRepository.signOut()
+                _uiState.update { it.copy(isLoading = false) }
+                _events.send(SettingsEvent.DeleteSuccess)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
+                _events.send(SettingsEvent.AuthError("Logout failed: ${e.message}"))
+            }
+        }
+    }
+
     fun onDeleteAllData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
