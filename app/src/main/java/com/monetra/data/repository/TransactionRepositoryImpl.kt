@@ -189,15 +189,43 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertAccount(accountName: String) {
-        accountDao.insertAccount(com.monetra.data.local.entity.AccountEntity(name = accountName))
+        val deviceId = syncRepository.getDeviceId()
+        val existing = accountDao.getAccountByName(accountName)
+
+        val account = com.monetra.data.local.entity.AccountEntity(
+            id = existing?.id ?: 0,
+            name = accountName,
+            remoteId = existing?.remoteId ?: java.util.UUID.randomUUID().toString(),
+            version = if (existing == null) 1L else existing.version + 1L,
+            updatedAt = System.currentTimeMillis(),
+            deviceId = deviceId,
+            isSynced = false
+        )
+        accountDao.upsertSync(account)
+        syncRepository.clearTombstone(account.remoteId)
+        syncRepository.setDirty(true)
     }
 
     override suspend fun updateAccount(oldName: String, newName: String) {
-        accountDao.updateAccount(oldName, newName)
-        dao.updateAccountName(oldName, newName)
+        val deviceId = syncRepository.getDeviceId()
+        accountDao.getAccountByName(oldName)?.let { existing ->
+            val updated = existing.copy(
+                name = newName,
+                version = existing.version + 1L,
+                updatedAt = System.currentTimeMillis(),
+                deviceId = deviceId,
+                isSynced = false
+            )
+            accountDao.upsertSync(updated)
+            dao.updateAccountName(oldName, newName)
+            syncRepository.setDirty(true)
+        }
     }
 
     override suspend fun deleteAccount(accountName: String) {
-        accountDao.deleteAccount(accountName)
+        accountDao.getAccountByName(accountName)?.let { entity ->
+            syncRepository.markDeleted(entity.remoteId, "ACCOUNT")
+            accountDao.deleteAccount(accountName)
+        }
     }
 }

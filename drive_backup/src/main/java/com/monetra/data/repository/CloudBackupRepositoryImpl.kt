@@ -80,6 +80,8 @@ class CloudBackupRepositoryImpl @Inject constructor(
                 billInstances = db.monthlyExpenseDao.getAllBillInstances(),
                 refundables = db.refundableDao.getAllRefundablesList(),
                 userPreferences = db.userPreferencesDao.getAllUserPreferences(),
+                notes = db.noteDao.getAllNotesList(),
+                accounts = db.accountDao.getAllAccountsList(),
                 createdAt = System.currentTimeMillis()
             )
 
@@ -195,6 +197,8 @@ class CloudBackupRepositoryImpl @Inject constructor(
             db.monthlyExpenseDao.deleteAllBillInstances()
             db.refundableDao.deleteAllRefundables()
             db.userPreferencesDao.deleteAllUserPreferences()
+            db.noteDao.deleteAllNotes()
+            db.accountDao.deleteAllAccounts()
 
             // Restore from backup (Ensuring all are marked as synced)
             db.transactionDao.insertAllTransactions(backupData.transactions.map { it.copy(isSynced = true) })
@@ -205,6 +209,8 @@ class CloudBackupRepositoryImpl @Inject constructor(
             db.monthlyExpenseDao.insertAllMonthlyExpenses(backupData.monthlyExpenses.map { it.copy(isSynced = true) })
             db.monthlyExpenseDao.insertAllBillInstances(backupData.billInstances.map { it.copy(isSynced = true) })
             db.refundableDao.insertAllRefundables(backupData.refundables.map { it.copy(isSynced = true) })
+            db.noteDao.insertAllNotes(backupData.notes.map { it.copy(isSynced = true) })
+            db.accountDao.insertAllAccounts(backupData.accounts.map { it.copy(isSynced = true) })
             
             val prefs = if (backupData.userPreferences.isNotEmpty()) {
                 backupData.userPreferences.first().copy(id = 0, isSynced = true, isBackupEnabled = true)

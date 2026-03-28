@@ -1,11 +1,13 @@
 package com.monetra.data.backup.model
 
+import com.monetra.data.local.entity.AccountEntity
 import com.monetra.data.local.entity.BillInstanceEntity
 import com.monetra.data.local.entity.CategoryBudgetEntity
 import com.monetra.data.local.entity.DeletedEntity
 import com.monetra.data.local.entity.InvestmentEntity
 import com.monetra.data.local.entity.LoanEntity
 import com.monetra.data.local.entity.MonthlyExpenseEntity
+import com.monetra.data.local.entity.NoteEntity
 import com.monetra.data.local.entity.RefundableEntity
 import com.monetra.data.local.entity.SavingEntity
 import com.monetra.data.local.entity.TransactionEntity
@@ -23,6 +25,8 @@ data class BackupData(
     val billInstances: List<BillInstanceEntity> = emptyList(),
     val refundables: List<RefundableEntity> = emptyList(),
     val userPreferences: List<UserPreferencesEntity> = emptyList(),
+    val notes: List<NoteEntity> = emptyList(),
+    val accounts: List<AccountEntity> = emptyList(),
     val deletedEntities: List<DeletedEntity> = emptyList(),
     val createdAt: Long = System.currentTimeMillis()
 )

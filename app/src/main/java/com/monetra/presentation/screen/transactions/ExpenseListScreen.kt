@@ -143,11 +143,26 @@ fun ExpenseListScreen(
                         )
                     },
                     actions = {
+                        val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
+                        
                         IconButton(onClick = onNavigateToPending) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                contentDescription = stringResource(R.string.add_from_notification)
-                            )
+                            androidx.compose.material3.BadgedBox(
+                                badge = {
+                                    if (pendingCount > 0) {
+                                        androidx.compose.material3.Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(text = pendingCount.toString())
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = stringResource(R.string.add_from_notification)
+                                )
+                            }
                         }
                         IconButton(onClick = { isFilterSheetOpen = true }) {
                             Icon(Icons.Default.FilterAlt, contentDescription = "Filter")

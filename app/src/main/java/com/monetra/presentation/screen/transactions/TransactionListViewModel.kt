@@ -2,21 +2,36 @@ package com.monetra.presentation.screen.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.monetra.domain.model.Transaction
-import com.monetra.domain.model.TransactionType
-import com.monetra.domain.model.TransactionFilters
-import com.monetra.domain.model.TransactionSummary
-import com.monetra.domain.usecase.transaction.*
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.insertSeparators
 import androidx.paging.map
+import com.monetra.data.worker.PendingDeleteManager
+import com.monetra.domain.model.Transaction
+import com.monetra.domain.model.TransactionFilters
+import com.monetra.domain.model.TransactionType
+import com.monetra.domain.usecase.transaction.AddTransactionUseCase
+import com.monetra.domain.usecase.transaction.DeleteTransactionUseCase
+import com.monetra.domain.usecase.transaction.GetAmountRangeUseCase
+import com.monetra.domain.usecase.transaction.GetFilterSummaryUseCase
+import com.monetra.domain.usecase.transaction.GetPagedTransactionsUseCase
+import com.monetra.domain.usecase.transaction.GetTransactionByIdUseCase
+import com.monetra.domain.usecase.transaction.GetUsedCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.monetra.data.worker.PendingDeleteManager
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -40,8 +55,13 @@ class TransactionListViewModel @Inject constructor(
     private val detectRecurringExpenses: com.monetra.domain.usecase.intelligence.DetectRecurringExpensesUseCase,
     private val getUsedCategories: GetUsedCategoriesUseCase,
     private val getAmountRange: GetAmountRangeUseCase,
-    private val pendingDeleteManager: PendingDeleteManager
+    private val pendingDeleteManager: PendingDeleteManager,
+    private val pendingTransactionRepository: com.monetra.domain.repository.PendingTransactionRepository
 ) : ViewModel() {
+
+    val pendingCount: StateFlow<Int> = pendingTransactionRepository.getAllPending()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // ── Events ────────────────────────────────────────────────────────────
 

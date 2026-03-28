@@ -21,6 +21,8 @@ class LocalSyncDataSource @Inject constructor(
             billInstances = db.monthlyExpenseDao.getUnsyncedInstances(),
             refundables = db.refundableDao.getUnsyncedRefundables(),
             userPreferences = db.userPreferencesDao.getUnsyncedPreferences(),
+            notes = db.noteDao.getUnsyncedNotes(),
+            accounts = db.accountDao.getUnsyncedAccounts(),
             deletedEntities = db.deletedEntityDao.getAll()
         )
     }
@@ -35,6 +37,8 @@ class LocalSyncDataSource @Inject constructor(
         db.monthlyExpenseDao.markAsSyncedInstances(bundle.billInstances.map { it.remoteId })
         db.refundableDao.markAsSynced(bundle.refundables.map { it.remoteId })
         db.userPreferencesDao.markAsSynced()
+        db.noteDao.markAsSynced(bundle.notes.map { it.remoteId })
+        db.accountDao.markAsSynced(bundle.accounts.map { it.remoteId })
         db.deletedEntityDao.deleteByRemoteIds(bundle.deletedEntities.map { it.remoteId })
     }
 
@@ -51,6 +55,11 @@ class LocalSyncDataSource @Inject constructor(
                     "MONTHLY_EXPENSE" -> db.monthlyExpenseDao.getExpenseByRemoteId(deleted.remoteId)?.let { db.monthlyExpenseDao.deleteMonthlyExpense(it) }
                     "BILL_INSTANCE" -> db.monthlyExpenseDao.getInstanceByRemoteId(deleted.remoteId)?.let { db.monthlyExpenseDao.deleteBillInstanceById(it.id) }
                     "CATEGORY_BUDGET" -> db.categoryBudgetDao.getBudgetByRemoteId(deleted.remoteId)?.let { db.categoryBudgetDao.deleteBudget(it.categoryName) }
+                    "NOTE" -> db.noteDao.getNoteByRemoteId(deleted.remoteId)
+                        ?.let { db.noteDao.deleteNoteById(it.id) }
+
+                    "ACCOUNT" -> db.accountDao.getAccountByRemoteId(deleted.remoteId)
+                        ?.let { db.accountDao.deleteAccount(it.name) }
                 }
             }
 
@@ -69,6 +78,10 @@ class LocalSyncDataSource @Inject constructor(
             remoteData.billInstances.filterNot { it.remoteId in allDeletes }.forEach { db.monthlyExpenseDao.upsertSyncInstance(it) }
             remoteData.refundables.filterNot { it.remoteId in allDeletes }.forEach { db.refundableDao.upsertSync(it) }
             remoteData.userPreferences.filterNot { it.remoteId in allDeletes }.forEach { db.userPreferencesDao.upsertSync(it) }
+            remoteData.notes.filterNot { it.remoteId in allDeletes }
+                .forEach { db.noteDao.upsertSync(it) }
+            remoteData.accounts.filterNot { it.remoteId in allDeletes }
+                .forEach { db.accountDao.upsertSync(it) }
         }
     }
 }

@@ -48,7 +48,7 @@ import com.monetra.data.local.entity.UserPreferencesEntity
         PendingTransactionEntity::class,
         AccountEntity::class
     ],
-    version = 1, 
+    version = 2, 
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -72,9 +72,13 @@ abstract class MonetraDatabase : RoomDatabase() {
         val CALLBACK = object : RoomDatabase.Callback() {
             override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 super.onCreate(db)
-                val defaultAccounts = listOf("CASH", "OTHER")
-                defaultAccounts.forEach { name ->
-                    db.execSQL("INSERT INTO accounts (name) VALUES ('$name')")
+                val defaultAccounts = listOf(
+                    "CASH" to "account_cash_default",
+                    "OTHER" to "account_other_default"
+                )
+                val timestamp = System.currentTimeMillis()
+                defaultAccounts.forEach { (name, remoteId) ->
+                    db.execSQL("INSERT INTO accounts (name, remoteId, version, updatedAt, deviceId, isSynced) VALUES ('$name', '$remoteId', 1, $timestamp, 'system', 0)")
                 }
             }
         }

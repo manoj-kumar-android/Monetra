@@ -5,6 +5,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.monetra.domain.model.Note
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 @Entity(
     tableName = "notes",
     indices = [

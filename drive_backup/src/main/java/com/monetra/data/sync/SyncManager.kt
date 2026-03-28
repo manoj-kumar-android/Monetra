@@ -132,6 +132,8 @@ class SyncManager @Inject constructor(
             billInstances = mergeEntities(remote.billInstances, localDirty.billInstances, allDeletedIds),
             refundables = mergeEntities(remote.refundables, localDirty.refundables, allDeletedIds),
             userPreferences = mergeEntities(remote.userPreferences, localDirty.userPreferences, allDeletedIds),
+            notes = mergeEntities(remote.notes, localDirty.notes, allDeletedIds),
+            accounts = mergeEntities(remote.accounts, localDirty.accounts, allDeletedIds),
             deletedEntities = (remote.deletedEntities + localDirty.deletedEntities)
                 .associateBy { it.remoteId }
                 .values.toList(),
@@ -181,6 +183,8 @@ class SyncManager @Inject constructor(
                data.billInstances.isEmpty() &&
                data.refundables.isEmpty() &&
                data.userPreferences.isEmpty() &&
+                data.notes.isEmpty() &&
+                data.accounts.isEmpty() &&
                data.deletedEntities.isEmpty()
     }
 
