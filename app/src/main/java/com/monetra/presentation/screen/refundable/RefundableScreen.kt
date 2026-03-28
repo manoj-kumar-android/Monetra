@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Event
@@ -167,11 +166,11 @@ fun RefundableScreen(
                 val filter = RefundableFilter.entries[page]
                 val pageRefundables = allRefundables?.filter {
                     when (filter) {
-                        RefundableFilter.PENDING -> it.status == RefundableStatus.PENDING
-                        RefundableFilter.OVERDUE -> it.status == RefundableStatus.OVERDUE
+                        RefundableFilter.DUES -> it.status == RefundableStatus.PENDING || it.status == RefundableStatus.OVERDUE
                         RefundableFilter.PAID -> it.status == RefundableStatus.PAID
                     }
-                }
+                }?.sortedWith(compareBy({ it.status == RefundableStatus.PENDING }, { it.dueDate }))
+
 
                 if (pageRefundables == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -256,8 +255,7 @@ private fun RefundableTabRow(
                 text = {
                     Text(
                         text = when(filter) {
-                            RefundableFilter.PENDING -> stringResource(R.string.pending)
-                            RefundableFilter.OVERDUE -> stringResource(R.string.overdue)
+                            RefundableFilter.DUES -> "Dues"
                             RefundableFilter.PAID -> stringResource(R.string.paid)
                         },
                         style = MaterialTheme.typography.titleSmall.copy(
@@ -283,14 +281,22 @@ private fun RefundableItemRow(
         RefundableStatus.PENDING -> MaterialTheme.colorScheme.primary
     }
 
+    val isOverdue = item.status == RefundableStatus.OVERDUE
+    
     Card(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isOverdue) 2.dp else 0.5.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -436,7 +442,8 @@ private fun RefundableEmptyState(
         verticalArrangement = Arrangement.Center
     ) {
         Box(contentAlignment = Alignment.Center) {
-            val tint = if (filter == RefundableFilter.PENDING) Color(0xFFFFCC00) else MaterialTheme.colorScheme.primary
+            val tint =
+                if (filter == RefundableFilter.DUES) Color(0xFFFFCC00) else MaterialTheme.colorScheme.primary
             
             // Animated background glow
             Box(
@@ -460,8 +467,7 @@ private fun RefundableEmptyState(
             ) {
                 Icon(
                     imageVector = when(filter) {
-                        RefundableFilter.PENDING -> Icons.Default.Handshake
-                        RefundableFilter.OVERDUE -> Icons.Default.Alarm
+                        RefundableFilter.DUES -> Icons.Default.Handshake
                         RefundableFilter.PAID -> Icons.Default.TaskAlt
                     },
                     contentDescription = null,
@@ -475,8 +481,7 @@ private fun RefundableEmptyState(
 
         Text(
             text = when(filter) {
-                RefundableFilter.PENDING -> "All Settled Up!"
-                RefundableFilter.OVERDUE -> "No Overdue Payments"
+                RefundableFilter.DUES -> "All Settled Up!"
                 RefundableFilter.PAID -> "No Paid Records"
             },
             style = MaterialTheme.typography.headlineSmall.copy(
@@ -490,8 +495,7 @@ private fun RefundableEmptyState(
 
         Text(
             text = when(filter) {
-                RefundableFilter.PENDING -> "You have no pending dues to receive or pay back."
-                RefundableFilter.OVERDUE -> "Great! No one is running late on their payments."
+                RefundableFilter.DUES -> "You have no pending dues to receive or pay back."
                 RefundableFilter.PAID -> "Settled entries will appear here for your records."
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -500,7 +504,7 @@ private fun RefundableEmptyState(
             modifier = Modifier.padding(horizontal = Spacing.lg)
         )
 
-        if (filter == RefundableFilter.PENDING) {
+        if (filter == RefundableFilter.DUES) {
             Spacer(modifier = Modifier.height(Spacing.lg))
             
             Row(

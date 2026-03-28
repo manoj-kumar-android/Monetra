@@ -1,28 +1,60 @@
 package com.monetra.presentation.component
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.monetra.ui.theme.Spacing
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,17 +65,11 @@ fun SwipeToDeleteContainer(
     content: @Composable () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                showDialog = true
-                false
-            } else {
-                false
-            }
-        },
-        positionalThreshold = { it * 0.35f }
-    )
+    val scope = rememberCoroutineScope()
+
+    // Manual offset management to allow "staying" at the release position
+    val offset = remember { Animatable(0f) }
+    var itemWidth by remember { mutableFloatStateOf(0f) }
 
     if (showDialog) {
         MonetraDeleteDialog(
@@ -51,47 +77,86 @@ fun SwipeToDeleteContainer(
             message = message,
             onConfirm = {
                 showDialog = false
-                onDelete()
+                scope.launch {
+                    // Animate to full dismiss before deleting
+                    offset.animateTo(-itemWidth, tween(300))
+                    onDelete()
+                }
             },
-            onDismiss = { showDialog = false }
+            onDismiss = {
+                showDialog = false
+                scope.launch {
+                    // Animate back to original state
+                    offset.animateTo(0f, tween(300))
+                }
+            }
         )
     }
 
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            val color by animateColorAsState(
-                targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                },
-                label = "swipe_bg"
-            )
-            val iconScale by animateFloatAsState(
-                targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1.2f else 0.8f,
-                label = "icon_scale"
-            )
-            Box(
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { itemWidth = it.size.width.toFloat() }
+    ) {
+        // Background - revealed as we swipe
+        val progress = if (itemWidth > 0) abs(offset.value) / itemWidth else 0f
+        val isPastThreshold = progress > 0.35f
+
+        val color by animateColorAsState(
+            targetValue = if (isPastThreshold) MaterialTheme.colorScheme.errorContainer
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            label = "swipe_bg"
+        )
+        val iconScale by animateFloatAsState(
+            targetValue = if (isPastThreshold) 1.2f else 0.8f,
+            label = "icon_scale"
+        )
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(24.dp))
+                .background(color),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(color),
-                contentAlignment = Alignment.CenterEnd
-              ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier
-                        .padding(end = Spacing.xl)
-                        .scale(iconScale)
+                    .padding(end = Spacing.xl)
+                    .scale(iconScale)
+            )
+        }
+
+        // Foreground content - the draggable part
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offset.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        // Only allow swiping from right (negative delta)
+                        val newOffset = (offset.value + delta).coerceIn(-itemWidth, 0f)
+                        scope.launch { offset.snapTo(newOffset) }
+                    },
+                    onDragStopped = { _ ->
+                        if (progress > 0.35f) {
+                            // Dialog shown, item stays at current release position
+                            showDialog = true
+                        } else {
+                            // Snap back if threshold not reached
+                            scope.launch {
+                                offset.animateTo(0f, tween(300))
+                            }
+                        }
+                    }
                 )
-            }
-        },
-        content = { content() }
-    )
+        ) {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -175,7 +240,10 @@ fun MonetraDeleteDialog(
                             .weight(1f)
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        )
                     ) {
                         Text(
                             "Cancel",

@@ -24,7 +24,7 @@ class RefundableViewModel @Inject constructor(
     private val pendingDeleteManager: PendingDeleteManager
 ) : ViewModel() {
 
-    private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.PENDING)
+    private val _filter = MutableStateFlow<RefundableFilter>(RefundableFilter.DUES)
     val filter: StateFlow<RefundableFilter> = _filter.asStateFlow()
 
     private val _pendingDeleteIds = pendingDeleteManager.getPendingIds("REFUNDABLE").stateIn(
@@ -71,5 +71,6 @@ class RefundableViewModel @Inject constructor(
 }
 
 enum class RefundableFilter {
-    PENDING, OVERDUE, PAID
+    DUES, PAID
 }
+

@@ -1,9 +1,9 @@
 package com.monetra.data.repository
 
 import com.monetra.data.local.dao.RefundableDao
-import com.monetra.data.local.entity.RefundableEntity
+import com.monetra.data.local.entity.toDomain
+import com.monetra.data.local.entity.toEntity
 import com.monetra.domain.model.Refundable
-import com.monetra.domain.model.RefundableType
 import com.monetra.domain.repository.RefundableRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -69,38 +69,4 @@ class RefundableRepositoryImpl @Inject constructor(
             syncRepository.setDirty(true)
         }
     }
-
-    private fun RefundableEntity.toDomain() = Refundable(
-        id = id,
-        remoteId = remoteId,
-        amount = amount,
-        personName = personName,
-        phoneNumber = phoneNumber,
-        givenDate = givenDate,
-        dueDate = dueDate,
-        note = note,
-        isPaid = isPaid,
-        remindMe = remindMe,
-        entryType = runCatching { RefundableType.valueOf(entryType) }.getOrDefault(RefundableType.LENT),
-        updatedAt = updatedAt,
-        deviceId = deviceId,
-        isSynced = isSynced
-    )
-
-    private fun Refundable.toEntity() = RefundableEntity(
-        id = id,
-        remoteId = remoteId,
-        amount = amount,
-        personName = personName,
-        phoneNumber = phoneNumber,
-        givenDate = givenDate,
-        dueDate = dueDate,
-        note = note,
-        isPaid = isPaid,
-        remindMe = remindMe,
-        entryType = entryType.name,
-        updatedAt = updatedAt,
-        deviceId = deviceId,
-        isSynced = isSynced
-    )
 }

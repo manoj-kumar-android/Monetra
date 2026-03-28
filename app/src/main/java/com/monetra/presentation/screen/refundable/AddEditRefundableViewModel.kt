@@ -175,15 +175,7 @@ class AddEditRefundableViewModel @Inject constructor(
             return
         }
 
-        val now = LocalDateTime.now()
-        if (state.remindMe && state.dueDate.isBefore(now)) {
-            val msg = if (state.dueDate.toLocalDate() == now.toLocalDate())
-                "That time has already passed today — pick a later time."
-            else
-                "Reminder date/time is in the past — pick today or a future date."
-            android.widget.Toast.makeText(application, msg, android.widget.Toast.LENGTH_LONG).show()
-            return
-        }
+
 
         viewModelScope.launch {
             try {
