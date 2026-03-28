@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 import com.monetra.data.local.entity.AccountEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -25,8 +24,22 @@ interface AccountDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAccount(account: AccountEntity)
 
-    @Upsert
-    suspend fun upsertSync(account: AccountEntity)
+    suspend fun upsertSync(account: AccountEntity) {
+        val existing = getAccountByRemoteId(account.remoteId)
+        val shouldOverwrite = when {
+            existing == null -> true
+            account.version > existing.version -> true
+            account.version < existing.version -> false
+            account.updatedAt > existing.updatedAt -> true
+            account.updatedAt < existing.updatedAt -> false
+            else -> account.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0
+            insertAllAccounts(listOf(account.copy(id = id, isSynced = true)))
+        }
+    }
 
     @Query("SELECT * FROM accounts WHERE isSynced = 0")
     suspend fun getUnsyncedAccounts(): List<AccountEntity>

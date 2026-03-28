@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 import com.monetra.data.local.entity.NoteEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -25,8 +24,22 @@ interface NoteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNote(note: NoteEntity)
 
-    @Upsert
-    suspend fun upsertSync(note: NoteEntity)
+    suspend fun upsertSync(note: NoteEntity) {
+        val existing = getNoteByRemoteId(note.remoteId)
+        val shouldOverwrite = when {
+            existing == null -> true
+            note.version > existing.version -> true
+            note.version < existing.version -> false
+            note.updatedAt > existing.updatedAt -> true
+            note.updatedAt < existing.updatedAt -> false
+            else -> note.deviceId > existing.deviceId
+        }
+
+        if (shouldOverwrite) {
+            val id = existing?.id ?: 0L
+            insertNote(note.copy(id = id, isSynced = true))
+        }
+    }
 
     @Query("SELECT * FROM notes WHERE isSynced = 0")
     suspend fun getUnsyncedNotes(): List<NoteEntity>

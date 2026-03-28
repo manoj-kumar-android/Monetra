@@ -26,14 +26,21 @@ class NoteRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertNote(note: Note) {
-        val deviceId = syncRepository.getDeviceId()
-
         val existing = if (note.id != 0L) {
             dao.getNoteById(note.id)
         } else {
             dao.getNoteByRemoteId(note.remoteId)
         }
 
+        // Only update if there's a real change (to avoid sync loop/pointless noise)
+        if (existing != null &&
+            existing.title == note.title &&
+            existing.content == note.content
+        ) {
+            return
+        }
+
+        val deviceId = syncRepository.getDeviceId()
         val syncNote = note.copy(
             id = existing?.id ?: note.id,
             remoteId = existing?.remoteId ?: note.remoteId,

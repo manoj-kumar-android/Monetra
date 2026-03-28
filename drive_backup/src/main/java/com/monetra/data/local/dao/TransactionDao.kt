@@ -209,8 +209,8 @@ interface TransactionDao {
         }
     }
 
-    @Query("UPDATE transactions SET accountName = :newName WHERE accountName = :oldName")
-    suspend fun updateAccountName(oldName: String, newName: String)
+    @Query("UPDATE transactions SET accountName = :newName, isSynced = 0, updatedAt = :timestamp, version = version + 1 WHERE accountName = :oldName")
+    suspend fun updateAccountName(oldName: String, newName: String, timestamp: Long)
 }
 
 data class CategorySum(

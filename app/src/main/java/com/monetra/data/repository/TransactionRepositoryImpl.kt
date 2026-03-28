@@ -189,14 +189,17 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertAccount(accountName: String) {
-        val deviceId = syncRepository.getDeviceId()
-        val existing = accountDao.getAccountByName(accountName)
+        val normalizedName = accountName.trim().uppercase()
+        val existing = accountDao.getAccountByName(normalizedName)
 
+        if (existing != null) return // Already exists, no need to do anything
+
+        val deviceId = syncRepository.getDeviceId()
         val account = com.monetra.data.local.entity.AccountEntity(
-            id = existing?.id ?: 0,
-            name = accountName,
-            remoteId = existing?.remoteId ?: java.util.UUID.randomUUID().toString(),
-            version = if (existing == null) 1L else existing.version + 1L,
+            id = 0,
+            name = normalizedName,
+            remoteId = java.util.UUID.randomUUID().toString(),
+            version = 1L,
             updatedAt = System.currentTimeMillis(),
             deviceId = deviceId,
             isSynced = false
@@ -217,7 +220,7 @@ class TransactionRepositoryImpl @Inject constructor(
                 isSynced = false
             )
             accountDao.upsertSync(updated)
-            dao.updateAccountName(oldName, newName)
+            dao.updateAccountName(oldName, newName, System.currentTimeMillis())
             syncRepository.setDirty(true)
         }
     }
