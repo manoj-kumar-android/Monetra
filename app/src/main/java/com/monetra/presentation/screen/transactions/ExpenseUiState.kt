@@ -9,7 +9,8 @@ data class IntelligenceUiModel(
     val projectedMonthEnd: String = "₹0.00",
     val dailyAverage: String = "₹0.00",
     val comparisonText: String = "",
-    val burnRateStatus: String = "Stable"
+    val burnRateStatus: String = "Stable",
+    val isExhausted: Boolean = false
 )
 
 @Immutable

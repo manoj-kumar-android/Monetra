@@ -385,8 +385,13 @@ private fun DashboardContent(
             SafeToSpendCard(
                 amount = state.dailySafeToSpend,
                 limit = state.dailyLimit,
+                spentToday = state.spentToday,
+                potentialTomorrowLimit = state.potentialTomorrowLimit,
+                projectedBonus = state.projectedBonus,
+                projectedTotalSavings = state.projectedTotalSavings,
                 rawLimit = state.rawDailyLimit,
-                percent = state.stsPercent
+                percent = state.stsPercent,
+                isExhausted = state.isExhausted
             )
         }
 
@@ -457,13 +462,26 @@ private fun DashboardContent(
 }
 
 @Composable
-private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, percent: Float) {
+private fun SafeToSpendCard(
+    amount: String,
+    limit: String,
+    spentToday: String,
+    potentialTomorrowLimit: String,
+    projectedBonus: String,
+    projectedTotalSavings: String,
+    rawLimit: Double,
+    percent: Float,
+    isExhausted: Boolean
+) {
     val isOverspent = amount.startsWith("−") || amount.startsWith("-")
-    val progress = (1f - percent).coerceIn(0f, 1f)
+    val hasSpentToday = spentToday != "₹0"
+
+    // Progress is based on daily limit. If daily limit is 0, we are at 100% usage if we have an allowance issue.
+    val progress = if (rawLimit <= 0) 1f else (1f - percent).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "STSProgress")
-    
+
     val statusColor = when {
-        isOverspent -> MaterialTheme.colorScheme.error
+        isExhausted || isOverspent -> MaterialTheme.colorScheme.error
         progress > 0.9f -> MaterialTheme.colorScheme.error
         progress > 0.7f -> Color(0xFFFF9500)
         else -> MaterialTheme.colorScheme.primary
@@ -476,21 +494,42 @@ private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, per
         border = androidx.compose.foundation.BorderStroke(1.5.dp, statusColor.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(statusColor)
-                )
-                Spacer(modifier = Modifier.width(Spacing.md))
-                Text(
-                    text = stringResource(R.string.safe_to_spend_today),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(statusColor)
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.md))
+                    Text(
+                        text = stringResource(R.string.safe_to_spend_today),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
+
+                if (isExhausted) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = stringResource(R.string.budget_exhausted),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(Spacing.lg))
             
+            Spacer(modifier = Modifier.height(Spacing.lg))
+
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -498,24 +537,32 @@ private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, per
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Column {
-                        Text(stringResource(R.string.todays_allowance), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            amount,
+                            text = if (isExhausted) stringResource(R.string.monthly_limit_reached) else stringResource(
+                                R.string.todays_allowance
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (isExhausted) "₹0" else amount,
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
                             color = statusColor
                         )
                     }
-                    Text(
-                        stringResource(R.string.limit_format, rawLimit),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
+                    if (!isExhausted) {
+                        Text(
+                            stringResource(R.string.limit_format, rawLimit),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     LinearProgressIndicator(
-                        progress = { if (isOverspent) 1f else animatedProgress },
+                        progress = { if (isOverspent || isExhausted) 1f else animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(10.dp)
@@ -524,29 +571,82 @@ private fun SafeToSpendCard(amount: String, limit: String, rawLimit: Double, per
                         trackColor = statusColor.copy(alpha = 0.1f),
                         strokeCap = StrokeCap.Round
                     )
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(stringResource(R.string.spent_today_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.used_percent_format, if (isOverspent) 100 else (progress * 100).toInt()), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = statusColor)
-                    }
-                }
-                
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
                     Row(
-                        modifier = Modifier
-                            .padding(Spacing.sm)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(Spacing.sm))
                         Text(
-                            if (isOverspent) stringResource(R.string.redistributing_tomorrow) else stringResource(R.string.pacing_tip_format, rawLimit),
+                            text = if (hasSpentToday) stringResource(R.string.spent_today_label) else stringResource(
+                                R.string.spent_so_far
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Text(
+                            text = if (isExhausted) "100% Used" else stringResource(
+                                R.string.used_percent_format,
+                                if (isOverspent) 100 else (progress * 100).toInt()
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor
+                        )
+                    }
+                }
+
+                Surface(
+                    color = (if (isExhausted || isOverspent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(
+                        alpha = 0.05f
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(Spacing.sm)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (isExhausted || isOverspent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Text(
+                                text = when {
+                                    isExhausted -> "Next month\'s allowance will reset soon."
+                                    isOverspent -> stringResource(R.string.redistributing_tomorrow)
+                                    (amount != "₹0" && amount != "₹0.00") -> stringResource(
+                                        R.string.sts_forecast_format,
+                                        potentialTomorrowLimit
+                                    )
+
+                                    else -> stringResource(R.string.pacing_tip_format, rawLimit)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (!isExhausted && !isOverspent) {
+                            Spacer(modifier = Modifier.height(Spacing.xs))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("🎯", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(Spacing.sm))
+                                Text(
+                                    text = stringResource(
+                                        R.string.sts_monthly_forecast,
+                                        projectedTotalSavings,
+                                        projectedBonus
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }

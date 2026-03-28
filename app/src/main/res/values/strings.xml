@@ -35,6 +35,11 @@
     <string name="monthly_commit">Monthly commit</string>
     <string name="recent_activity">Recent Activity</string>
     <string name="see_all">See All</string>
+    <string name="monthly_limit_reached">Monthly allowance exhausted</string>
+    <string name="budget_exhausted">Budget Exhausted</string>
+    <string name="spent_so_far">Spent So Far</string>
+    <string name="sts_forecast_format">Forecast: Stop now to boost tomorrow\'s limit to %s</string>
+    <string name="sts_monthly_forecast">Monthly Forecast: On track to save %s (%s bonus!)</string>
 
     <!-- Assistant / Planning -->
     <string name="assistant_title">Assistant</string>

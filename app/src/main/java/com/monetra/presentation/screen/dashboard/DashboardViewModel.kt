@@ -154,6 +154,13 @@ class DashboardViewModel @Inject constructor(
                     rawFixedCosts = currentReserved,
                     dailySafeToSpend = "₹%,.0f".format(sts.remainingToday),
                     dailyLimit = "₹%,.0f".format(sts.dailyLimit),
+                    spentToday = "₹%,.0f".format(sts.spentToday),
+                    potentialTomorrowLimit = "₹%,.0f".format(sts.potentialTomorrowLimit),
+                    projectedBonus = "₹%,.0f".format(
+                        (burn?.projectedMonthEndSavings ?: 0.0) - (pref.monthlySavingsGoal)
+                    ),
+                    projectedTotalSavings = "₹%,.0f".format(burn?.projectedMonthEndSavings ?: 0.0),
+                    isExhausted = sts.isExhausted,
                     stsPercent = sts.remainingPercent.coerceIn(0f, 1f),
                     summary = summary.toSummaryUiModel(pref.ownerName),
                     weeklyExpense = "₹%,.0f".format(weekly.totalExpense.coerceAtLeast(0.0)),
@@ -168,7 +175,8 @@ class DashboardViewModel @Inject constructor(
                         projectedMonthEnd = "₹%,.2f".format(burn?.projectedEndMonthSpend ?: 0.0),
                         dailyAverage = "₹%,.2f".format(dailyAvg),
                         comparisonText = burn?.warningMessage ?: "Stable spending velocity",
-                        burnRateStatus = if (burn?.isOverspending == true) "Critical" else "Stable"
+                        burnRateStatus = if (burn?.isOverspending == true) "Critical" else "Stable",
+                        isExhausted = sts.isExhausted
                     ),
                     budgets = activeBudgets.map { it.toUiModel() },
                     recurringTotal = "₹%,.2f".format(rec.sumOf { it.amount }),
@@ -311,6 +319,11 @@ sealed interface DashboardUiState {
         val rawFixedCosts: Double,
         val dailySafeToSpend: String,
         val dailyLimit: String,
+        val spentToday: String,
+        val potentialTomorrowLimit: String,
+        val projectedBonus: String,
+        val projectedTotalSavings: String,
+        val isExhausted: Boolean,
         val stsPercent: Float,
         val summary: SummaryUiModel,
         val weeklyExpense: String,

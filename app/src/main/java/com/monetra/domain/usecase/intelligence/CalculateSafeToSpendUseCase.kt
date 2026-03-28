@@ -5,10 +5,10 @@ import com.monetra.domain.repository.LoanRepository
 import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.TransactionRepository
 import com.monetra.domain.repository.UserPreferenceRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.Dispatchers
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -79,14 +79,23 @@ class CalculateSafeToSpendUseCase @Inject constructor(
             // 3. Final Calculations
             val remainingAllowance = (monthlyDiscretionaryPool - effectiveSpentBeforeToday).coerceAtLeast(0.0)
             val remainingDays = (daysInMonth - today.dayOfMonth + 1).coerceAtLeast(1)
+            val daysAfterToday = (daysInMonth - today.dayOfMonth).coerceAtLeast(0)
 
             val dailyLimit = remainingAllowance / remainingDays
             val remainingToday = dailyLimit - effectiveSpentToday
 
+            val potentialTomorrowLimit = if (daysAfterToday > 0) {
+                (remainingAllowance - effectiveSpentToday) / daysAfterToday
+            } else {
+                dailyLimit // If it's the last day, just show current limit or 0
+            }
+
             SafeToSpend(
                 dailyLimit = dailyLimit,
                 remainingToday = remainingToday,
-                monthlyAllowance = remainingAllowance
+                monthlyAllowance = remainingAllowance,
+                spentToday = effectiveSpentToday,
+                potentialTomorrowLimit = potentialTomorrowLimit
             )
         }.flowOn(Dispatchers.Default)
     }

@@ -6,8 +6,6 @@ import com.monetra.domain.repository.TransactionRepository
 import com.monetra.domain.repository.UserPreferenceRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -36,8 +34,10 @@ class CalculateBurnRateUseCase @Inject constructor(
             val dailyRate = if (elapsedDays > 0) totalSpent / elapsedDays else 0.0
             val projectedSpent = dailyRate * daysInMonth
             val disposableLimit = prefs.monthlyIncome - prefs.monthlySavingsGoal
-
             val isOverspending = projectedSpent > disposableLimit
+
+            val projectedMonthEndSavings =
+                prefs.monthlySavingsGoal + (disposableLimit - projectedSpent)
 
             val warningMessage = if (isOverspending) {
                 "Warning: At your current pace, you will overspend by ₹%,.0f of your disposable income limit.".format(projectedSpent - disposableLimit)
@@ -48,6 +48,7 @@ class CalculateBurnRateUseCase @Inject constructor(
                 totalDays = daysInMonth,
                 currentSpend = totalSpent,
                 projectedEndMonthSpend = projectedSpent,
+                projectedMonthEndSavings = projectedMonthEndSavings.coerceAtLeast(0.0),
                 isOverspending = isOverspending,
                 warningMessage = warningMessage
             )

@@ -41,6 +41,7 @@ data class BurnRateAnalysis(
     val totalDays: Int,
     val currentSpend: Double,
     val projectedEndMonthSpend: Double,
+    val projectedMonthEndSavings: Double,
     val isOverspending: Boolean,
     val warningMessage: String?
 )
@@ -48,8 +49,13 @@ data class BurnRateAnalysis(
 data class SafeToSpend(
     val dailyLimit: Double,
     val remainingToday: Double,
-    val monthlyAllowance: Double
+    val monthlyAllowance: Double,
+    val spentToday: Double = 0.0,
+    val potentialTomorrowLimit: Double = 0.0
 ) {
     val remainingPercent: Float
         get() = if (dailyLimit > 0) (remainingToday / dailyLimit).toFloat().coerceIn(0f, 1f) else 0f
+
+    val isExhausted: Boolean
+        get() = monthlyAllowance <= 0
 }
