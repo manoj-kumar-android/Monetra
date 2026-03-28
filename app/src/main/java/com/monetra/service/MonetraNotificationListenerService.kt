@@ -2,9 +2,7 @@ package com.monetra.service
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
-import com.monetra.domain.repository.PendingTransactionRepository
-import com.monetra.util.NotificationParser
+import com.monetra.util.TransactionDetector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +14,7 @@ import javax.inject.Inject
 class MonetraNotificationListenerService : NotificationListenerService() {
 
     @Inject
-    lateinit var repository: PendingTransactionRepository
+    lateinit var detector: TransactionDetector
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -31,20 +29,11 @@ class MonetraNotificationListenerService : NotificationListenerService() {
         val combinedText = "$title $text $bigText"
 
         scope.launch {
-            val pending = NotificationParser.parse(combinedText, packageName)
-            if (pending != null) {
-                if (!repository.isDuplicate(pending.referenceId, pending.rawText)) {
-                    repository.insertPending(pending)
-                    Log.d("NotificationListener", "Detected transaction: $pending")
-                } else {
-                    Log.d("NotificationListener", "Duplicate transaction ignored")
-                }
-            }
+            detector.detectAndSave(combinedText, packageName)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // No need to cancel scope if it's tied to application lifecycle or handled correctly
     }
 }

@@ -33,8 +33,6 @@ class PendingTransactionRepositoryImpl @Inject constructor(
 
     override suspend fun isDuplicate(refId: String?, rawText: String): Boolean {
         if (refId != null && dao.existsByReferenceId(refId)) return true
-
-        // Also check if same text arrived within last 5 minutes (for apps that don't provide refId)
         val fiveMinutesAgo = System.currentTimeMillis() - (5 * 60 * 1000)
         return dao.existsByRecentText(rawText, fiveMinutesAgo)
     }
