@@ -193,7 +193,6 @@ fun DashboardScreen(
                             .padding(Spacing.lg),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("👋", style = MaterialTheme.typography.displayMedium)
                         Spacer(modifier = Modifier.height(Spacing.md))
                         Text(
                             stringResource(R.string.welcome_to_monetra),
@@ -627,7 +626,7 @@ private fun SafeToSpendCard(
                             )
                         }
 
-                        if (!isExhausted && !isOverspent) {
+                        /*if (!isExhausted && !isOverspent) {
                             Spacer(modifier = Modifier.height(Spacing.xs))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -645,7 +644,7 @@ private fun SafeToSpendCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
+                        }*/
                     }
                 }
             }

@@ -534,7 +534,6 @@ private fun WealthProjectionCard(projection: PortfolioProjection, onNavigateToIn
     ) {
         if (projection.monthlyContribution <= 0) {
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("📈", fontSize = 32.sp)
                 Spacer(Modifier.height(Spacing.sm))
                 Text("No monthly investments yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(Spacing.md))
