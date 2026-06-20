@@ -1,30 +1,65 @@
 package com.monetra.presentation.screen.portfolio
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.monetra.domain.model.*
+import com.monetra.domain.model.FinancialScore
+import com.monetra.domain.model.PortfolioData
+import com.monetra.domain.model.PortfolioProjection
 import com.monetra.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,7 +111,9 @@ fun PortfolioScreen(
                 is PortfolioUiState.Error -> {
                     Text(
                         text = state.message,
-                        modifier = Modifier.align(Alignment.Center).padding(Spacing.xl),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(Spacing.xl),
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
@@ -183,6 +220,7 @@ private fun PortfolioDashboard(
                 savings = data.currentSavings,
                 investments = data.totalInvestmentValue,
                 loanRemaining = data.totalLoanRemaining,
+                averageLoanInterestRate = data.averageLoanInterestRate,
                 onNavigateToSavings = onNavigateToSavings,
                 onNavigateToInvestments = onNavigateToInvestments,
                 onNavigateToLoans = onNavigateToLoans
@@ -232,7 +270,9 @@ private fun NetWorthCard(data: PortfolioData) {
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally, 
-                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xxl)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.xxl)
             ) {
                 Text(
                     "TOTAL NET WORTH",
@@ -316,6 +356,7 @@ private fun FinancialBreakdownRow(
     savings: Double,
     investments: Double,
     loanRemaining: Double,
+    averageLoanInterestRate: Double,
     onNavigateToSavings: () -> Unit,
     onNavigateToInvestments: () -> Unit,
     onNavigateToLoans: () -> Unit
@@ -340,12 +381,18 @@ private fun FinancialBreakdownRow(
             color = Color(0xFF5856D6),
             onClick = onNavigateToInvestments
         )
+        val interestRateText = if (averageLoanInterestRate > 0) {
+            "%.1f%%".format(averageLoanInterestRate)
+        } else {
+            null
+        }
         MiniStatCard(
             modifier = Modifier.weight(1f),
             label = "Loan Debt",
             value = loanRemaining,
             emoji = "💳",
             color = if (loanRemaining > 0) MaterialTheme.colorScheme.error else Color(0xFF34C759),
+            extraInfo = interestRateText,
             onClick = onNavigateToLoans
         )
     }
@@ -358,6 +405,7 @@ private fun MiniStatCard(
     value: Double,
     emoji: String,
     color: Color,
+    extraInfo: String? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -378,7 +426,9 @@ private fun MiniStatCard(
             )
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(Spacing.md),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Spacing.md),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
@@ -394,6 +444,13 @@ private fun MiniStatCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(emoji, fontSize = 18.sp)
+                    }
+                    if (extraInfo != null) {
+                        Text(
+                            text = extraInfo,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = color
+                        )
                     }
                 }
                 Column {
@@ -444,7 +501,10 @@ private fun FinancialScoreCard(score: FinancialScore, monthlyInvestment: Double,
         val animProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(1000), label = "score")
         LinearProgressIndicator(
             progress = { animProgress },
-            modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape),
             color = scoreColor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
@@ -465,7 +525,9 @@ private fun FinancialScoreCard(score: FinancialScore, monthlyInvestment: Double,
 @Composable
 private fun WealthProjectionCard(projection: PortfolioProjection, onNavigateToInvestments: () -> Unit) {
     PortfolioCard(
-        modifier = Modifier.fillMaxWidth().clickable { onNavigateToInvestments() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onNavigateToInvestments() },
         title = "WEALTH PROJECTION", 
         icon = Icons.AutoMirrored.Filled.TrendingUp, 
         accentColor = Color(0xFF5856D6)

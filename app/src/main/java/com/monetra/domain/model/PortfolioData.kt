@@ -15,6 +15,7 @@ data class PortfolioData(
     val freeMoney: Double,
     val financialScore: FinancialScore,
     val wealthProjection: PortfolioProjection,
+    val averageLoanInterestRate: Double,
 
     val hasData: Boolean
 )

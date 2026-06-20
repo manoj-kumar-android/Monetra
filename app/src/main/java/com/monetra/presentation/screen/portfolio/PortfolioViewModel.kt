@@ -2,13 +2,25 @@ package com.monetra.presentation.screen.portfolio
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.monetra.domain.model.*
-import com.monetra.domain.repository.*
+import com.monetra.domain.model.ContributionFrequency
+import com.monetra.domain.model.PortfolioData
+import com.monetra.domain.model.PortfolioProjection
+import com.monetra.domain.model.toFinancialScore
+import com.monetra.domain.repository.InvestmentRepository
+import com.monetra.domain.repository.LoanRepository
+import com.monetra.domain.repository.MonthlyExpenseRepository
+import com.monetra.domain.repository.SavingRepository
+import com.monetra.domain.repository.UserPreferenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlin.math.pow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
+import kotlin.math.pow
 
 @HiltViewModel
 class PortfolioViewModel @Inject constructor(
@@ -38,8 +50,14 @@ class PortfolioViewModel @Inject constructor(
             
             // Only consider non-paid loans
             val activeLoans = loans.filter { it.remainingTenure > 0 }
-            val totalLoanRemaining = activeLoans.sumOf { it.totalPrincipal * (it.remainingTenure.toDouble() / it.tenureMonths.toDouble()).coerceIn(0.0, 1.0) }
+            val totalLoanRemaining = activeLoans.sumOf { it.remainingBalance }
             val totalEmi = activeLoans.sumOf { it.monthlyEmi }
+
+            val averageLoanInterestRate = if (totalLoanRemaining > 0) {
+                activeLoans.sumOf { it.remainingBalance * it.annualInterestRate } / totalLoanRemaining
+            } else {
+                0.0
+            }
 
             val totalInvestmentValue = investments.sumOf { it.calculateCurrentValue() }
             val totalMonthlyInvestment = investments.filter { it.frequency == ContributionFrequency.MONTHLY }.sumOf { it.currentMonthlyAmount() }
@@ -87,6 +105,7 @@ class PortfolioViewModel @Inject constructor(
                     totalReturns = totalReturns,
                     projectedValue = projectedValue
                 ),
+                averageLoanInterestRate = averageLoanInterestRate,
                 hasData = hasData
             )
 
