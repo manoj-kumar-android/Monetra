@@ -205,14 +205,19 @@ class SettingsViewModel @Inject constructor(
         }
         _uiState.update { it.copy(isLoading = false) }
     }
+    private suspend fun revertBackupToggle() {
+        _uiState.update { it.copy(isBackupEnabled = false) }
+        val currentPrefs = repository.getUserPreferences().first()
+        repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = false))
+    }
 
     fun onBackupToggle(enabled: Boolean, activity: Activity, confirmed: Boolean = false) {
         toggleJob?.cancel()
         toggleJob = viewModelScope.launch {
-            _uiState.update { it.copy(isBackupEnabled = enabled) }
-            val currentPrefs = repository.getUserPreferences().first()
-            repository.saveUserPreferences(currentPrefs.copy(isBackupEnabled = enabled))
-            if (enabled) {
+            if (!enabled) {
+                revertBackupToggle()
+            } else {
+                _uiState.update { it.copy(isBackupEnabled = true) }
                 _uiState.update { it.copy(isLoading = true) }
                 val result = validateBackupUseCase(ignoreBackupCheck = confirmed)
                 handleValidationResult(result, activity, isManual = true, confirmed = confirmed)
@@ -246,6 +251,7 @@ class SettingsViewModel @Inject constructor(
             is BackupValidationResult.NotSignedIn -> {
                 val authSuccess = driveBackupManager.authenticate(activity)
                 if (!authSuccess) {
+                    revertBackupToggle()
                     _events.send(SettingsEvent.AuthError("Authentication failed. Please sign in to enable backup."))
                 } else {
                     // Re-validate after sign in
@@ -290,7 +296,7 @@ class SettingsViewModel @Inject constructor(
     fun onPermissionDenied() {
         viewModelScope.launch {
             cloudBackupRepository.signOut()
-            _uiState.update { it.copy(isBackupEnabled = false) }
+            revertBackupToggle()
             _events.send(SettingsEvent.AuthError("Drive permission required for backup"))
         }
     }
@@ -377,7 +383,10 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onSignOutClick() {
-        viewModelScope.launch { driveBackupManager.signOut() }
+        viewModelScope.launch {
+            driveBackupManager.signOut()
+            revertBackupToggle()
+        }
     }
 
     fun onLogoutClick() {
