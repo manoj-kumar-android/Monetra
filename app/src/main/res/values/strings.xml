@@ -227,7 +227,7 @@
     <string name="financial_survival_status">Financial Survival Status</string>
     <string name="survival_buffer">Survival Buffer</string>
     <string name="liquid_wealth">Liquid Wealth</string>
-    <string name="wealth_projection_title">Wealth Projection 🚀</string>
+    <string name="wealth_projection_title">Wealth Projection</string>
     <string name="wealth_projection_desc">Simulate your future wealth growth</string>
     <string name="invested_label_format">Invested: ₹%,.0f</string>
     <string name="returns_label_format">Returns: ₹%,.0f</string>
@@ -385,7 +385,7 @@
     <string name="data_backup">DATA &amp; BACKUP</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_welcome_title">Welcome to Spend Sense 🚀</string>
+    <string name="onboarding_welcome_title">Welcome to Spend Sense</string>
     <string name="onboarding_subtitle">Let\'s set up your financial baseline to calculate your safe-to-spend allowance.</string>
     <string name="onboarding_step1_title">Mandatory Commitments</string>
     <string name="onboarding_step1_subtitle">Manage your utility bills, subscriptions, and recurring costs seamlessly.</string>
