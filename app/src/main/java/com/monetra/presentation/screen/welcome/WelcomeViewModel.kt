@@ -52,7 +52,18 @@ class WelcomeViewModel @Inject constructor(
 
     fun onSkipForNow() {
         viewModelScope.launch {
-            completeOnboarding()
+            // Save preferences asynchronously in background
+            viewModelScope.launch {
+                val prefs = userPreferenceRepository.getUserPreferences().first()
+                userPreferenceRepository.saveUserPreferences(
+                    prefs.copy(
+                        isOnboardingCompleted = true,
+                        isBackupEnabled = false
+                    )
+                )
+            }
+            // Navigate immediately
+            _events.send(WelcomeEvent.AuthSuccess)
         }
     }
 
