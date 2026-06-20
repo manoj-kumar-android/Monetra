@@ -145,7 +145,6 @@ fun DashboardScreen(
                         ),
                         modifier = Modifier
                             .padding(start = Spacing.sm)
-                            .clickable { viewModel.onSignOutClick() }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
