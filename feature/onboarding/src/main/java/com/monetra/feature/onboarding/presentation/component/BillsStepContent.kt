@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -201,178 +202,192 @@ fun BillsStepContent(
         keyboardController?.show()
     }
 
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenWidth =
+        with(density) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = Spacing.screenHorizontal)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = Spacing.screenHorizontal),
+        contentAlignment = Alignment.Center
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .padding(bottom = 80.dp),
-            contentPadding = PaddingValues(vertical = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.bills_title),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.bills_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        val contentModifier = if (screenWidth > 600.dp) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier.fillMaxSize()
+        }
 
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                    ),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+        Box(modifier = contentModifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .padding(bottom = 80.dp),
+                contentPadding = PaddingValues(vertical = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = stringResource(R.string.bills_title),
+                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.bills_subtitle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(24.dp)
+                            )
                     ) {
-                        OutlinedTextField(
-                            value = nameTextFieldValue,
-                            onValueChange = { newValue ->
-                                nameTextFieldValue = newValue
-                                onNameChange(newValue.text)
-                            },
-                            placeholder = { Text(stringResource(R.string.bill_name_placeholder)) },
-                            label = { Text(stringResource(R.string.bill_name_label)) },
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester),
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Words,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        )
-
-                        CategoryPickerField(
-                            selectedCategoryId = billCategory,
-                            categories = categoriesList,
-                            onCategorySelected = onCategoryChange,
-                            label = stringResource(R.string.bill_category_label)
-                        )
-
-                        OutlinedTextField(
-                            value = amountTextFieldValue,
-                            onValueChange = { newValue ->
-                                amountTextFieldValue = newValue
-                                onAmountChange(newValue.text)
-                            },
-                            placeholder = { Text(stringResource(R.string.bill_amount_placeholder)) },
-                            label = { Text(stringResource(R.string.bill_amount_label)) },
-                            prefix = { Text(stringResource(R.string.currency_prefix)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        )
-
-                        DueDayPickerField(
-                            selectedDay = billDueDay.toIntOrNull() ?: 1,
-                            onDaySelected = { onDueDayChange(it.toString()) },
-                            label = stringResource(R.string.bill_due_day_label)
-                        )
-
-                        Button(
-                            onClick = {
-                                keyboardController?.hide()
-                                onAddBill()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
+                        Column(
+                            modifier = Modifier.padding(Spacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(R.string.add_bill),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
+                            OutlinedTextField(
+                                value = nameTextFieldValue,
+                                onValueChange = { newValue ->
+                                    nameTextFieldValue = newValue
+                                    onNameChange(newValue.text)
+                                },
+                                placeholder = { Text(stringResource(R.string.bill_name_placeholder)) },
+                                label = { Text(stringResource(R.string.bill_name_label)) },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester),
+                                shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Words,
+                                    imeAction = ImeAction.Next
+                                ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                )
                             )
+
+                            CategoryPickerField(
+                                selectedCategoryId = billCategory,
+                                categories = categoriesList,
+                                onCategorySelected = onCategoryChange,
+                                label = stringResource(R.string.bill_category_label)
+                            )
+
+                            OutlinedTextField(
+                                value = amountTextFieldValue,
+                                onValueChange = { newValue ->
+                                    amountTextFieldValue = newValue
+                                    onAmountChange(newValue.text)
+                                },
+                                placeholder = { Text(stringResource(R.string.bill_amount_placeholder)) },
+                                label = { Text(stringResource(R.string.bill_amount_label)) },
+                                prefix = { Text(stringResource(R.string.currency_prefix)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            )
+
+                            DueDayPickerField(
+                                selectedDay = billDueDay.toIntOrNull() ?: 1,
+                                onDaySelected = { onDueDayChange(it.toString()) },
+                                label = stringResource(R.string.bill_due_day_label)
+                            )
+
+                            Button(
+                                onClick = {
+                                    keyboardController?.hide()
+                                    onAddBill()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.add_bill),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                            }
                         }
+                    }
+                }
+
+                if (billsList.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.added_bills_header),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    items(
+                        items = billsList,
+                        key = { it.remoteId }
+                    ) { bill ->
+                        BillListItem(
+                            bill = bill,
+                            onDeleteClick = { onDeleteBill(bill) }
+                        )
                     }
                 }
             }
 
-            if (billsList.isNotEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.added_bills_header),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-
-                items(
-                    items = billsList,
-                    key = { it.remoteId }
-                ) { bill ->
-                    BillListItem(
-                        bill = bill,
-                        onDeleteClick = { onDeleteBill(bill) }
-                    )
-                }
-            }
-        }
-
-        Button(
-            onClick = {
-                keyboardController?.hide()
-                onNext()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(vertical = Spacing.md)
-                .height(58.dp),
-            shape = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text(
-                text = stringResource(R.string.finish_onboarding),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+            Button(
+                onClick = {
+                    keyboardController?.hide()
+                    onNext()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.md)
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
-            )
+            ) {
+                Text(
+                    text = stringResource(R.string.finish_onboarding),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+            }
         }
     }
 }

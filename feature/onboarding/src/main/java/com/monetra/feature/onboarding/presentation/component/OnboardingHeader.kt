@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -54,50 +56,68 @@ fun OnboardingHeader(
         OnboardingStep.WELCOME -> -1
     }
 
-    Row(
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenWidth =
+        with(density) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .padding(horizontal = Spacing.screenHorizontal),
-        verticalAlignment = Alignment.CenterVertically
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
     ) {
-        IconButton(
-            onClick = onBackClick,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.back),
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+        val headerMaxWidth = if (currentStep == OnboardingStep.BILLS) 600.dp else 550.dp
+        val contentModifier = if (screenWidth > 600.dp) {
+            Modifier.widthIn(max = headerMaxWidth)
+        } else {
+            Modifier.fillMaxWidth()
         }
 
-        Spacer(modifier = Modifier.width(Spacing.lg))
-
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = contentModifier
+                .fillMaxHeight()
+                .padding(horizontal = Spacing.screenHorizontal),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            for (i in 0 until totalSteps) {
-                val isActive = i <= activeIndex
-                val color =
-                    if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                val animateWidth by animateFloatAsState(
-                    targetValue = if (i == activeIndex) 2.5f else 1f,
-                    animationSpec = spring(stiffness = Spring.StiffnessLow),
-                    label = "barWidthAnimation"
+            IconButton(
+                onClick = onBackClick,
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
+            }
 
-                Box(
-                    modifier = Modifier
-                        .weight(animateWidth)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(color)
-                )
+            Spacer(modifier = Modifier.width(Spacing.lg))
+
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (i in 0 until totalSteps) {
+                    val isActive = i <= activeIndex
+                    val color =
+                        if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                    val animateWidth by animateFloatAsState(
+                        targetValue = if (i == activeIndex) 2.5f else 1f,
+                        animationSpec = spring(stiffness = Spring.StiffnessLow),
+                        label = "barWidthAnimation"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(animateWidth)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(color)
+                    )
+                }
             }
         }
     }

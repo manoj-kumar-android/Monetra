@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Welcome screen -->
-    <string name="welcome_title">Welcome to Spend Sense</string>
-    <string name="welcome_subtitle">Know exactly how much you can spend without hurting your savings goals.</string>
+    <string name="welcome_title">Spend Sense</string>
+    <string name="welcome_subtitle">Plan better. Spend smarter.\nSave effortlessly.</string>
     <string name="get_started">Get Started</string>
 
     <!-- Income Screen -->
     <string name="income_title">What is your monthly income?</string>
     <string name="income_subtitle">This helps us build your budget around your income.</string>
     <string name="income_hint">0</string>
-    <string name="settings_change_tip">You can change this anytime from Settings.</string>
+    <string name="settings_change_tip">You can change this anytime later.</string>
     <string name="next">Next</string>
     <string name="currency_prefix">₹ </string>
 

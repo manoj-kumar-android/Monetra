@@ -1,34 +1,37 @@
 package com.monetra.feature.onboarding.presentation.component
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import android.content.res.Configuration
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,108 +44,179 @@ import com.monetra.feature.onboarding.R
 fun WelcomeStepContent(
     onGetStarted: () -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "welcomeIllustration")
-    val floatOffset by infiniteTransition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "illustrationFloat"
-    )
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenWidth =
+        with(density) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(Spacing.screenHorizontal),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.md),
+        contentAlignment = Alignment.Center
     ) {
-        Spacer(modifier = Modifier.height(10.dp))
+        val contentModifier = if (screenWidth > 600.dp) {
+            Modifier.widthIn(max = 550.dp)
+        } else {
+            Modifier.fillMaxSize()
+        }
 
+        if (isLandscape) {
+            Row(
+                modifier = contentModifier,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left side: Illustration
+                Box(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight()
+                        .clipToBounds(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.person_logo_with_phone),
+                        contentDescription = "Illustration",
+                        contentScale = ContentScale.Crop, // Crop blank top/bottom space
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(Spacing.xl))
+
+                // Right side: Content and CTA
+                Column(
+                    modifier = Modifier
+                        .weight(0.8f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    LogoHeader()
+
+                    Spacer(modifier = Modifier.height(Spacing.lg))
+
+                    Text(
+                        text = stringResource(R.string.welcome_subtitle),
+                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(modifier = Modifier.height(Spacing.xl))
+
+                    GetStartedButton(onClick = onGetStarted)
+                }
+            }
+        } else {
+            Column(
+                modifier = contentModifier,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top logo & texts
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.height(Spacing.xl))
+                    LogoHeader()
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    Text(
+                        text = stringResource(R.string.welcome_subtitle),
+                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = Spacing.md)
+                    )
+                }
+
+                // Center Illustration (Given large weight to allow full-width cropping of vertical whitespace)
+                Box(
+                    modifier = Modifier
+                        .weight(3.5f)
+                        .fillMaxWidth()
+                        .clipToBounds(), // Clip the overflowing whitespace margins
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.person_logo_with_phone),
+                        contentDescription = "Illustration",
+                        contentScale = ContentScale.Crop, // Crop blank top/bottom space
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                // Bottom Button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    GetStartedButton(onClick = onGetStarted)
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LogoHeader() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Rounded blue square icon
         Box(
             modifier = Modifier
-                .size(240.dp)
-                .offset(y = floatOffset.dp),
+                .size(64.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF2196F3)), // Bright Blue
             contentAlignment = Alignment.Center
         ) {
-            val primaryColor = MaterialTheme.colorScheme.primary
-            val secondaryColor = MaterialTheme.colorScheme.secondary
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(primaryColor.copy(alpha = 0.15f), Color.Transparent),
-                        center = center,
-                        radius = size.width / 2f
-                    ),
-                    radius = size.width / 2f,
-                    center = center
-                )
-                drawCircle(
-                    color = primaryColor.copy(alpha = 0.25f),
-                    radius = size.width / 2.8f,
-                    center = center,
-                    style = Stroke(width = 4.dp.toPx())
-                )
-                drawCircle(
-                    brush = Brush.linearGradient(
-                        colors = listOf(primaryColor, secondaryColor)
-                    ),
-                    radius = size.width / 4f,
-                    center = center
-                )
-            }
-
-            Text(
-                text = stringResource(R.string.currency_prefix).trim(),
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Black,
-                color = Color.White,
-                modifier = Modifier.offset(y = (-4).dp)
+            Image(
+                painter = painterResource(id = R.drawable.step_up_arrow),
+                contentDescription = "Logo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
             )
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = stringResource(R.string.welcome_title),
-                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+        Spacer(modifier = Modifier.height(Spacing.md))
 
-            Spacer(modifier = Modifier.height(Spacing.sm))
+        Text(
+            text = stringResource(R.string.welcome_title),
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 32.sp,
+                letterSpacing = 0.5.sp
+            ),
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
-            Text(
-                text = stringResource(R.string.welcome_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = Spacing.md)
+@Composable
+private fun GetStartedButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(58.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF2196F3), // Bright Blue to match logo
+            contentColor = Color.White
+        )
+    ) {
+        Text(
+            text = stringResource(R.string.get_started),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
             )
-        }
-
-        Button(
-            onClick = onGetStarted,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            shape = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text(
-                text = stringResource(R.string.get_started),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            )
-        }
+        )
     }
 }
