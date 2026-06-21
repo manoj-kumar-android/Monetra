@@ -3,6 +3,7 @@ package com.monetra.feature.onboarding.presentation
 import com.monetra.core.mvi.MviEffect
 import com.monetra.core.mvi.MviIntent
 import com.monetra.core.mvi.MviState
+import com.monetra.core.ui.util.UiText
 import com.monetra.domain.model.MonthlyExpense
 
 enum class OnboardingStep {
@@ -21,7 +22,7 @@ data class OnboardingState(
     val billCategory: String = "Bills",
     val billDueDay: String = "1",
     val bills: List<MonthlyExpense> = emptyList(),
-    val error: String? = null
+    val error: UiText? = null
 ) : MviState
 
 sealed interface OnboardingIntent : MviIntent {
@@ -40,5 +41,5 @@ sealed interface OnboardingIntent : MviIntent {
 
 sealed interface OnboardingEffect : MviEffect {
     data object NavigationToDashboard : OnboardingEffect
-    data class ShowToast(val message: String) : OnboardingEffect
+    data class ShowToast(val message: UiText) : OnboardingEffect
 }

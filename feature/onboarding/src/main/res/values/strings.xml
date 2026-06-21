@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Welcome screen -->
+    <string name="welcome_title">Welcome to Spend Sense</string>
+    <string name="welcome_subtitle">Know exactly how much you can spend without hurting your savings goals.</string>
+    <string name="get_started">Get Started</string>
+
+    <!-- Income Screen -->
+    <string name="income_title">What is your monthly income?</string>
+    <string name="income_subtitle">This helps us build your budget around your income.</string>
+    <string name="income_hint">0</string>
+    <string name="settings_change_tip">You can change this anytime from Settings.</string>
+    <string name="next">Next</string>
+    <string name="currency_prefix">₹ </string>
+
+    <!-- Savings Screen -->
+    <string name="savings_title">What is your monthly savings goal?</string>
+    <string name="savings_subtitle">How much do you want to save every month?</string>
+    <string name="savings_hint">0</string>
+    <string name="savings_tip">Great! Aim high and we\'ll help you stay on track.</string>
+
+    <!-- Bills Screen -->
+    <string name="bills_title">Add your recurring bills</string>
+    <string name="bills_subtitle">Add your monthly fixed bills. We\'ll reserve this amount for you.</string>
+    <string name="bill_name_placeholder">Rent, Net, etc.</string>
+    <string name="bill_name_label">Bill Name</string>
+    <string name="bill_category_placeholder">Utilities, Rent, Subscription, etc.</string>
+    <string name="bill_category_label">Category</string>
+    <string name="bill_amount_placeholder">0</string>
+    <string name="bill_amount_label">Amount</string>
+    <string name="bill_due_day_placeholder">1</string>
+    <string name="bill_due_day_label">Due Day (1–31)</string>
+    <string name="add_bill">Add Bill</string>
+    <string name="added_bills_header">Your Added Bills</string>
+    <string name="finish_onboarding">Finish Onboarding</string>
+
+    <!-- Content Descriptions & Accessibility -->
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+
+    <!-- Errors -->
+    <string name="error_invalid_income">Please enter a valid monthly income.</string>
+    <string name="error_invalid_savings">Please enter a valid savings goal.</string>
+    <string name="error_savings_exceeds_income">Savings goal cannot be greater than monthly income.</string>
+    <string name="error_empty_bill_name">Please enter a bill name.</string>
+    <string name="error_invalid_bill_amount">Please enter a valid bill amount.</string>
+    <string name="error_invalid_due_day">Due day must be between 1 and 31.</string>
+    <string name="error_failed_save_data">Failed to save onboarding data</string>
+</resources>

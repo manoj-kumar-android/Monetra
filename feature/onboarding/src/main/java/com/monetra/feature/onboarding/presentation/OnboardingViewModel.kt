@@ -2,9 +2,11 @@ package com.monetra.feature.onboarding.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.monetra.core.mvi.MviViewModel
+import com.monetra.core.ui.util.UiText
 import com.monetra.domain.model.MonthlyExpense
 import com.monetra.domain.repository.MonthlyExpenseRepository
 import com.monetra.domain.repository.UserPreferenceRepository
+import com.monetra.feature.onboarding.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -56,7 +58,7 @@ class OnboardingViewModel @Inject constructor(
             OnboardingStep.INCOME -> {
                 val income = currentState.monthlyIncome.toDoubleOrNull()
                 if (income == null || income <= 0) {
-                    updateState { copy(error = "Please enter a valid monthly income.") }
+                    updateState { copy(error = UiText.StringResource(R.string.error_invalid_income)) }
                     return
                 }
                 OnboardingStep.SAVINGS
@@ -66,11 +68,11 @@ class OnboardingViewModel @Inject constructor(
                 val savings = currentState.monthlySavingsGoal.toDoubleOrNull()
                 val income = currentState.monthlyIncome.toDoubleOrNull() ?: 0.0
                 if (savings == null || savings < 0) {
-                    updateState { copy(error = "Please enter a valid savings goal.") }
+                    updateState { copy(error = UiText.StringResource(R.string.error_invalid_savings)) }
                     return
                 }
                 if (savings > income) {
-                    updateState { copy(error = "Savings goal cannot be greater than monthly income.") }
+                    updateState { copy(error = UiText.StringResource(R.string.error_savings_exceeds_income)) }
                     return
                 }
                 OnboardingStep.BILLS
@@ -101,15 +103,15 @@ class OnboardingViewModel @Inject constructor(
         val dueDay = currentState.billDueDay.toIntOrNull() ?: 1
 
         if (name.isEmpty()) {
-            sendEffect(OnboardingEffect.ShowToast("Please enter a bill name."))
+            sendEffect(OnboardingEffect.ShowToast(UiText.StringResource(R.string.error_empty_bill_name)))
             return
         }
         if (amount == null || amount <= 0) {
-            sendEffect(OnboardingEffect.ShowToast("Please enter a valid bill amount."))
+            sendEffect(OnboardingEffect.ShowToast(UiText.StringResource(R.string.error_invalid_bill_amount)))
             return
         }
         if (dueDay !in 1..31) {
-            sendEffect(OnboardingEffect.ShowToast("Due day must be between 1 and 31."))
+            sendEffect(OnboardingEffect.ShowToast(UiText.StringResource(R.string.error_invalid_due_day)))
             return
         }
 
@@ -150,7 +152,12 @@ class OnboardingViewModel @Inject constructor(
                 monthlyExpenseRepository.insertAll(currentState.bills)
                 sendEffect(OnboardingEffect.NavigationToDashboard)
             } catch (e: Exception) {
-                updateState { copy(error = e.message ?: "Failed to save onboarding data") }
+                updateState {
+                    copy(
+                        error = e.message?.let { UiText.DynamicString(it) }
+                            ?: UiText.StringResource(R.string.error_failed_save_data)
+                    )
+                }
             }
         }
     }
