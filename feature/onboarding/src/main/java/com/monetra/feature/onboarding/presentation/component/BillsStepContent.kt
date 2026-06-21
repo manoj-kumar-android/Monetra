@@ -137,12 +137,12 @@ fun BillsStepContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
             .padding(horizontal = Spacing.screenHorizontal)
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .padding(bottom = 80.dp),
             contentPadding = PaddingValues(vertical = Spacing.md),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -240,8 +240,8 @@ fun BillsStepContent(
                                 onAddBill()
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
