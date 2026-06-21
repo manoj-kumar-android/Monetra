@@ -102,8 +102,11 @@ fun OnboardingHeader(
             ) {
                 for (i in 0 until totalSteps) {
                     val isActive = i <= activeIndex
-                    val color =
-                        if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                    val color = if (isActive) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    }
                     val animateWidth by animateFloatAsState(
                         targetValue = if (i == activeIndex) 2.5f else 1f,
                         animationSpec = spring(stiffness = Spring.StiffnessLow),

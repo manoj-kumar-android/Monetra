@@ -3,7 +3,7 @@ package com.monetra.feature.onboarding.presentation.component
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monetra.core.ui.theme.Spacing
 import com.monetra.core.ui.util.UiText
+import com.monetra.core.ui.util.dashedBorder
 import com.monetra.feature.onboarding.R
 
 @Composable
@@ -99,6 +100,13 @@ fun IncomeStepContent(
         with(density) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() }
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+    // Theme-aware accessible colors for the Tip Card
+    val isDark = isSystemInDarkTheme()
+    val tipBgColor = if (isDark) Color(0x1A30D158) else Color(0x1234C759)
+    val tipBorderColor = if (isDark) Color(0x4030D158) else Color(0x3534C759)
+    val tipIconColor = if (isDark) Color(0xFF30D158) else Color(0xFF22C55E)
+    val tipTextColor = if (isDark) Color(0xFF86EFAC) else Color(0xFF1E7036)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -106,7 +114,7 @@ fun IncomeStepContent(
             .imePadding(),
         contentAlignment = Alignment.Center
     ) {
-        val contentModifier = if (screenWidth > 600.dp) {
+        val contentModifier = if (screenWidth > 600.dp && !isLandscape) {
             Modifier.widthIn(max = 550.dp)
         } else {
             Modifier.fillMaxSize()
@@ -117,114 +125,244 @@ fun IncomeStepContent(
                 .fillMaxSize()
                 .padding(horizontal = Spacing.screenHorizontal)
         ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(bottom = 88.dp),
-                verticalArrangement = Arrangement.Top
             ) {
-                Spacer(modifier = Modifier.height(if (isLandscape) Spacing.md else Spacing.xl))
-
-                Text(
-                    text = stringResource(R.string.income_title),
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = if (isLandscape) 24.sp else 30.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.height(Spacing.xs))
-
-                Text(
-                    text = stringResource(R.string.income_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(if (isLandscape) Spacing.md else Spacing.xxl))
-
-                OutlinedTextField(
-                    value = textFieldValue,
-                    onValueChange = { newValue ->
-                        textFieldValue = newValue
-                        onIncomeChange(newValue.text)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    placeholder = { Text(stringResource(R.string.income_hint)) },
-                    prefix = {
-                        Text(
-                            text = stringResource(R.string.currency_prefix),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    textStyle = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = if (isLandscape) 28.sp else 36.sp
-                    ),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = {
-                            keyboardController?.hide()
-                            onNext()
-                        }
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                            alpha = 0.3f
-                        )
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                )
-
-                AnimatedVisibility(visible = errorMsg != null) {
-                    Text(
-                        text = errorMsg?.asString() ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(if (isLandscape) Spacing.lg else Spacing.xxl))
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0x1A22C55E) // Semi-transparent green matching design mockup
-                    ),
-                    shape = RoundedCornerShape(18.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Spacing.md)
-                        .border(1.dp, Color(0x3322C55E), RoundedCornerShape(18.dp))
-                ) {
+                if (isLandscape) {
                     Row(
-                        modifier = Modifier.padding(Spacing.lg),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 88.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lightbulb,
-                            contentDescription = "Tip",
-                            tint = Color(0xFF22C55E),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(Spacing.md))
+                        // Left: Input side
+                        Column(
+                            modifier = Modifier.weight(1.1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.income_title),
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+
+                            Text(
+                                text = stringResource(R.string.income_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedTextField(
+                                value = textFieldValue,
+                                onValueChange = { newValue ->
+                                    textFieldValue = newValue
+                                    onIncomeChange(newValue.text)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester),
+                                placeholder = { Text(stringResource(R.string.income_hint)) },
+                                prefix = {
+                                    Text(
+                                        text = stringResource(R.string.currency_prefix),
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                textStyle = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        keyboardController?.hide()
+                                        onNext()
+                                    }
+                                ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = 0.3f
+                                    ),
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = 0.3f
+                                    )
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+
+                            AnimatedVisibility(visible = errorMsg != null) {
+                                Text(
+                                    text = errorMsg?.asString() ?: "",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                                )
+                            }
+                        }
+
+                        // Right: Tip side (Stitched card border)
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = tipBgColor
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier
+                                .weight(0.9f)
+                                .dashedBorder(
+                                    width = 1.5.dp,
+                                    color = tipBorderColor,
+                                    shape = RoundedCornerShape(18.dp)
+                                )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Spacing.lg),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lightbulb,
+                                    contentDescription = "Tip",
+                                    tint = tipIconColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.md))
+                                Text(
+                                    text = stringResource(R.string.settings_change_tip),
+                                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                                    color = tipTextColor
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Portrait layout
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 88.dp),
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Spacer(modifier = Modifier.height(Spacing.xl))
+
                         Text(
-                            text = stringResource(R.string.settings_change_tip),
-                            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                            color = Color(0xFF86EFAC)
+                            text = stringResource(R.string.income_title),
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 30.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground
                         )
+
+                        Spacer(modifier = Modifier.height(Spacing.xs))
+
+                        Text(
+                            text = stringResource(R.string.income_subtitle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(Spacing.xxl))
+
+                        OutlinedTextField(
+                            value = textFieldValue,
+                            onValueChange = { newValue ->
+                                textFieldValue = newValue
+                                onIncomeChange(newValue.text)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            placeholder = { Text(stringResource(R.string.income_hint)) },
+                            prefix = {
+                                Text(
+                                    text = stringResource(R.string.currency_prefix),
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            textStyle = MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 36.sp
+                            ),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    keyboardController?.hide()
+                                    onNext()
+                                }
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.3f
+                                ),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.3f
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        AnimatedVisibility(visible = errorMsg != null) {
+                            Text(
+                                text = errorMsg?.asString() ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(Spacing.xxl))
+
+                        // Stitched Tip Card
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = tipBgColor
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .dashedBorder(
+                                    width = 1.5.dp,
+                                    color = tipBorderColor,
+                                    shape = RoundedCornerShape(18.dp)
+                                )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Spacing.lg),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lightbulb,
+                                    contentDescription = "Tip",
+                                    tint = tipIconColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.md))
+                                Text(
+                                    text = stringResource(R.string.settings_change_tip),
+                                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                                    color = tipTextColor
+                                )
+                            }
+                        }
                     }
                 }
             }
