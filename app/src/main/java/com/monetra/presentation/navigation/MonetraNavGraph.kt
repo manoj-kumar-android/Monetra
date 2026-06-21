@@ -16,6 +16,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.monetra.MainViewModel
+import com.monetra.feature.onboarding.presentation.OnboardingScreen
 import com.monetra.presentation.screen.add_edit.AddEditExpenseScreen
 import com.monetra.presentation.screen.budgets.BudgetsScreen
 import com.monetra.presentation.screen.settings.SettingsScreen
@@ -358,7 +359,7 @@ fun MonetraNavGraph(
 
                 is Route.Welcome -> {
                     NavEntry(key) {
-                        com.monetra.presentation.screen.welcome.WelcomeScreen(
+                        OnboardingScreen(
                             onNavigateToDashboard = {
                                 backStack.clear()
                                 backStack.add(Route.TransactionList())

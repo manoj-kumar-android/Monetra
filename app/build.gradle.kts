@@ -75,6 +75,10 @@ ksp {
 
 dependencies {
     implementation(project(":drive_backup"))
+    implementation(project(":core:mvi"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:domain"))
+    implementation(project(":feature:onboarding"))
     // ── Core ──────────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

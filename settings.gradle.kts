@@ -23,4 +23,7 @@ dependencyResolutionManagement {
 rootProject.name = "Spend Sense"
 include(":app")
 include(":drive_backup")
- 
+include(":core:mvi")
+include(":core:ui")
+include(":core:domain")
+include(":feature:onboarding")
