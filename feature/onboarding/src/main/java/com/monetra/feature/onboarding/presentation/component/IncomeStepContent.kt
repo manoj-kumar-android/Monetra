@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monetra.core.ui.theme.Spacing
+import com.monetra.core.ui.util.IndianCurrencyVisualTransformation
 import com.monetra.core.ui.util.UiText
 import com.monetra.core.ui.util.dashedBorder
 import com.monetra.feature.onboarding.R
@@ -162,8 +163,10 @@ fun IncomeStepContent(
                             OutlinedTextField(
                                 value = textFieldValue,
                                 onValueChange = { newValue ->
-                                    textFieldValue = newValue
-                                    onIncomeChange(newValue.text)
+                                    // Strip non-digits just in case
+                                    val digitsOnly = newValue.text.filter { it.isDigit() }
+                                    textFieldValue = newValue.copy(text = digitsOnly)
+                                    onIncomeChange(digitsOnly)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -190,6 +193,7 @@ fun IncomeStepContent(
                                         onNext()
                                     }
                                 ),
+                                visualTransformation = IndianCurrencyVisualTransformation(),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -278,8 +282,9 @@ fun IncomeStepContent(
                         OutlinedTextField(
                             value = textFieldValue,
                             onValueChange = { newValue ->
-                                textFieldValue = newValue
-                                onIncomeChange(newValue.text)
+                                val digitsOnly = newValue.text.filter { it.isDigit() }
+                                textFieldValue = newValue.copy(text = digitsOnly)
+                                onIncomeChange(digitsOnly)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -307,6 +312,7 @@ fun IncomeStepContent(
                                     onNext()
                                 }
                             ),
+                            visualTransformation = IndianCurrencyVisualTransformation(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,

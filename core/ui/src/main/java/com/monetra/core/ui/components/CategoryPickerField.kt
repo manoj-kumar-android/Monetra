@@ -17,8 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,7 +105,7 @@ fun CategoryPickerField(
                         iconSize = 18.dp
                     )
                 } else {
-                    Icon(Icons.Default.Label, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null)
                 }
             },
             trailingIcon = {
