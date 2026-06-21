@@ -1,5 +1,6 @@
 package com.monetra.core.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -40,7 +40,6 @@ fun DueDayPickerField(
     label: String = "Due Day"
 ) {
     var showSheet by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
 
     val suffix = when (selectedDay) {
         1, 21, 31 -> "st"
@@ -73,11 +72,7 @@ fun DueDayPickerField(
                 .matchParentSize()
                 .padding(top = 8.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable {
-                    // Clear focus so the IME hides naturally before sheet opens
-                    focusManager.clearFocus(force = true)
-                    showSheet = true
-                }
+                .clickable { showSheet = true }
         )
     }
 
@@ -85,12 +80,15 @@ fun DueDayPickerField(
         isOpen = showSheet,
         onDismissRequest = { showSheet = false }
     ) {
+        // BottomSheetPopup renders in a Dialog window — draws above keyboard natively.
+        // dismiss() is available from BottomSheetPopupScope (this scope).
         var sliderValue by remember { mutableFloatStateOf(selectedDay.toFloat()) }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 48.dp),
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

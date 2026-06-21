@@ -20,9 +20,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.ShoppingBag
+import androidx.compose.material.icons.rounded.ShoppingCart
+import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -115,17 +126,72 @@ fun BillsStepContent(
     }
 
     val categoriesList = listOf(
-        CategoryItem("General", "💰", stringResource(R.string.cat_general)),
-        CategoryItem("Food", "🍔", stringResource(R.string.cat_food)),
-        CategoryItem("Transport", "🚗", stringResource(R.string.cat_transport)),
-        CategoryItem("Shopping", "🛍️", stringResource(R.string.cat_shopping)),
-        CategoryItem("Groceries", "🛒", stringResource(R.string.cat_groceries)),
-        CategoryItem("Bills", "💡", stringResource(R.string.cat_bills)),
-        CategoryItem("Rent", "🏠", stringResource(R.string.cat_rent)),
-        CategoryItem("Subscription", "🔄", stringResource(R.string.cat_subscription)),
-        CategoryItem("Fun", "🎭", stringResource(R.string.cat_fun)),
-        CategoryItem("Health", "🏥", stringResource(R.string.cat_health)),
-        CategoryItem("Mobile Recharge", "📱", stringResource(R.string.cat_mobile_recharge))
+        CategoryItem(
+            "General",
+            Icons.Rounded.AccountBalanceWallet,
+            stringResource(R.string.cat_general),
+            Color(0xFF6C63FF)
+        ), // Indigo-purple
+        CategoryItem(
+            "Food",
+            Icons.Rounded.Restaurant,
+            stringResource(R.string.cat_food),
+            Color(0xFFFF6B35)
+        ), // Warm orange
+        CategoryItem(
+            "Transport",
+            Icons.Rounded.DirectionsCar,
+            stringResource(R.string.cat_transport),
+            Color(0xFF2196F3)
+        ), // Blue
+        CategoryItem(
+            "Shopping",
+            Icons.Rounded.ShoppingBag,
+            stringResource(R.string.cat_shopping),
+            Color(0xFFE91E8C)
+        ), // Hot pink
+        CategoryItem(
+            "Groceries",
+            Icons.Rounded.ShoppingCart,
+            stringResource(R.string.cat_groceries),
+            Color(0xFF4CAF50)
+        ), // Green
+        CategoryItem(
+            "Bills",
+            Icons.AutoMirrored.Rounded.ReceiptLong,
+            stringResource(R.string.cat_bills),
+            Color(0xFFF59E0B)
+        ), // Amber
+        CategoryItem(
+            "Rent",
+            Icons.Rounded.Home,
+            stringResource(R.string.cat_rent),
+            Color(0xFF14B8A6)
+        ), // Teal
+        CategoryItem(
+            "Subscription",
+            Icons.Rounded.Autorenew,
+            stringResource(R.string.cat_subscription),
+            Color(0xFF8B5CF6)
+        ), // Violet
+        CategoryItem(
+            "Fun",
+            Icons.Rounded.SportsEsports,
+            stringResource(R.string.cat_fun),
+            Color(0xFFEF4444)
+        ), // Red
+        CategoryItem(
+            "Health",
+            Icons.Rounded.HealthAndSafety,
+            stringResource(R.string.cat_health),
+            Color(0xFF06B6D4)
+        ), // Cyan
+        CategoryItem(
+            "Mobile Recharge",
+            Icons.Rounded.PhoneAndroid,
+            stringResource(R.string.cat_mobile_recharge),
+            Color(0xFF10B981)
+        )  // Emerald
     )
 
     LaunchedEffect(Unit) {
