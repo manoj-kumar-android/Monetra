@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -56,6 +55,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monetra.core.ui.components.CategoryItem
+import com.monetra.core.ui.components.CategoryPickerField
+import com.monetra.core.ui.components.DueDayPickerField
 import com.monetra.core.ui.theme.Spacing
 import com.monetra.domain.model.MonthlyExpense
 import com.monetra.feature.onboarding.R
@@ -95,23 +97,6 @@ fun BillsStepContent(
         }
     }
 
-    var categoryTextFieldValue by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = billCategory,
-                selection = TextRange(billCategory.length)
-            )
-        )
-    }
-    LaunchedEffect(billCategory) {
-        if (categoryTextFieldValue.text != billCategory) {
-            categoryTextFieldValue = categoryTextFieldValue.copy(
-                text = billCategory,
-                selection = TextRange(billCategory.length)
-            )
-        }
-    }
-
     var amountTextFieldValue by remember {
         mutableStateOf(
             TextFieldValue(
@@ -129,22 +114,19 @@ fun BillsStepContent(
         }
     }
 
-    var dueDayTextFieldValue by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = billDueDay,
-                selection = TextRange(billDueDay.length)
-            )
-        )
-    }
-    LaunchedEffect(billDueDay) {
-        if (dueDayTextFieldValue.text != billDueDay) {
-            dueDayTextFieldValue = dueDayTextFieldValue.copy(
-                text = billDueDay,
-                selection = TextRange(billDueDay.length)
-            )
-        }
-    }
+    val categoriesList = listOf(
+        CategoryItem("General", "💰", stringResource(R.string.cat_general)),
+        CategoryItem("Food", "🍔", stringResource(R.string.cat_food)),
+        CategoryItem("Transport", "🚗", stringResource(R.string.cat_transport)),
+        CategoryItem("Shopping", "🛍️", stringResource(R.string.cat_shopping)),
+        CategoryItem("Groceries", "🛒", stringResource(R.string.cat_groceries)),
+        CategoryItem("Bills", "💡", stringResource(R.string.cat_bills)),
+        CategoryItem("Rent", "🏠", stringResource(R.string.cat_rent)),
+        CategoryItem("Subscription", "🔄", stringResource(R.string.cat_subscription)),
+        CategoryItem("Fun", "🎭", stringResource(R.string.cat_fun)),
+        CategoryItem("Health", "🏥", stringResource(R.string.cat_health)),
+        CategoryItem("Mobile Recharge", "📱", stringResource(R.string.cat_mobile_recharge))
+    )
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(300)
@@ -217,22 +199,11 @@ fun BillsStepContent(
                             )
                         )
 
-                        OutlinedTextField(
-                            value = categoryTextFieldValue,
-                            onValueChange = { newValue ->
-                                categoryTextFieldValue = newValue
-                                onCategoryChange(newValue.text)
-                            },
-                            placeholder = { Text(stringResource(R.string.bill_category_placeholder)) },
-                            label = { Text(stringResource(R.string.bill_category_label)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
+                        CategoryPickerField(
+                            selectedCategoryId = billCategory,
+                            categories = categoriesList,
+                            onCategorySelected = onCategoryChange,
+                            label = stringResource(R.string.bill_category_label)
                         )
 
                         OutlinedTextField(
@@ -257,31 +228,10 @@ fun BillsStepContent(
                             )
                         )
 
-                        OutlinedTextField(
-                            value = dueDayTextFieldValue,
-                            onValueChange = { newValue ->
-                                dueDayTextFieldValue = newValue
-                                onDueDayChange(newValue.text)
-                            },
-                            placeholder = { Text(stringResource(R.string.bill_due_day_placeholder)) },
-                            label = { Text(stringResource(R.string.bill_due_day_label)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    keyboardController?.hide()
-                                    onAddBill()
-                                }
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
+                        DueDayPickerField(
+                            selectedDay = billDueDay.toIntOrNull() ?: 1,
+                            onDaySelected = { onDueDayChange(it.toString()) },
+                            label = stringResource(R.string.bill_due_day_label)
                         )
 
                         Button(

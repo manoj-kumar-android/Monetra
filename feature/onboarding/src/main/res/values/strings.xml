@@ -29,10 +29,23 @@
     <string name="bill_amount_placeholder">0</string>
     <string name="bill_amount_label">Amount</string>
     <string name="bill_due_day_placeholder">1</string>
-    <string name="bill_due_day_label">Due Day (1–31)</string>
+    <string name="bill_due_day_label">Due Day (1-31)</string>
     <string name="add_bill">Add Bill</string>
     <string name="added_bills_header">Your Added Bills</string>
     <string name="finish_onboarding">Finish Onboarding</string>
+
+    <!-- Categories -->
+    <string name="cat_general">General</string>
+    <string name="cat_food">Food</string>
+    <string name="cat_transport">Transport</string>
+    <string name="cat_shopping">Shopping</string>
+    <string name="cat_fun">Fun</string>
+    <string name="cat_bills">Bills</string>
+    <string name="cat_health">Health</string>
+    <string name="cat_rent">Rent</string>
+    <string name="cat_groceries">Groceries</string>
+    <string name="cat_subscription">Subscription</string>
+    <string name="cat_mobile_recharge">Mobile Recharge</string>
 
     <!-- Content Descriptions & Accessibility -->
     <string name="back">Back</string>
